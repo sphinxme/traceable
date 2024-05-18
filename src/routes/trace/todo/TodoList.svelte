@@ -1,5 +1,5 @@
 <script lang="ts">
-    import SortableList from "$lib/SortableList.svelte";
+    import SortableList from "$lib/components/SortableList.svelte";
     import Todo from "./Todo.svelte";
     import { Database } from "./data";
     import * as Y from "yjs";
