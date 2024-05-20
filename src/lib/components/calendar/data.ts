@@ -1,11 +1,5 @@
 import * as Y from "yjs";
-import type { Database } from "../../todo/data";
-
-class CalendarEventController {
-    constructor() {
-
-    }
-}
+import type { Database } from "../../states/data";
 
 export class TaskEventGroup {
 

@@ -13,6 +13,15 @@ export class Database {
   loading: boolean = false;
   provider?: IndexeddbPersistence;
 
+  private static db?: Database;
+
+  static getInstance(): Database {
+    if (!Database.db) {
+      Database.db = new Database();
+    }
+    return Database.db
+  }
+
   constructor() {
     this.doc = new Y.Doc();
     this.tasks = this.doc.getMap("tasks");
@@ -514,4 +523,4 @@ const tasks: Task[] = [
   },
 ];
 
-export const db = new Database();
+export const db = Database.getInstance();
