@@ -1,5 +1,6 @@
 import * as Y from "yjs";
-import type { Database } from "../../states/data";
+import type { Database, Event } from "../../states/data";
+import type { Dayjs } from "dayjs";
 
 export class TaskEventGroup {
 

@@ -1,15 +1,30 @@
 <script lang="ts">
-	import SortableList from '$lib/components/SortableList.svelte';
-	import Todo from './Todo.svelte';
-	import { Database } from '$lib/states/data';
-	import * as Y from 'yjs';
-	import type { KeyboardHandler } from './item/model';
+	import type { Database } from '$lib/states/data';
 	import { flip } from 'svelte/animate';
-	import { fly } from 'svelte/transition';
+	import * as Y from 'yjs';
+	import { getContext, onDestroy } from 'svelte';
+	import { LastOneEmptyStatusKey, type LastOneEmptyStatus } from '$lib/states/types';
+	import type { KeyboardHandler } from './item/model';
+	import Todo from './Todo.svelte';
+	import TaskDropable from './dnd/TaskDropable.svelte';
+	import { slide } from 'svelte/transition';
 
 	export let db: Database;
-	export let items: Y.Array<string>;
+
 	export let parentTaskId: string;
+
+	let items: Y.Array<string> = db.getTaskChildren(parentTaskId);
+	let itemsArr = items.toArray();
+	const observeItems = () => {
+		itemsArr = items.toArray();
+	};
+	items.observe(observeItems);
+	onDestroy(() => {
+		items.unobserve(observeItems);
+	});
+
+	export let depth = 1;
+	export let isLastOne = true;
 
 	export let arrowUpHandle: KeyboardHandler = () => true;
 	export let arrowDownHandle: KeyboardHandler = () => true;
@@ -22,141 +37,84 @@
 		itemRefs.at(-1)?.focus(index);
 	};
 
-	items.observe((event, transaction) => {
-		items = event.target;
-	});
-
 	let itemRefs: Todo[] = [];
-	let spill = false;
+
+	const handleArrowUpFromItem: (i: number) => KeyboardHandler = (i) => (range, context, quill) => {
+		let nextIndex = i - 1;
+		if (nextIndex < 0) {
+			return arrowUpHandle(range, context, quill); // 到头了
+		}
+		itemRefs[nextIndex].focusBottom(range.index);
+		return false;
+	};
+	const handleArrowDownFromItem: (i: number) => KeyboardHandler =
+		(i) => (range, context, quill) => {
+			let nextIndex = i + 1;
+			if (nextIndex >= itemsArr.length) {
+				return arrowDownHandle(range, context, quill); // 到头了
+			}
+
+			itemRefs[nextIndex].focus(range.index);
+			return false;
+		};
+
+	const insertItem = (i: number, text?: string) => {
+		// 在i下面再加一个
+		const id = db.createTask({
+			id: '',
+			textId: '',
+			text: text,
+			parentIds: [parentTaskId],
+			isCompleted: false
+		});
+		items.insert(i + 1, [id]);
+	};
+	const handleEnterFromItem: (i: number) => KeyboardHandler = (i) => (range, context, quill) => {
+		// 在i下面再加一个
+		insertItem(i, '');
+		// FIXME:focus到对应的item里
+		setTimeout(() => {
+			focusTop(i + 1);
+		}, 100);
+
+		return true;
+	};
+
+	const isLastOneEmpty = getContext<LastOneEmptyStatus>(LastOneEmptyStatusKey).isLastOneEmpty;
+
+	const isMeLastOne = isLastOne && itemsArr.length == 0;
+	$: if (isMeLastOne) {
+		isLastOneEmpty.set(false);
+	}
 </script>
 
-<SortableList
-	onMove={(event) => {
-		// console.log(event);
-	}}
-	onSpill={(event) => {
-		spill = true;
-		event.originalEvent.is_spill = true;
-	}}
-	onEnd={async (event) => {
-		if (event.originalEvent.is_spill) {
-			return;
-		}
+<div class="flex w-full flex-row" transition:slide>
+	<slot name="side"></slot>
 
-		// console.log(event);
-		const taskId = event.item.dataset.taskId;
-		if (typeof taskId != 'string') {
-			throw new Error('no taskId found');
-		}
-		const fromParentTaskId = event.from.dataset.listId;
-		const toParentTaskId = event.to.dataset.listId;
-
-		const oldIndexInFrom = event.oldIndex;
-		const newIndexInTo = event.newIndex;
-
-		if (fromParentTaskId === toParentTaskId && oldIndexInFrom == newIndexInTo) {
-			console.log('not changed');
-			return;
-		}
-
-		db.doc.transact((transaction) => {
-			if (fromParentTaskId == toParentTaskId) {
-				if (fromParentTaskId != parentTaskId) {
-					throw new Error(
-						`invalid parent id, event source parent:${fromParentTaskId}, my id:${parentTaskId}`
-					);
-				}
-				console.log({ oldIndexInFrom, newIndexInTo });
-				items.delete(oldIndexInFrom);
-				items.insert(newIndexInTo, [taskId]);
-			} else {
-				db.getTaskChildren(fromParentTaskId).delete(oldIndexInFrom);
-				db.getTaskChildren(toParentTaskId).insert(newIndexInTo, [taskId]);
-
-				db.changeTaskParentId(taskId, {
-					from: fromParentTaskId,
-					to: toParentTaskId
-				});
-			}
-		});
-	}}
-	group={{
-		name: 'nested',
-		put(to, from, dragEl, event) {
-			// 解决两边复制还是粘贴的时候可以用 put和pull解决
-			// console.log("type:123123");
-			// console.log({ to, from, dragEl, event });
-			return true;
-		}
-	}}
-	class="todolist"
-	listId={parentTaskId}
-	forceFallback={true}
-	invertSwap={true}
-	swapThreshold={0.65}
-	handle="div .handle"
-	animation={200}
-	emptyInsertThreshold={20}
->
-	{#each items.toArray() as item, i (item)}
-		<div
-			animate:flip
-			in:fly={{
-				duration: 500,
-				x: -20,
-				y: 0,
-				opacity: 0.5
-			}}
-			data-task-id={item}
-		>
-			<Todo
-				bind:this={itemRefs[i]}
-				arrowUpHandle={(range, context, quill) => {
-					let nextIndex = i - 1;
-					if (nextIndex < 0) {
-						return arrowUpHandle(range, context, quill); // 到头了
-					}
-					itemRefs[nextIndex].focusBottom(range.index);
-					return false;
-				}}
-				arrowDownHandle={(range, context, quill) => {
-					let nextIndex = i + 1;
-					if (nextIndex >= items.length) {
-						return arrowDownHandle(range, context, quill); // 到头了
-					}
-
-					itemRefs[nextIndex].focus(range.index);
-					return false;
-				}}
-				enterHandle={(range, context, quill) => {
-					// 在i下面再加一个
-					const id = db.createTask({
-						id: '',
-						textId: '',
-						text: ' ',
-						parentIds: [parentTaskId],
-						isCompleted: false
-					});
-					items.insert(i + 1, [id]);
-					// FIXME:focus到对应的item里
-					setTimeout(() => {
-						focusTop(i + 1);
-					}, 100);
-
-					return true;
-				}}
-				taskId={item}
-				{parentTaskId}
-				{db}
-			/>
-		</div>
-	{/each}
-</SortableList>
-
-<style>
-	:global(.sortable-ghost) {
-		opacity: 0.5; /* 设置透明度，模拟消失效果 */
-		/* background-color: black; 或其他颜色，以突出显示占位符 */
-		/* 其他样式，如边框、大小调整等 */
-	}
-</style>
+	<div class="relative w-full" role="list">
+		{#if itemsArr.length > 0}
+			{#each itemsArr as item, i (item)}
+				<TaskDropable
+					{parentTaskId}
+					index={i}
+					topTaskId={item}
+					bottomTaskId={itemsArr[i - 1]}
+					{depth}
+				/>
+				<Todo
+					depth={depth + 1}
+					isLastOne={isLastOne && i == itemsArr.length - 1}
+					indexInParent={i}
+					bind:this={itemRefs[i]}
+					arrowUpHandle={handleArrowUpFromItem(i)}
+					arrowDownHandle={handleArrowDownFromItem(i)}
+					enterHandle={handleEnterFromItem(i)}
+					taskId={item}
+					{parentTaskId}
+					{db}
+				/>
+			{/each}
+		{/if}
+		<TaskDropable {parentTaskId} index={itemsArr.length} topTaskId={itemsArr.at(-1)} {depth} />
+	</div>
+</div>

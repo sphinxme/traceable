@@ -32,24 +32,26 @@ export class Database {
 
   async load() {
     return new Promise<void>((resolve, reject) => {
-      this.provider = new IndexeddbPersistence('traceable', this.doc)
-      this.provider.on('synced', () => {
-        console.log('content from the database is loaded')
-        this.tasks = this.doc.getMap("tasks");
-        this.texts = this.doc.getMap("texts");
-        this.events = this.doc.getMap("events");
-        this.notes = this.doc.getMap("notes");
-        console.log(this.doc.toJSON());
-        console.log(this.tasks.get("root")?.toJSON())
-        // this.init();
-        resolve();
-      })
+      // this.provider = new IndexeddbPersistence('traceable', this.doc)
+      // this.provider.on('synced', () => {
+      //   console.log('content from the database is loaded')
+      //   this.tasks = this.doc.getMap("tasks");
+      //   this.texts = this.doc.getMap("texts");
+      //   this.events = this.doc.getMap("events");
+      //   this.notes = this.doc.getMap("notes");
+      //   console.log(this.doc.toJSON());
+      //   console.log(this.tasks.get("root")?.toJSON())
+      //   // this.init();
+      //   resolve();
+      // })
+      this.init();
+      resolve();
     });
   }
 
   // utils
   genID() {
-    return String(Date.now());
+    return `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   }
 
   init() {
@@ -96,9 +98,11 @@ export class Database {
     // text
     if (!t.textId) {
       t.textId = this.genID();
-      console.log(t.textId);
     }
-    this.texts.set(t.textId, new Y.Text(t.text || t.textId));
+    if (typeof t.text === 'undefined') {
+      t.text = t.textId
+    }
+    this.texts.set(t.textId, new Y.Text(t.text));
     yTask.set("textId", t.textId);
 
     // note text
@@ -136,12 +140,109 @@ export class Database {
     return t.id;
   }
 
+  public getOrCreateOrganzieTask(id: string, text: string): YTask {
+    const task = this.tasks.get("id");
+    if (task) {
+      return task;
+    }
+
+    this.createTask({
+      id: id,
+      textId: "",
+      text: text,
+      parentIds: ["organize"],
+      isCompleted: false
+    })
+
+    return this.getTask(id);
+  }
+
   public getTask(id: string) {
     const task = this.tasks.get(id);
     if (!task) {
       throw new Error(`task not found, id:${id}`);
     }
     return task;
+  }
+
+  // 既从原父亲删除task, 也加入到现在的父亲
+  public moveTask(id: string, fromParentId: string, fromIndex: number, toParentId: string, toIndex: number) {
+    if (fromParentId == toParentId) {
+      if (fromIndex == toIndex || fromIndex == toIndex - 1) {
+        return
+      }
+    }
+    if (toParentId == id) {
+      return
+    }
+
+    // FIXME: 当要插入的id已经存在在toParentId的孩子里了的时候
+    db.doc.transact((transaction) => {
+      const thisTaskParent = this.getTaskParents(id);
+      const originTaskChildren = this.getTaskChildren(fromParentId);
+      const originParentIndex = thisTaskParent.toArray().indexOf(fromParentId);
+      const toParentChildren = this.getTaskChildren(toParentId);
+
+      originTaskChildren.delete(fromIndex);
+      thisTaskParent.delete(originParentIndex);
+
+      // 如果已经存在在toParent的孩子里面了 那就只改顺序不再move
+      const existedIndex = toParentChildren.toArray().indexOf(id);
+      if (existedIndex > -1) {
+        if (existedIndex == toIndex || existedIndex == toIndex - 1) {
+          return;
+        }
+
+        toParentChildren.insert(toIndex, [id]);
+        if (toIndex > existedIndex) {
+          toParentChildren.delete(existedIndex)
+        } else {
+          toParentChildren.delete(existedIndex + 1);
+        }
+        return;
+      }
+
+      // 如果原位置在目标位置之前，插入位置减1
+      if ((fromParentId == toParentId) && (fromIndex < toIndex)) {
+        toIndex--;
+      }
+
+      toParentChildren.insert(toIndex, [id]);
+      thisTaskParent.push([toParentId]);
+    })
+  }
+
+  public copyTask(id: string, toParentId: string, toIndex: number) {
+    db.doc.transact((transaction) => {
+      const taskParents = db.getTaskParents(id);
+      const parentTaskChildren = db.getTaskChildren(toParentId);
+
+      const existedIndex = parentTaskChildren.toArray().indexOf(id);
+      if (existedIndex > -1) {
+        // 如果已经存在在toParent的孩子里面了 那就只改顺序不再copy
+        if (existedIndex == toIndex || existedIndex == toIndex - 1) {
+          return;
+        }
+
+        parentTaskChildren.insert(toIndex, [id]);
+        if (toIndex > existedIndex) {
+          parentTaskChildren.delete(existedIndex)
+        } else {
+          parentTaskChildren.delete(existedIndex + 1);
+        }
+      } else {
+        taskParents.push([toParentId])
+        parentTaskChildren.insert(toIndex, [id]);
+      }
+    })
+  }
+
+  public getTaskAllChildren(id: string, idSet: Set<string>) {
+    idSet.add(id);
+
+    db.getTaskChildren(id).forEach((child) => {
+      this.getTaskAllChildren(child, idSet);
+    })
   }
 
   /**
@@ -180,6 +281,14 @@ export class Database {
     return children;
   }
 
+  public getTaskParents(id: string) {
+    const parents = this.getTask(id).get("parentIds") as Y.Array<string>;
+    if (!(parents instanceof Y.Array)) {
+      throw new Error(`parents not ok, task id:${id}`);
+    }
+    return parents;
+  }
+
   public getTaskText(id: string) {
     const textId = this.getTask(id).get("textId") as string;
     if (!(typeof textId === "string")) {
@@ -195,20 +304,6 @@ export class Database {
     }
     return this.getNoteText(textId);
   }
-
-  // public listenChildrenChange(
-  //   id: string,
-  //   callback: (
-  //     children: Y.Array<string>,
-  //     event: Y.YArrayEvent<string>,
-  //     transaction: Y.Transaction,
-  //   ) => void,
-  // ) {
-  //   const children = this.getTaskChildren(id);
-  //   children.observe((event, transaction) => {
-  //     callback(event.target, event, transaction);
-  //   });
-  // }
 
   /**
    * 从指定树的位置删除这个task, 
@@ -310,7 +405,7 @@ export class Database {
   // events
 
   public genEventId() {
-    return `event-${Date.now()}-${this.doc.clientID}`;
+    return `event-${db.genID()}`;
   }
 
   public createEvent(e: Event, source: string) {
@@ -335,6 +430,47 @@ export class Database {
       console.log(`task child event pushed, id:${e.id}`)
     });
 
+  }
+
+  /**
+   * 不保证和task关联的一致性
+   * @param eventId 
+   * @param e 
+   * @param source 
+   */
+  public updateEvent(eventId: string, e: Event, source: string) {
+    if (!eventId) {
+      throw new Error("invalid event id");
+    }
+    e.id = eventId;
+    let yEvent = this.events.get(eventId);
+    if (!yEvent) {
+      throw new Error(`no event by id: ${eventId}`);
+    }
+    this.doc.transact((transaction) => {
+      transaction.meta.set("traceable::source", source);
+      SetEventToYEvent(e, yEvent);
+      console.log(`event updated, id:${e.id}`);
+    })
+  }
+
+  /**
+   * 1. 删除事件本体
+   * 2. 从task当中删除本体id
+   * 3. TODO: 删除schedule
+   * @param eventId 
+   */
+  public deleteEvent(eventId: string) {
+    const yEvent = db.events.get(eventId);
+    if (!yEvent) {
+      throw new Error(`no event found by id: ${eventId}`);
+    }
+    const taskId = yEvent.get("taskId") as string;
+
+    const events = db.getTaskEvents(taskId)
+    events.delete(events.toArray().findIndex(v=>v==eventId))
+    db.events.delete(eventId);
+    yEvent.clear();
   }
 
   public observeEvent(eventId: string, callback: (e: Event) => void): () => void {
@@ -379,7 +515,10 @@ function yEventToEvent(yEvent: YEvent): Event {
 
 function EventToYEvent(event: Event): YEvent {
   const yEvent = new Y.Map();
+  return SetEventToYEvent(event, yEvent)
+}
 
+function SetEventToYEvent(event: Event, yEvent:YEvent): YEvent {
   yEvent.set("id", event.id);
   yEvent.set("taskId", event.taskId);
   yEvent.set("start", event.start);
@@ -393,7 +532,7 @@ function EventToYEvent(event: Event): YEvent {
   return yEvent;
 }
 
-interface Task {
+export interface Task {
   id: string;
   textId: string;
   text?: string;
