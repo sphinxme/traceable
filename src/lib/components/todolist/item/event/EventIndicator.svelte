@@ -36,7 +36,7 @@
 	let isCompleted = event.isCompleted;
 </script>
 
-<div style:width={calculateTimeLength(start, end, isAllDay) + 'px'} class=" mr-1">
+<div style:width={calculateTimeLength(start, end, isAllDay) + 'px'} class=" z-50 mr-1">
 	<HoverCard.Root
 		openDelay={100}
 		onOpenChange={(open) => {
@@ -49,7 +49,7 @@
 	>
 		<HoverCard.Trigger>
 			<div
-				class="h-1 w-full cursor-pointer rounded-full bg-slate-600 transition-all duration-100 hover:h-2"
+				class=" h-1 w-full cursor-pointer rounded-full bg-slate-600 transition-all duration-100 hover:h-2"
 			/>
 		</HoverCard.Trigger>
 		<HoverCard.Content side="top" sideOffset={24}>
