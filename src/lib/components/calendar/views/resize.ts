@@ -14,7 +14,7 @@ type ResizeActionParams = {
     onResizeEnd: (row?: number, col?: number) => void;
 }
 
-export const resize: Action<HTMLDivElement, ResizeActionParams> = (node, { data, timeToRowNum, timeToColNum, onDragEnd, onDragOver, onDragStart, onResizeEnd }) => {
+const interactAction: Action<HTMLDivElement, ResizeActionParams> = (node, { data, timeToRowNum, timeToColNum, onDragEnd, onDragOver, onDragStart, onResizeEnd }) => {
     interact(node).
         resizable({
             invert: 'reposition',
@@ -157,9 +157,10 @@ export const resize: Action<HTMLDivElement, ResizeActionParams> = (node, { data,
                     if (!cell) {
                         return
                     }
+                    // console.log(cell);
                     // 移动时只粗略估计计算格子数量, 落定时再计算准确时间
                     onDragOver(parseInt(cell.style.gridRowStart), parseInt(cell.style.gridColumnStart))
-
+                    // console.log({ row: cell.style.gridRowStart, col: cell.style.gridColumnStart })
                 },
                 end(event) {
                     const lists = document.elementsFromPoint(event.clientX, event.clientY)
@@ -171,3 +172,4 @@ export const resize: Action<HTMLDivElement, ResizeActionParams> = (node, { data,
         })
 
 }
+export { interactAction as interact };

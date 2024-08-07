@@ -432,6 +432,25 @@ export class Database {
 
   }
 
+  /**
+   * 不保证和task关联的一致性
+   * @param eventId 
+   * @param e 
+   * @param source 
+   */
+  public updateEvent(eventId: string, e: Event, source: string) {
+    if (!eventId) {
+      throw new Error("invalid event id");
+    }
+    e.id = eventId;
+    const yEvent = EventToYEvent(e);
+    this.doc.transact((transaction) => {
+      transaction.meta.set("traceable::source", source);
+      this.events.set(eventId, yEvent);
+      console.log(`event updated, id:${e.id}`);
+    })
+  }
+
   public observeEvent(eventId: string, callback: (e: Event) => void): () => void {
     const yEvent = this.events.get(eventId)
     if (!yEvent) {
@@ -488,7 +507,7 @@ function EventToYEvent(event: Event): YEvent {
   return yEvent;
 }
 
-interface Task {
+export interface Task {
   id: string;
   textId: string;
   text?: string;

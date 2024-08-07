@@ -1,5 +1,6 @@
 import * as Y from "yjs";
-import type { Database } from "../../states/data";
+import type { Database, Event } from "../../states/data";
+import type { Dayjs } from "dayjs";
 
 export class TaskEventGroup {
 
@@ -147,4 +148,12 @@ export function diff<T>(before: T[], now: T[]): { added: T[], deleted: T[], chan
 function inANotInB<T>(a: T[], b: T[]): T[] {
     const setB = new Set(b);
     return a.filter(e => !setB.has(e))
+}
+
+export interface Chunk {
+    eventId: string;
+    event: Event;
+    start: Dayjs;
+    end: Dayjs;
+
 }
