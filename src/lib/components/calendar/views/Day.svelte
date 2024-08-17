@@ -1,6 +1,7 @@
 <script lang="ts">
 	import dayjs, { Dayjs } from 'dayjs';
 	import type { Chunk } from '../data';
+	import { interact } from './interact';
 
 	export let day: Dayjs;
 	export let chunks: Chunk[] = [
@@ -9,13 +10,13 @@
 			event: {
 				id: '',
 				taskId: 'task-test',
-				start: 1721616894000, // 7/22 10
-				end: 1721631294000, // 7/22 14
+				start: 1723360784000, // 7/22 10
+				end: 1723371599000, // 7/22 14
 				isAllDay: false,
 				isCompleted: false
 			},
-			start: dayjs(1721616894000),
-			end: dayjs(1721628000000)
+			start: dayjs(1723360784000),
+			end: dayjs(1723371599000)
 		}
 	];
 
@@ -29,6 +30,7 @@
 		}
 		return 0;
 	}
+	
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions -->
@@ -45,24 +47,12 @@
 >
 	{#each chunks as chunk}
 		<div
-			style:transform="translateY({Math.floor(percent(chunk.start, day.startOf('day')) * height) +
-				'px'})"
+			style:top="{Math.floor(percent(chunk.start, day.startOf('day')) * height)}px"
 			style:height={Math.floor(percent(chunk.end, chunk.start) * height) + 'px'}
-			class="child flex flex-col justify-between rounded-2xl bg-slate-500 shadow-lg"
+			class="child flex flex-col justify-between absolute rounded-2xl bg-slate-500 shadow-lg"
 		>
 			{chunk.start.format('HH:mm')}
 			{chunk.end.format('HH:mm')}
-			<div
-				class=" h-1 rounded-full bg-white"
-				on:mousedown={(e) => {
-					console.log(e);
-				}}
-				on:mousemove={(e) => {
-					console.log(e);
-				}}
-			>
-				-
-			</div>
 		</div>
 	{/each}
 </div>

@@ -443,12 +443,34 @@ export class Database {
       throw new Error("invalid event id");
     }
     e.id = eventId;
-    const yEvent = EventToYEvent(e);
+    let yEvent = this.events.get(eventId);
+    if (!yEvent) {
+      throw new Error(`no event by id: ${eventId}`);
+    }
     this.doc.transact((transaction) => {
       transaction.meta.set("traceable::source", source);
-      this.events.set(eventId, yEvent);
+      SetEventToYEvent(e, yEvent);
       console.log(`event updated, id:${e.id}`);
     })
+  }
+
+  /**
+   * 1. 删除事件本体
+   * 2. 从task当中删除本体id
+   * 3. TODO: 删除schedule
+   * @param eventId 
+   */
+  public deleteEvent(eventId: string) {
+    const yEvent = db.events.get(eventId);
+    if (!yEvent) {
+      throw new Error(`no event found by id: ${eventId}`);
+    }
+    const taskId = yEvent.get("taskId") as string;
+
+    const events = db.getTaskEvents(taskId)
+    events.delete(events.toArray().findIndex(v=>v==eventId))
+    db.events.delete(eventId);
+    yEvent.clear();
   }
 
   public observeEvent(eventId: string, callback: (e: Event) => void): () => void {
@@ -493,7 +515,10 @@ function yEventToEvent(yEvent: YEvent): Event {
 
 function EventToYEvent(event: Event): YEvent {
   const yEvent = new Y.Map();
+  return SetEventToYEvent(event, yEvent)
+}
 
+function SetEventToYEvent(event: Event, yEvent:YEvent): YEvent {
   yEvent.set("id", event.id);
   yEvent.set("taskId", event.taskId);
   yEvent.set("start", event.start);

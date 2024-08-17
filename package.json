@@ -54,7 +54,7 @@
     "@tanstack/svelte-virtual": "^3.5.0",
     "@tanstack/virtual-core": "^3.5.0",
     "@types/sortablejs": "^1.15.8",
-    "bits-ui": "^0.21.8",
+    "bits-ui": "^0.21.13",
     "clsx": "^2.1.1",
     "dayjs": "^1.11.11",
     "dragula": "^3.7.3",

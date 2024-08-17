@@ -1,25 +1,15 @@
 <script lang="ts">
 	import TodoItem from './item/TodoItem.svelte';
-	import type Quill from 'quill';
-	import type { Range } from 'quill';
-	import type { Context } from 'quill/modules/keyboard';
 	import TodoList from './TodoList.svelte';
 	import * as Y from 'yjs';
 	import { Database } from '$lib/states/data';
 	import type { KeyboardHandler } from './item/model';
 	import CollapseIcon from './item/overlay/CollapseButton.svelte';
-	import { slide } from 'svelte/transition';
 	import CheckButton from './item/overlay/CheckButton.svelte';
 	import ItemMenuButton from './item/overlay/ItemMenuButton.svelte';
-	import Dropable from './dnd/TaskDropable.svelte';
-	import { isCopy } from './dnd';
-	import S from 'lucide-static/icons/airplay.svg';
-	import { Draggable, ThirdPartyDraggable } from '@fullcalendar/interaction/index.js';
-	import { getContext, onMount } from 'svelte';
-	import { addControls } from 'quill/modules/toolbar';
 	import TaskDraggable from './dnd/TaskDraggable.svelte';
-	import TaskDropable from './dnd/TaskDropable.svelte';
 	import { draggingTaskId } from './dnd/state';
+	import Handle from './item/overlay/Handle.svelte';
 
 	let todoItem: TodoItem;
 	let todoList: TodoList;
@@ -101,7 +91,7 @@
 </script>
 
 <div class="relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}">
-	<TaskDraggable {parentTaskId} {taskId} orginIndex={indexInParent}>
+	
 		<TodoItem
 			bind:this={todoItem}
 			arrowDownHandle={itemArrowDownHandle}
@@ -111,11 +101,11 @@
 			{db}
 			isLastOne={isLastOne && children.length == 0}
 		>
-			<!-- <svelte:fragment slot="drag">
-				{#if !meDragging}
-					<TaskDropable {parentTaskId} index={0} {depth} bind:hoverStatus={dropHovering} />
-				{/if}
-			</svelte:fragment> -->
+			<svelte:fragment slot="handle">
+				<TaskDraggable {parentTaskId} {taskId} orginIndex={indexInParent}>
+				<Handle {taskId} on:click={() => console.log('mmp')}/>
+				</TaskDraggable>
+			</svelte:fragment>
 
 			<svelte:fragment slot="overlay">
 				{#if !meDragging}
@@ -143,7 +133,6 @@
 				{/if}
 			</svelte:fragment>
 		</TodoItem>
-	</TaskDraggable>
 
 	{#if !folded}
 		<TodoList

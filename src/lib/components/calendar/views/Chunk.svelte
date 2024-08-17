@@ -17,7 +17,7 @@
 
 	let editing = false;
 
-	export let onEditing: (eventId: string, start) => void;
+	export let onEditing: (eventId: string, start:string) => void;
 
 	/**
 	 * 单位px

@@ -1,18 +1,15 @@
 <script lang="ts">
 	import 'quill/dist/quill.core.css';
-	import Quill, { Range } from 'quill';
+	import Quill from 'quill';
 	import { QuillBinding } from 'y-quill';
-	import QuillCursors from 'quill-cursors';
-	import { createEventDispatcher, getContext, onDestroy, onMount } from 'svelte';
+	import { getContext, onDestroy, onMount } from 'svelte';
 	import Handle from './overlay/Handle.svelte';
-	import * as HoverCard from '$lib/components/ui/hover-card';
 	import * as Popover from '$lib/components/ui/popover';
 	import * as Y from 'yjs';
 
 	import { warpKeyHandler, type KeyboardHandler } from './model';
 	import type { Database } from '$lib/states/data';
 	import EventIndicator from './event/EventIndicator.svelte';
-	import { Keyboard } from 'lucide-svelte';
 	import NoteEditor from './note/NoteEditor.svelte';
 	import Overlay from './overlay/Overlay.svelte';
 	import { LastOneEmptyStatusKey, type LastOneEmptyStatus } from '$lib/states/types';
@@ -123,12 +120,7 @@
 		<div class="flex w-full flex-row items-center">
 			<Overlay><slot name="overlay"></slot></Overlay>
 			<div class="flex w-full flex-row items-center">
-				<Handle
-					{taskId}
-					on:click={() => {
-						console.log('mmp');
-					}}
-				/>
+				<slot name="handle"></slot>
 				<div
 					style:font-size="large"
 					style:text-decoration={isCompleted ? 'line-through' : ''}
