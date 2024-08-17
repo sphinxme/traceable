@@ -1,46 +1,35 @@
 <script lang="ts">
-	import { Draggable, ThirdPartyDraggable } from '@fullcalendar/interaction/index.js';
 	import { onMount } from 'svelte';
 	import { db } from '$lib/states/data';
 
 	export let taskId: string;
 
-	let container: HTMLDivElement;
+	const parents = db.getTaskParents(taskId);
+	let parentCount = parents.length;
 	onMount(() => {
-		const draggable = new ThirdPartyDraggable(container, {
-			eventData(el) {
-				return {
-					title: taskId,
-					id: db.genEventId(),
-					extendedProps: {
-						taskId: taskId
-					}
-				};
-			}
-		});
+		const updateCount = () => {
+			parentCount = parents.length;
+		};
+		parents.observe(updateCount);
 		return () => {
-			draggable.destroy();
+			parents.unobserve(updateCount);
 		};
 	});
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <!-- svelte-ignore a11y-no-static-element-interactions -->
+<!-- svelte-ignore a11y-interactive-supports-focus -->
 <div
+	role="button"
 	on:click
-	bind:this={container}
 	data-task-id={taskId}
-	class="ctr handle relative flex cursor-grab items-center justify-center"
+	class="group relative flex items-center justify-center"
 >
 	<span
-		class="background-ring absolute z-0 h-5 w-5 rounded-full bg-slate-200 opacity-0 transition-opacity duration-100 ease-in"
+		class=" absolute z-0 h-5 w-5 rounded-full bg-slate-200 opacity-0 transition-opacity duration-100 ease-in group-hover:opacity-100"
 	/>
-	<span class=" z-10 h-2 w-2 rounded-full bg-slate-500"> </span>
+	<span
+		class={` z-10 h-2 w-2 ${parentCount > 1 ? 'rounded-full' : 'rounded-full'}  bg-slate-500`}
+	/>
 </div>
-
-<style>
-	.ctr:hover .background-ring {
-		opacity: 1;
-		user-select: none;
-	}
-</style>
