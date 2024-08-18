@@ -17,7 +17,7 @@
 	let container: HTMLDivElement;
 	let editor: Quill;
 
-	export let db: Database;
+	let db: Database = getContext('db');
 	export let taskId: string;
 	export let isEmpty: boolean = true;
 	let text: Y.Text = db.getTaskText(taskId);
@@ -135,7 +135,7 @@
 	<div class="flex h-2 flex-row">
 		<div class="h-1 w-6" />
 		{#each eventArr as eventId (eventId)}
-			<EventIndicator {db} {eventId} />
+			<EventIndicator {eventId} />
 		{/each}
 	</div>
 	{#if true}

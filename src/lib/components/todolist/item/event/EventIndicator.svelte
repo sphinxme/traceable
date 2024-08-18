@@ -1,10 +1,10 @@
 <script lang="ts">
 	import * as HoverCard from '$lib/components/ui/hover-card';
-	import { onDestroy } from 'svelte';
+	import { getContext, onDestroy } from 'svelte';
 	import { highlightFEventIds } from '$lib/states/stores';
 	import type { Database } from '$lib/states/data';
 
-	export let db: Database;
+	let db: Database = getContext('db');
 	export let eventId: string;
 
 	function calculateTimeLength(start: number, end: number, isAllDay: boolean) {
