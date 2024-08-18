@@ -32,20 +32,21 @@ export class Database {
 
   async load() {
     return new Promise<void>((resolve, reject) => {
-      // this.provider = new IndexeddbPersistence('traceable', this.doc)
-      // this.provider.on('synced', () => {
-      //   console.log('content from the database is loaded')
-      //   this.tasks = this.doc.getMap("tasks");
-      //   this.texts = this.doc.getMap("texts");
-      //   this.events = this.doc.getMap("events");
-      //   this.notes = this.doc.getMap("notes");
-      //   console.log(this.doc.toJSON());
-      //   console.log(this.tasks.get("root")?.toJSON())
-      //   // this.init();
-      //   resolve();
-      // })
-      this.init();
-      resolve();
+      this.provider = new IndexeddbPersistence('traceable', this.doc)
+      this.provider.on('synced', () => {
+        console.log('content from the database is loaded')
+        // this.init();
+        this.tasks = this.doc.getMap("tasks");
+        this.texts = this.doc.getMap("texts");
+        this.events = this.doc.getMap("events");
+        this.notes = this.doc.getMap("notes");
+        console.log(this.doc.toJSON());
+        console.log(this.tasks.get("root")?.toJSON())
+        
+        resolve();
+      })
+      // this.init();
+      // resolve();
     });
   }
 
@@ -54,7 +55,7 @@ export class Database {
     return `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   }
 
-  init() {
+  init() { 
     tasks.forEach((task) => {
       this.createTask(task);
     });

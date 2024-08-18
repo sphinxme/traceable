@@ -9,11 +9,18 @@
 	import TaskDropable from './dnd/TaskDropable.svelte';
 	import { slide } from 'svelte/transition';
 
-	export let db: Database;
+	let db: Database = getContext('db');
 
 	export let parentTaskId: string;
+	export let currentPath: string[];
 
+	$: {
+		items = db.getTaskChildren(parentTaskId);
+		itemsArr = items.toArray();
+		console.log('items updated');
+	}
 	let items: Y.Array<string> = db.getTaskChildren(parentTaskId);
+
 	let itemsArr = items.toArray();
 	const observeItems = () => {
 		itemsArr = items.toArray();
@@ -102,6 +109,7 @@
 					{depth}
 				/>
 				<Todo
+					currentPath={[...currentPath, item]}
 					depth={depth + 1}
 					isLastOne={isLastOne && i == itemsArr.length - 1}
 					indexInParent={i}
@@ -111,7 +119,6 @@
 					enterHandle={handleEnterFromItem(i)}
 					taskId={item}
 					{parentTaskId}
-					{db}
 				/>
 			{/each}
 		{/if}

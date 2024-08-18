@@ -10,6 +10,7 @@
 	import TaskDraggable from './dnd/TaskDraggable.svelte';
 	import { draggingTaskId } from './dnd/state';
 	import Handle from './item/overlay/Handle.svelte';
+	import { getContext } from 'svelte';
 
 	let todoItem: TodoItem;
 	let todoList: TodoList;
@@ -17,8 +18,9 @@
 	export let parentTaskId: string;
 	export let taskId: string;
 	export let indexInParent: number;
-	export let db: Database;
+	let db: Database = getContext('db');
 
+	export let currentPath: string[];
 	export let depth = 1;
 	export let isLastOne = true;
 
@@ -34,6 +36,8 @@
 			todoItem.focus(index);
 		}
 	};
+
+	const paths = getContext('paths') as any;
 
 	let children = db.getTaskChildren(taskId);
 	let folded = false;
@@ -72,7 +76,7 @@
 				isCompleted: false
 			});
 			children.unshift([id]);
-			//FIXME:focus到新建的task里面去
+			// FIXME:focus到新建的task里面去
 			setTimeout(() => {
 				todoList.focusTop(0);
 			}, 100);
@@ -91,51 +95,56 @@
 </script>
 
 <div class="relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}">
-	
-		<TodoItem
-			bind:this={todoItem}
-			arrowDownHandle={itemArrowDownHandle}
-			{arrowUpHandle}
-			enterHandle={itemEnterHandler}
-			{taskId}
-			{db}
-			isLastOne={isLastOne && children.length == 0}
-		>
-			<svelte:fragment slot="handle">
-				<TaskDraggable {parentTaskId} {taskId} orginIndex={indexInParent}>
-				<Handle {taskId} on:click={() => console.log('mmp')}/>
-				</TaskDraggable>
-			</svelte:fragment>
+	<TodoItem
+		bind:this={todoItem}
+		arrowDownHandle={itemArrowDownHandle}
+		{arrowUpHandle}
+		enterHandle={itemEnterHandler}
+		{taskId}
+		isLastOne={isLastOne && children.length == 0}
+	>
+		<svelte:fragment slot="handle">
+			<TaskDraggable {parentTaskId} {taskId} orginIndex={indexInParent}>
+				<Handle
+					{taskId}
+					on:click={() => {
+						console.log('mmp');
+						paths.push(currentPath);
+					}}
+				/>
+			</TaskDraggable>
+		</svelte:fragment>
 
-			<svelte:fragment slot="overlay">
-				{#if !meDragging}
-					<div
-						class="flex flex-row items-center opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
-					>
-						<ItemMenuButton
-							{taskId}
-							on:delete={() => {
-								db.deleteTaskFromParent(taskId, parentTaskId);
-							}}
-						/>
-						<CheckButton
-							{isCompleted}
-							on:click={() => {
-								db.changeTaskStatus(taskId, !isCompleted);
-							}}
-						/>
-					</div>
-					<CollapseIcon
-						bind:folded
-						on:folded={() => console.log('folded')}
-						on:unfolded={() => console.log('unfolded')}
+		<svelte:fragment slot="overlay">
+			{#if !meDragging}
+				<div
+					class="flex flex-row items-center opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
+				>
+					<ItemMenuButton
+						{taskId}
+						on:delete={() => {
+							db.deleteTaskFromParent(taskId, parentTaskId);
+						}}
 					/>
-				{/if}
-			</svelte:fragment>
-		</TodoItem>
+					<CheckButton
+						{isCompleted}
+						on:click={() => {
+							db.changeTaskStatus(taskId, !isCompleted);
+						}}
+					/>
+				</div>
+				<CollapseIcon
+					bind:folded
+					on:folded={() => console.log('folded')}
+					on:unfolded={() => console.log('unfolded')}
+				/>
+			{/if}
+		</svelte:fragment>
+	</TodoItem>
 
 	{#if !folded}
 		<TodoList
+			{currentPath}
 			depth={depth + 1}
 			bind:this={todoList}
 			arrowUpHandle={(range, context) => {
@@ -145,7 +154,6 @@
 			{arrowDownHandle}
 			parentTaskId={taskId}
 			{isLastOne}
-			{db}
 		>
 			<div slot="side" class="flex w-9 flex-row items-start pb-0 pl-1">
 				<div class=" h-full bg-slate-300" style="width: 1px;"></div>
