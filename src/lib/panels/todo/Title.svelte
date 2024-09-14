@@ -1,15 +1,39 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import { quill } from './quill';
-	import type { Database } from '$lib/states/data';
+	import type { Database } from '$lib/states/db';
+	import { quill } from '$lib/components/quill/quill';
+	import type { QuillOptions } from 'quill';
 	const db: Database = getContext('db');
 	export let taskId: string;
+
+	// let text: Y.Text;
+
+	// todo: 使用top-level-await
+	$: loading = db.getTask(taskId).then((task) => {
+		const yText = db.texts.get(task.textId);
+		if (!yText) {
+			throw new Error(`invalid taskId: ${task.textId}`);
+		}
+		return yText;
+	});
+
+	const configs: QuillOptions = {
+		modules: {
+			toolbar: false
+		},
+		theme: 'bubble',
+		placeholder: ''
+	};
 </script>
 
 <h1
 	class="traceable-quill-title scroll-m-20 py-4 text-3xl font-bold tracking-tight transition-colors first:mt-0"
 >
-	<div use:quill={{ taskId, db }} />
+	{#await loading}
+		loading...
+	{:then text}
+		<div use:quill={{ text, configs }} />
+	{/await}
 </h1>
 
 <style>

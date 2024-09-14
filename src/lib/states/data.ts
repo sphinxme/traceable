@@ -19,7 +19,7 @@ export class Database {
     if (!Database.db) {
       Database.db = new Database();
     }
-    return Database.db
+    return Database.db;
   }
 
   constructor() {
@@ -32,19 +32,19 @@ export class Database {
 
   async load() {
     return new Promise<void>((resolve, reject) => {
-      this.provider = new IndexeddbPersistence('traceable', this.doc)
-      this.provider.on('synced', () => {
-        console.log('content from the database is loaded')
+      this.provider = new IndexeddbPersistence("traceable", this.doc);
+      this.provider.on("synced", () => {
+        console.log("content from the database is loaded");
         // this.init();
         this.tasks = this.doc.getMap("tasks");
         this.texts = this.doc.getMap("texts");
         this.events = this.doc.getMap("events");
         this.notes = this.doc.getMap("notes");
         console.log(this.doc.toJSON());
-        console.log(this.tasks.get("root")?.toJSON())
-        
+        console.log(this.tasks.get("root")?.toJSON());
+
         resolve();
-      })
+      });
       // this.init();
       // resolve();
     });
@@ -55,7 +55,7 @@ export class Database {
     return `${Date.now()}-${Math.floor(Math.random() * 10000)}`;
   }
 
-  init() { 
+  init() {
     tasks.forEach((task) => {
       this.createTask(task);
     });
@@ -90,7 +90,6 @@ export class Database {
       t.id = this.genID();
     }
 
-
     const yTask = new Y.Map();
 
     // id
@@ -100,18 +99,18 @@ export class Database {
     if (!t.textId) {
       t.textId = this.genID();
     }
-    if (typeof t.text === 'undefined') {
-      t.text = t.textId
+    if (typeof t.text === "undefined") {
+      t.text = t.textId;
     }
     this.texts.set(t.textId, new Y.Text(t.text));
     yTask.set("textId", t.textId);
 
     // note text
-    if (typeof t.note != 'string') {
+    if (typeof t.note != "string") {
       t.note = "";
     }
-    if (typeof t.noteId != 'string') {
-      t.noteId = 'note-' + t.id + '-' + this.genID();
+    if (typeof t.noteId != "string") {
+      t.noteId = "note-" + t.id + "-" + this.genID();
     }
     this.notes.set(t.noteId, new Y.Text(t.note));
     yTask.set("noteId", t.noteId);
@@ -141,7 +140,11 @@ export class Database {
     return t.id;
   }
 
-  public getOrCreateOrganzieTask(id: string, text: string): YTask {
+  public getOrCreateOrganzieTask(
+    id: string,
+    time: number,
+    text: string,
+  ): YTask {
     const task = this.tasks.get("id");
     if (task) {
       return task;
@@ -152,8 +155,8 @@ export class Database {
       textId: "",
       text: text,
       parentIds: ["organize"],
-      isCompleted: false
-    })
+      isCompleted: false,
+    });
 
     return this.getTask(id);
   }
@@ -167,14 +170,20 @@ export class Database {
   }
 
   // 既从原父亲删除task, 也加入到现在的父亲
-  public moveTask(id: string, fromParentId: string, fromIndex: number, toParentId: string, toIndex: number) {
+  public moveTask(
+    id: string,
+    fromParentId: string,
+    fromIndex: number,
+    toParentId: string,
+    toIndex: number,
+  ) {
     if (fromParentId == toParentId) {
       if (fromIndex == toIndex || fromIndex == toIndex - 1) {
-        return
+        return;
       }
     }
     if (toParentId == id) {
-      return
+      return;
     }
 
     // FIXME: 当要插入的id已经存在在toParentId的孩子里了的时候
@@ -196,7 +205,7 @@ export class Database {
 
         toParentChildren.insert(toIndex, [id]);
         if (toIndex > existedIndex) {
-          toParentChildren.delete(existedIndex)
+          toParentChildren.delete(existedIndex);
         } else {
           toParentChildren.delete(existedIndex + 1);
         }
@@ -210,7 +219,7 @@ export class Database {
 
       toParentChildren.insert(toIndex, [id]);
       thisTaskParent.push([toParentId]);
-    })
+    });
   }
 
   public copyTask(id: string, toParentId: string, toIndex: number) {
@@ -227,15 +236,15 @@ export class Database {
 
         parentTaskChildren.insert(toIndex, [id]);
         if (toIndex > existedIndex) {
-          parentTaskChildren.delete(existedIndex)
+          parentTaskChildren.delete(existedIndex);
         } else {
           parentTaskChildren.delete(existedIndex + 1);
         }
       } else {
-        taskParents.push([toParentId])
+        taskParents.push([toParentId]);
         parentTaskChildren.insert(toIndex, [id]);
       }
-    })
+    });
   }
 
   public getTaskAllChildren(id: string, idSet: Set<string>) {
@@ -243,18 +252,21 @@ export class Database {
 
     db.getTaskChildren(id).forEach((child) => {
       this.getTaskAllChildren(child, idSet);
-    })
+    });
   }
 
   /**
    * 只改child task侧, 不改parent的children列表
-   * @param id 
-   * @param param1 
+   * @param id
+   * @param param1
    */
-  public changeTaskParentId(id: string, { from, to }: { from?: string, to: string }) {
+  public changeTaskParentId(
+    id: string,
+    { from, to }: { from?: string; to: string },
+  ) {
     const task = this.getTask(id);
     const parentIds = task.get("parentIds") as Y.Array<string>;
-    if (typeof from != 'string') {
+    if (typeof from != "string") {
       // insert
       parentIds.push([to]);
     } else {
@@ -264,7 +276,7 @@ export class Database {
         if (parentId === from) {
           fromParentIndex = index;
         }
-      })
+      });
       parentIds.delete(fromParentIndex);
       parentIds.push([to]);
     }
@@ -307,11 +319,11 @@ export class Database {
   }
 
   /**
-   * 从指定树的位置删除这个task, 
+   * 从指定树的位置删除这个task,
    * - 如果这个task只挂在这个树上, 那就把整体都删掉
    * - 如果这个task不仅挂在这个树上, 还在别的地方存在, 那就只删除它跟父节点的关系, 本体仍保留着
-   * @param id 
-   * @param parentId 
+   * @param id
+   * @param parentId
    */
   public deleteTaskFromParent(id: string, parentId: string) {
     const task = this.getTask(id);
@@ -330,28 +342,28 @@ export class Database {
         if (childTaskId == id) {
           myIndexInParent = indexInArr;
         }
-      })
+      });
       parentTaskChildren.delete(myIndexInParent);
     }
   }
 
   /**
    * 将会在所有parent当中删除这个task
-   * @param id 
+   * @param id
    */
   public deleteTask(id: string) {
     // 0. 删除自己在父亲的位置
     // 1. 删除本体
     // 2. 删除所有子task
     // 3. 删除关联的yText
-    // 4. 删除所有关联的events    
+    // 4. 删除所有关联的events
     // 5. todo: 删除关联的schedule
 
     const task = this.getTask(id);
     const parentIds = task.get("parentIds") as Y.Array<string>;
     const allParentChildrenLists = parentIds.map((parentId) => {
-      return this.getTaskChildren(parentId)
-    })
+      return this.getTaskChildren(parentId);
+    });
     // const parentTaskChildren = this.getTaskChildren(parentIds);
     const childrenTaskIds = task.get("children") as Y.Array<string>;
     const textId = task.get("textId") as string;
@@ -362,26 +374,25 @@ export class Database {
 
       // 对于每个父亲, 都把自己从他们的孩子列表里删除
       allParentChildrenLists.forEach((parentTaskChildren) => {
-
         // 找到自己是这个父亲的第几个孩子
         parentTaskChildren.forEach((childTaskId, indexInArr) => {
           if (childTaskId == id) {
             myIndexInParent = indexInArr;
           }
-        })
+        });
         parentTaskChildren.delete(myIndexInParent);
-      })
+      });
       this.texts.delete(textId);
 
       // TODO:改成专门删除event的函数, 因为可以复用, 而且还需要处理删除schedule的逻辑
       eventIds.forEach((eventId) => {
         this.events.delete(eventId);
-      })
+      });
       this.tasks.delete(id);
       childrenTaskIds.forEach((childTaskId) => {
         this.deleteTaskFromParent(childTaskId, id);
-      })
-    })
+      });
+    });
   }
 
   // texts
@@ -428,16 +439,15 @@ export class Database {
       this.events.set(e.id, yEvent);
 
       yEvents.push([e.id]);
-      console.log(`task child event pushed, id:${e.id}`)
+      console.log(`task child event pushed, id:${e.id}`);
     });
-
   }
 
   /**
    * 不保证和task关联的一致性
-   * @param eventId 
-   * @param e 
-   * @param source 
+   * @param eventId
+   * @param e
+   * @param source
    */
   public updateEvent(eventId: string, e: Event, source: string) {
     if (!eventId) {
@@ -452,14 +462,14 @@ export class Database {
       transaction.meta.set("traceable::source", source);
       SetEventToYEvent(e, yEvent);
       console.log(`event updated, id:${e.id}`);
-    })
+    });
   }
 
   /**
    * 1. 删除事件本体
    * 2. 从task当中删除本体id
    * 3. TODO: 删除schedule
-   * @param eventId 
+   * @param eventId
    */
   public deleteEvent(eventId: string) {
     const yEvent = db.events.get(eventId);
@@ -468,25 +478,31 @@ export class Database {
     }
     const taskId = yEvent.get("taskId") as string;
 
-    const events = db.getTaskEvents(taskId)
-    events.delete(events.toArray().findIndex(v=>v==eventId))
+    const events = db.getTaskEvents(taskId);
+    events.delete(events.toArray().findIndex((v) => v == eventId));
     db.events.delete(eventId);
     yEvent.clear();
   }
 
-  public observeEvent(eventId: string, callback: (e: Event) => void): () => void {
-    const yEvent = this.events.get(eventId)
+  public observeEvent(
+    eventId: string,
+    callback: (e: Event) => void,
+  ): () => void {
+    const yEvent = this.events.get(eventId);
     if (!yEvent) {
       throw new Error(`failed getting event, id: ${eventId}`);
     }
-    const warppedCallback = (e: Y.YMapEvent<unknown>, transaction: Y.Transaction) => {
-      const updatedEvent: Event = yEventToEvent(e.target)
-      callback(updatedEvent)
-    }
-    yEvent.observe(warppedCallback)
+    const warppedCallback = (
+      e: Y.YMapEvent<unknown>,
+      transaction: Y.Transaction,
+    ) => {
+      const updatedEvent: Event = yEventToEvent(e.target);
+      callback(updatedEvent);
+    };
+    yEvent.observe(warppedCallback);
     return () => {
       yEvent.unobserve(warppedCallback);
-    }
+    };
   }
 
   public getEventData(eventId: string): Event {
@@ -506,28 +522,28 @@ function yEventToEvent(yEvent: YEvent): Event {
     end: yEvent.get("end") as number,
     isAllDay: yEvent.get("isAllDay") as boolean,
     isCompleted: yEvent.get("isCompleted") as boolean,
-  }
+  };
   const repeatScheduleId = yEvent.get("repeatScheduleId");
   if (typeof repeatScheduleId == "string") {
     e.repeatScheduleId = repeatScheduleId;
   }
-  return e
+  return e;
 }
 
 function EventToYEvent(event: Event): YEvent {
   const yEvent = new Y.Map();
-  return SetEventToYEvent(event, yEvent)
+  return SetEventToYEvent(event, yEvent);
 }
 
-function SetEventToYEvent(event: Event, yEvent:YEvent): YEvent {
+function SetEventToYEvent(event: Event, yEvent: YEvent): YEvent {
   yEvent.set("id", event.id);
   yEvent.set("taskId", event.taskId);
   yEvent.set("start", event.start);
   yEvent.set("end", event.end);
   yEvent.set("isAllDay", event.isAllDay);
-  yEvent.set("isCompleted", event.isCompleted)
+  yEvent.set("isCompleted", event.isCompleted);
   if (typeof event.repeatScheduleId == "string") {
-    yEvent.set("repeatScheduleId", event.repeatScheduleId)
+    yEvent.set("repeatScheduleId", event.repeatScheduleId);
   }
 
   return yEvent;
@@ -541,7 +557,7 @@ export interface Task {
   children?: string[]; // 里面放的是子task id
   events?: string[]; // 放Event的id
   noteId?: string;
-  note?: string
+  note?: string;
   isCompleted: boolean;
 }
 

@@ -2,7 +2,7 @@
 	import { droppable, type DroppableActionParams } from '$lib/components/dnd/droppable';
 	import type { TaskDnDData } from './state';
 	import { dragging } from '$lib/components/dnd/state';
-	import { db } from '$lib/states/data';
+	import { db } from '$lib/states/db';
 	import { getContext } from 'svelte';
 
 	export let parentTaskId: string;
@@ -18,9 +18,9 @@
 
 	const droppableOptions: DroppableActionParams<TaskDnDData> = {
 		channel: 'tasks',
-		onMove({ draggingTaskId, originParentTaskId, originIndexInParent }) {
+		onMove({ draggingTaskId, originParentTaskId }) {
 			console.log('on task move');
-			db.moveTask(draggingTaskId, originParentTaskId, originIndexInParent, parentTaskId, index);
+			db.moveTask(draggingTaskId, originParentTaskId, parentTaskId, index);
 		},
 		onLink({ draggingTaskId }) {
 			console.log('on task link');

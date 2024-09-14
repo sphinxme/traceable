@@ -1,26 +1,26 @@
 import type { Action } from "svelte/action";
 import dayjs, { Dayjs } from "dayjs";
-import interact from 'interactjs';
+import interact from "interactjs";
 
 import { getDnDData } from "$lib/components/dnd/state";
 import type { TaskDnDData } from "$lib/components/todolist/dnd/state";
 
 type ResizeActionParams = {
-    onDropMove: (day: Dayjs, topPx: number) => void
-    onDropEnd: () => void
-    onResizeMove: (heightPx:number) => void
-    onResizeEnd: () => void
-}
+    onDropMove: (day: Dayjs, topPx: number) => void;
+    onDropEnd: () => void;
+    onResizeMove: (heightPx: number) => void;
+    onResizeEnd: () => void;
+};
 
 function getComputedStyleTop(element: HTMLElement) {
     // 获取计算样式
     const computedStyle = window.getComputedStyle(element);
 
     // 获取 top 样式属性值
-    const topStyle = computedStyle.getPropertyValue('top');
+    const topStyle = computedStyle.getPropertyValue("top");
 
     // 如果没有设置 top 值，返回 0
-    if (topStyle === 'auto') {
+    if (topStyle === "auto") {
         return 0;
     }
 
@@ -32,39 +32,44 @@ export const dayDropZone: Action<HTMLDivElement> = (node) => {
     interact(node).dropzone({
         ondrop(event) {
             // console.log({ ondrop: event })
-        }
-    })
-}
+        },
+    });
+};
 
 type DayExternalDropZoneParams = {
-    onDragOver: (taskId:string, topPx:number) => void;
-    onDragEnd: () =>void;
-    onDrop: (taskId:string, topPx:number)=> void;
-}
+    onDragOver: (taskId: string, topPx: number) => void;
+    onDragEnd: () => void;
+    onDrop: (taskId: string, topPx: number) => void;
+};
 
-export const dayExternalDropZone: Action<HTMLDivElement, DayExternalDropZoneParams> = (node, {onDragOver, onDragEnd, onDrop}) => {
+export const dayExternalDropZone: Action<
+    HTMLDivElement,
+    DayExternalDropZoneParams
+> = (node, { onDragOver, onDragEnd, onDrop }) => {
     node.ondragover = (event) => {
         event.preventDefault();
-        const data:TaskDnDData = getDnDData("tasks");
-        onDragOver(data.draggingTaskId, event.offsetY)
-    }
+        const data: TaskDnDData = getDnDData("tasks");
+        onDragOver(data.draggingTaskId, event.offsetY);
+    };
     node.ondragend = (event) => {
         event.preventDefault();
         onDragEnd();
-    }
+    };
     node.ondrop = (event) => {
         event.preventDefault();
         console.log(event);
-        const data:TaskDnDData = getDnDData("tasks");
-        onDrop(data.draggingTaskId, event.offsetY)
-        
-    }
-}
+        const data: TaskDnDData = getDnDData("tasks");
+        onDrop(data.draggingTaskId, event.offsetY);
+    };
+};
 
-const interactAction: Action<HTMLDivElement, ResizeActionParams> = (node, { onDropMove, onDropEnd, onResizeEnd, onResizeMove }) => {
-    interact(node).
-        resizable({
-            invert: 'reposition',
+const interactAction: Action<HTMLDivElement, ResizeActionParams> = (
+    node,
+    { onDropMove, onDropEnd, onResizeEnd, onResizeMove },
+) => {
+    interact(node)
+        .resizable({
+            invert: "reposition",
             autoScroll: false,
             edges: {
                 bottom: true,
@@ -72,21 +77,19 @@ const interactAction: Action<HTMLDivElement, ResizeActionParams> = (node, { onDr
             },
             listeners: {
                 start(event) {
-                    node.style.opacity = '50%'
+                    node.style.opacity = "50%";
                 },
                 move(event) {
-                    console.log(event);
-                    onResizeMove(event.rect.height)
+                    onResizeMove(event.rect.height);
                     // node.style.height = event.rect.height+'px';
                 },
                 end(event) {
-                    node.style.opacity = '100%'
+                    node.style.opacity = "100%";
                     onResizeEnd();
-                }
-            }
-        }).
-        draggable({
-
+                },
+            },
+        })
+        .draggable({
             // modifiers: [
             //     interact.modifiers.snap({
             //       targets: [
@@ -99,25 +102,22 @@ const interactAction: Action<HTMLDivElement, ResizeActionParams> = (node, { onDr
 
             listeners: {
                 start(event) {
-
                 },
                 move(event) {
-
+                    console.log({ event });
                     const top = getComputedStyleTop(node) + event.dy;
                     // node.style.top = top +'px' // 手感更好
 
                     const targetDay = event.dropzone.target;
                     // node.style.gridColumnStart=String(parseInt(getComputedStyleColNum(targetDay))+1) // 因为子网格跟外面网格不一致 所以+1;
                     const startDay = dayjs(parseInt(targetDay.dataset.dayts));
-                    onDropMove(startDay, top)
-
+                    onDropMove(startDay, top);
                 },
                 end(event) {
                     onDropEnd();
-                    console.log({ end: event })
-                }
-            }
-        })
-
-}
+                    console.log({ end: event });
+                },
+            },
+        });
+};
 export { interactAction as interact };

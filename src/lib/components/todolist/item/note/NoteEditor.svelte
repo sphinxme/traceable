@@ -1,9 +1,8 @@
 <script lang="ts">
-	import type { Database } from '$lib/states/data';
-	import { note } from './note_editor';
+	import { quill } from '$lib/components/quill/quill';
 	import * as Y from 'yjs';
 
 	export let text: Y.Text;
 </script>
 
-<div use:note={text} />
+<div use:quill={{ text }} />

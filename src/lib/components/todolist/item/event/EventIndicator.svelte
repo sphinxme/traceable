@@ -1,49 +1,31 @@
 <script lang="ts">
 	import * as HoverCard from '$lib/components/ui/hover-card';
-	import { getContext, onDestroy } from 'svelte';
 	import { highlightFEventIds } from '$lib/states/stores';
-	import type { Database } from '$lib/states/data';
 
-	let db: Database = getContext('db');
-	export let eventId: string;
-
+	interface Event {
+		id: string;
+		start: number;
+		end: number;
+		isAllDay: boolean;
+		isCompleted: boolean;
+	}
+	export let data: Event;
 	function calculateTimeLength(start: number, end: number, isAllDay: boolean) {
 		return 10;
 	}
-
-	const unobserve = db.observeEvent(eventId, (updated) => {
-		if (start !== updated.start) {
-			start = updated.start;
-		}
-		if (end !== updated.end) {
-			end = updated.end;
-		}
-		if (isAllDay !== updated.isAllDay) {
-			isAllDay = updated.isAllDay;
-		}
-		if (isCompleted !== updated.isCompleted) {
-			isCompleted = updated.isCompleted;
-		}
-	});
-
-	onDestroy(() => {
-		unobserve();
-	});
-	const event = db.getEventData(eventId);
-	let start = event.start;
-	let end = event.end;
-	let isAllDay = event.isAllDay;
-	let isCompleted = event.isCompleted;
 </script>
 
-<div style:width={calculateTimeLength(start, end, isAllDay) + 'px'} class=" z-50 mr-1">
+<div
+	style:width={calculateTimeLength(data.start, data.end, data.isAllDay) + 'px'}
+	class=" z-50 mr-1"
+>
 	<HoverCard.Root
 		openDelay={100}
 		onOpenChange={(open) => {
 			if (open) {
-				highlightFEventIds.add(eventId);
+				highlightFEventIds.add(data.id);
 			} else {
-				highlightFEventIds.delete(eventId);
+				highlightFEventIds.delete(data.id);
 			}
 		}}
 	>
@@ -53,11 +35,11 @@
 			/>
 		</HoverCard.Trigger>
 		<HoverCard.Content side="top" sideOffset={24}>
-			start: {new Date(start)} <br />
-			end: {end}<br />
-			isAllDay: {isAllDay}
-			isCompleted: {isCompleted}
-			{JSON.stringify(event)}
+			start: {new Date(data.start)} <br />
+			end: {data.end}<br />
+			isAllDay: {data.isAllDay}
+			isCompleted: {data.isCompleted}
+			{JSON.stringify(data)}
 		</HoverCard.Content>
 	</HoverCard.Root>
 </div>

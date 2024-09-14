@@ -1,5 +1,4 @@
 <script lang="ts">
-	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
 	import { setContext } from 'svelte';
 	import Weekly from './Weekly.svelte';
 

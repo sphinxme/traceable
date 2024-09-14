@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { Root, List, Item, Separator, Page, Link } from '$lib/components/ui/breadcrumb';
-	import type { Database } from '$lib/states/data';
 	import TaskText from './TaskText.svelte';
 
 	export let paths: string[];
-	export let db: Database;
 </script>
 
 <Root>
@@ -19,14 +17,14 @@
 								paths = paths.slice(0, i + 1);
 							}}
 						>
-							<TaskText {db} {taskId} />
+							<TaskText {taskId} />
 						</button>
 					</Link>
 				</Item>
 				<Separator />
 			{:else}
 				<Item>
-					<Page><TaskText {db} {taskId} /></Page>
+					<Page><TaskText {taskId} /></Page>
 				</Item>
 			{/if}
 		{/each}

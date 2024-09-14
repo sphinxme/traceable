@@ -1,8 +1,7 @@
 <script lang="ts">
-	import type { Database } from '$lib/states/data';
-	import { flip } from 'svelte/animate';
-	import * as Y from 'yjs';
-	import { getContext, onDestroy } from 'svelte';
+	import { Database } from '$lib/states/db';
+	// import { flip } from 'svelte/animate';
+	import { getContext } from 'svelte';
 	import { LastOneEmptyStatusKey, type LastOneEmptyStatus } from '$lib/states/types';
 	import type { KeyboardHandler } from './item/model';
 	import Todo from './Todo.svelte';
@@ -14,21 +13,23 @@
 	export let parentTaskId: string;
 	export let currentPath: string[];
 
-	$: {
-		items = db.getTaskChildren(parentTaskId);
-		itemsArr = items.toArray();
-		console.log('items updated');
-	}
-	let items: Y.Array<string> = db.getTaskChildren(parentTaskId);
-
-	let itemsArr = items.toArray();
-	const observeItems = () => {
-		itemsArr = items.toArray();
-	};
-	items.observe(observeItems);
-	onDestroy(() => {
-		items.unobserve(observeItems);
+	$: itemsQueryResp = db.instant.useQuery({
+		taskChildEdges: {
+			$: {
+				where: { 'parent.id': parentTaskId }
+			},
+			task: {}
+		}
 	});
+	if ($itemsQueryResp?.error) {
+		throw new Error($itemsQueryResp.error.message);
+	}
+	$: items = ($itemsQueryResp.data?.taskChildEdges || [])
+		.map(({ task, seq }) => {
+			return task ? { ...task, seq } : undefined;
+		})
+		.filter((x) => x !== undefined)
+		.sort((a, b) => a.seq - b.seq);
 
 	export let depth = 1;
 	export let isLastOne = true;
@@ -36,92 +37,90 @@
 	export let arrowUpHandle: KeyboardHandler = () => true;
 	export let arrowDownHandle: KeyboardHandler = () => true;
 
+	let itemRefs: Record<string, Todo> = {};
+	const getIndexedItem = (index: number) => {
+		return itemRefs[items.at(index)?.id || ''];
+	};
+
+	export const hasChildren = () => {
+		return items.length > 0;
+	};
+
 	export const focusTop = (index: number) => {
-		itemRefs.at(index)?.focus(index);
+		getIndexedItem(index)?.focus(index);
 	};
 
 	export const focusBottom = (index: number) => {
-		itemRefs.at(-1)?.focus(index);
+		getIndexedItem(-1)?.focus(index);
 	};
 
-	let itemRefs: Todo[] = [];
+	const now = () => Date.now().valueOf();
 
-	const handleArrowUpFromItem: (i: number) => KeyboardHandler = (i) => (range, context, quill) => {
-		let nextIndex = i - 1;
-		if (nextIndex < 0) {
-			return arrowUpHandle(range, context, quill); // 到头了
-		}
-		itemRefs[nextIndex].focusBottom(range.index);
-		return false;
-	};
-	const handleArrowDownFromItem: (i: number) => KeyboardHandler =
-		(i) => (range, context, quill) => {
-			let nextIndex = i + 1;
-			if (nextIndex >= itemsArr.length) {
-				return arrowDownHandle(range, context, quill); // 到头了
-			}
-
-			itemRefs[nextIndex].focus(range.index);
-			return false;
-		};
-
-	const insertItem = (i: number, text?: string) => {
+	export const insertItem = (i: number, text?: string) => {
 		// 在i下面再加一个
-		const id = db.createTask({
-			id: '',
-			textId: '',
-			text: text,
-			parentIds: [parentTaskId],
-			isCompleted: false
-		});
-		items.insert(i + 1, [id]);
-	};
-	const handleEnterFromItem: (i: number) => KeyboardHandler = (i) => (range, context, quill) => {
-		// 在i下面再加一个
-		insertItem(i, '');
-		// FIXME:focus到对应的item里
-		setTimeout(() => {
-			focusTop(i + 1);
-		}, 100);
-
-		return true;
+		const preSeq = items[i]?.seq || now();
+		const afterSeq = items[i + 1]?.seq || now();
+		console.log({ preSeq, afterSeq });
+		const seq = (preSeq + afterSeq) / 2;
+		db.createTask(parentTaskId, seq);
 	};
 
 	const isLastOneEmpty = getContext<LastOneEmptyStatus>(LastOneEmptyStatusKey).isLastOneEmpty;
 
-	const isMeLastOne = isLastOne && itemsArr.length == 0;
+	$: isMeLastOne = isLastOne && items.length == 0;
 	$: if (isMeLastOne) {
 		isLastOneEmpty.set(false);
 	}
 </script>
 
-<div class="flex w-full flex-row" transition:slide>
+<div class="flex w-full flex-row pl-4" transition:slide>
 	<slot name="side"></slot>
 
 	<div class="relative w-full" role="list">
-		{#if itemsArr.length > 0}
-			{#each itemsArr as item, i (item)}
-				<TaskDropable
-					{parentTaskId}
-					index={i}
-					topTaskId={item}
-					bottomTaskId={itemsArr[i - 1]}
-					{depth}
-				/>
-				<Todo
-					currentPath={[...currentPath, item]}
-					depth={depth + 1}
-					isLastOne={isLastOne && i == itemsArr.length - 1}
-					indexInParent={i}
-					bind:this={itemRefs[i]}
-					arrowUpHandle={handleArrowUpFromItem(i)}
-					arrowDownHandle={handleArrowDownFromItem(i)}
-					enterHandle={handleEnterFromItem(i)}
-					taskId={item}
-					{parentTaskId}
-				/>
-			{/each}
-		{/if}
-		<TaskDropable {parentTaskId} index={itemsArr.length} topTaskId={itemsArr.at(-1)} {depth} />
+		{#each items as item, i (item.id)}
+			<TaskDropable
+				{parentTaskId}
+				index={i}
+				topTaskId={item.id}
+				bottomTaskId={items[i - 1]?.id}
+				{depth}
+			/>
+			<Todo
+				currentPath={[...currentPath, item.id]}
+				depth={depth + 1}
+				isLastOne={isLastOne && i == items.length - 1}
+				bind:this={itemRefs[item.id]}
+				arrowUpHandle={(range, context, quill) => {
+					let nextIndex = i - 1;
+					if (nextIndex < 0) {
+						return arrowUpHandle(range, context, quill); // 到头了
+					}
+					getIndexedItem(nextIndex).focusBottom(range.index);
+					return false;
+				}}
+				arrowDownHandle={(range, context, quill) => {
+					let nextIndex = i + 1;
+					if (nextIndex >= items.length) {
+						return arrowDownHandle(range, context, quill); // 到头了
+					}
+
+					getIndexedItem(nextIndex).focus(range.index);
+					return false;
+				}}
+				enterHandle={(range, context, quill) => {
+					// 在i下面再加一个
+					insertItem(i, '');
+					// FIXME:focus到对应的item里
+					setTimeout(() => {
+						focusTop(i + 1);
+					}, 100);
+
+					return false;
+				}}
+				task={item}
+				{parentTaskId}
+			/>
+		{/each}
+		<TaskDropable {parentTaskId} index={items.length} topTaskId={items.at(-1)?.id} {depth} />
 	</div>
 </div>

@@ -1,20 +1,18 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
+	import { getContext } from 'svelte';
 	import dayjs from 'dayjs';
 
 	import { Badge } from '$lib/components/ui/badge';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 
-	import type { Database, Event } from '$lib/states/data';
-	import { TaskEventGroup } from '../data';
+	import { Database, id } from '$lib/states/db';
 	import { percent, range, isRestDay, roundToNearest15Minutes } from './utils';
 	import { dayDropZone, dayExternalDropZone } from './interact';
 
 	import WeekEvent from './WeekEvent.svelte';
 
 	export let dayNum = 7;
-	export let db: Database;
-	export let rootId = 'root';
+	const db = getContext<Database>('db');
 	let today = dayjs().startOf('day');
 
 	// 以startDay为0
@@ -26,17 +24,14 @@
 	 * 判断t所在的天数是对应了当前的第几列
 	 * @param t 时间的毫秒时间戳
 	 */
-	const getDisplayDayNum = (t: number) => {
+	const getColumnIndex = (t: number) => {
 		return dayjs(t).diff(displayStartDay, 'day');
 	};
-	const calculateTopOffset = (event: Event, dayHeight: number) => {
-		const start = dayjs(event.start).startOf('day');
-		const end = dayjs(event.start);
-		return Math.floor(percent(start, end) * dayHeight);
+	const calculateTopOffset = (start: number): number => {
+		const startOfDay = dayjs(start).startOf('day');
+		return Math.floor(percent(startOfDay.valueOf(), start) * dayHeight);
 	};
-	const calculateEventHeight = (event: Event, dayHeight: number) => {
-		const start = dayjs(event.start);
-		const end = dayjs(event.end);
+	const calculateEventHeight = (start: number, end: number): number => {
 		return Math.floor(percent(start, end) * dayHeight);
 	};
 
@@ -44,17 +39,27 @@
 	let size = offsetWidth / dayNum;
 	let sideWidth = '4rem';
 
-	let eventSubscriber = new TaskEventGroup(db, rootId, (updatedIds) => {
-		eventIds = updatedIds;
+	// TODO: 支持筛选event
+	// let eventSubscriber = new TaskEventGroup(db, rootId, (updatedIds) => {
+	// 	eventIds = updatedIds;
+	// });
+	// onDestroy(() => {
+	// 	eventSubscriber.destory();
+	// });
+	// let eventIds = eventSubscriber.fetchAllEvents();
+	let eventResp = db.instant.useQuery({
+		events: {
+			task: {}
+		}
 	});
-	onDestroy(() => {
-		eventSubscriber.destory();
-	});
-	let eventIds = eventSubscriber.fetchAllEvents();
+	if ($eventResp.error) {
+		throw $eventResp.error;
+	}
+	$: events = $eventResp.data.events || [];
 
 	let dayHeight: number;
 
-	let draggingTaskEvent: Event | null = null;
+	let draggingTaskEvent: any = null;
 </script>
 
 <!-- 可滚动区域 -->
@@ -176,15 +181,22 @@
 								.startOf('day')
 								.add((24 * 60 * 60 * 1000 * topPx) / dayHeight, 'milliseconds');
 							start = roundToNearest15Minutes(start);
-							draggingTaskEvent = {
-								id: db.genID(),
-								taskId: taskId,
-								start: start.valueOf(),
-								end: start.valueOf() + 30 * 60 * 1000,
-								isAllDay: false,
-								isCompleted: false
-							};
-							db.createEvent(draggingTaskEvent, 'dragging');
+							const eventId = id();
+
+							db.instant.transact([
+								db.instant.tx.events[eventId]
+									.update({
+										start: start.valueOf(),
+										end: start.add(30, 'minutes').valueOf(),
+										isAllDay: false,
+										isCompleted: false
+									})
+									.link({
+										task: taskId
+									})
+							]);
+
+							// db.createEvent(draggingTaskEvent, 'dragging');
 							draggingTaskEvent = null;
 						}
 					}}
@@ -194,8 +206,15 @@
 		</div>
 
 		<!-- 事件 -->
-		{#each eventIds as eventId (eventId)}
-			<WeekEvent {db} {eventId} {displayStartDay} {dayHeight} />
+		{#each events as event (event.id)}
+			<WeekEvent
+				{event}
+				textId={event.task?.textId || ''}
+				{getColumnIndex}
+				{calculateEventHeight}
+				{calculateTopOffset}
+				{dayHeight}
+			/>
 		{/each}
 
 		{#if draggingTaskEvent}
@@ -204,8 +223,8 @@
 				style:z-index="8"
 				class=" relative bg-blue-300"
 				style:grid-row="3"
-				style:grid-column={getDisplayDayNum(draggingTaskEvent.start) + 2}
-				style:top="{calculateTopOffset(draggingTaskEvent, dayHeight)}px"
+				style:grid-column={getColumnIndex(draggingTaskEvent.start) + 2}
+				style:top="{calculateTopOffset(draggingTaskEvent.start)}px"
 				style:height="{calculateEventHeight(draggingTaskEvent, dayHeight)}px"
 			>
 				{dayjs(draggingTaskEvent.start).format('HH:mm')}-{dayjs(draggingTaskEvent.end).format(

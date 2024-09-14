@@ -50,10 +50,8 @@ export const highlightFEventIds = new ReactiveSet<string>();
 function name() {
   const w = writable(new Set<string>());
 
-
-
   w.update((s) => {
-    s.add("aaa")
+    s.add("aaa");
     return s;
-  })
+  });
 }

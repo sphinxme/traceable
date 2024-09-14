@@ -1,6 +1,6 @@
 <script>
 	import '../app.css';
-	import { db } from '$lib/states/data';
+	import { db } from '$lib/states/db';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { PanelTopClose } from 'lucide-svelte';
 </script>

@@ -1,8 +1,7 @@
 <script lang="ts">
 	import TodoItem from './item/TodoItem.svelte';
 	import TodoList from './TodoList.svelte';
-	import * as Y from 'yjs';
-	import { Database } from '$lib/states/data';
+	import { Database } from '$lib/states/db';
 	import type { KeyboardHandler } from './item/model';
 	import CollapseIcon from './item/overlay/CollapseButton.svelte';
 	import CheckButton from './item/overlay/CheckButton.svelte';
@@ -11,13 +10,18 @@
 	import { draggingTaskId } from './dnd/state';
 	import Handle from './item/overlay/Handle.svelte';
 	import { getContext } from 'svelte';
+	import { fade, slide } from 'svelte/transition';
 
 	let todoItem: TodoItem;
 	let todoList: TodoList;
 
 	export let parentTaskId: string;
-	export let taskId: string;
-	export let indexInParent: number;
+	export let task: {
+		id: string;
+		isCompleted: boolean;
+		noteId: string;
+		textId: string;
+	};
 	let db: Database = getContext('db');
 
 	export let currentPath: string[];
@@ -30,7 +34,8 @@
 
 	export const focus = (index: number) => todoItem.focus(index);
 	export const focusBottom = (index: number) => {
-		if (children.length) {
+		console.log('focusBottom');
+		if (todoList.hasChildren()) {
 			todoList.focusBottom(index);
 		} else {
 			todoItem.focus(index);
@@ -38,75 +43,60 @@
 	};
 
 	const paths = getContext('paths') as any;
-
-	let children = db.getTaskChildren(taskId);
-	let folded = false;
-	let task = db.getTask(taskId);
-	// TODO:与todoItem中重复 记得重构掉
-	let isCompleted: boolean = task.get('isCompleted') as boolean;
-	task.observe((event, transaction) => {
-		const newIsCompleted = event.target.get('isCompleted') as boolean;
-		if (isCompleted != newIsCompleted) {
-			isCompleted = newIsCompleted;
+	let parentEdgesQuery = db.instant.useQuery({
+		taskChildEdges: {
+			$: { where: { 'task.id': task.id } }
 		}
 	});
-
-	const parentIds = task.get('parentIds') as Y.Array<string>;
-	if (parentIds.length > 1) {
-		folded = true;
+	if ($parentEdgesQuery.error) {
+		throw new Error($parentEdgesQuery.error.message);
 	}
-
+	$: multiParent = ($parentEdgesQuery.data?.taskChildEdges || []).length > 1;
+	let folded = multiParent;
 	const itemArrowDownHandle: KeyboardHandler = (range, context, quill) => {
-		if (children.length) {
+		if (todoList.hasChildren()) {
 			todoList.focusTop(0);
 			return false;
 		}
 		return arrowDownHandle(range, context, quill);
 	};
 	const itemEnterHandler: KeyboardHandler = (range, context, quill) => {
-		console.log({ range, context, quill });
-		// 1. 如果item当前有孩子 那么top新建一个孩子 然后把剩下的截断放到孩子里
+		// (后续todo, 模仿幕布行为: 如果是截断的, 那就把光标前面的插入为同级上面; 如果是没截断的, 就加入为孩子中的第一个 )
+		// 1. 如果item当前有孩子 那么top新建一个孩子
 		const { index, length } = range;
-		if (children.length) {
-			const id = db.createTask({
-				id: '',
-				text: ' ',
-				textId: '',
-				parentIds: [taskId],
-				isCompleted: false
-			});
-			children.unshift([id]);
-			// FIXME:focus到新建的task里面去
-			setTimeout(() => {
-				todoList.focusTop(0);
-			}, 100);
+		if (todoList.hasChildren()) {
+			todoList.insertItem(0, '');
 			return false;
 		} else {
 			// 2. 如果没有孩子 那么上抛 下层同级创建一个孩子 然后把剩下的截断放到兄弟里
-			enterHandle(range, context, quill);
-			return false;
+			return enterHandle(range, context, quill);
+			// return false;
 		}
 	};
 
 	let meDragging: boolean;
 	$: {
-		meDragging = $draggingTaskId == taskId;
+		meDragging = $draggingTaskId == task.id;
 	}
+
+	const toggleTaskStatus = () => {
+		db.instant.transact([db.instant.tx.tasks[task.id].update({ isCompleted: !task.isCompleted })]);
+	};
 </script>
 
-<div class="relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}">
+<div transition:slide class="relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}">
 	<TodoItem
 		bind:this={todoItem}
 		arrowDownHandle={itemArrowDownHandle}
 		{arrowUpHandle}
 		enterHandle={itemEnterHandler}
-		{taskId}
-		isLastOne={isLastOne && children.length == 0}
+		{task}
 	>
 		<svelte:fragment slot="handle">
-			<TaskDraggable {parentTaskId} {taskId} orginIndex={indexInParent}>
+			<TaskDraggable {parentTaskId} taskId={task.id}>
 				<Handle
-					{taskId}
+					{multiParent}
+					taskId={task.id}
 					on:click={() => {
 						console.log('mmp');
 						paths.push(currentPath);
@@ -120,18 +110,8 @@
 				<div
 					class="flex flex-row items-center opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
 				>
-					<ItemMenuButton
-						{taskId}
-						on:delete={() => {
-							db.deleteTaskFromParent(taskId, parentTaskId);
-						}}
-					/>
-					<CheckButton
-						{isCompleted}
-						on:click={() => {
-							db.changeTaskStatus(taskId, !isCompleted);
-						}}
-					/>
+					<ItemMenuButton on:delete={() => db.deleteTask(task.id, parentTaskId)} />
+					<CheckButton isCompleted={task.isCompleted} on:click={toggleTaskStatus} />
 				</div>
 				<CollapseIcon
 					bind:folded
@@ -152,7 +132,7 @@
 				return false;
 			}}
 			{arrowDownHandle}
-			parentTaskId={taskId}
+			parentTaskId={task.id}
 			{isLastOne}
 		>
 			<div slot="side" class="flex w-9 flex-row items-start pb-0 pl-1">

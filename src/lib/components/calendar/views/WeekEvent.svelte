@@ -1,62 +1,53 @@
 <script lang="ts">
-	import { onDestroy, onMount } from 'svelte';
+	import { getContext, onMount } from 'svelte';
 	import dayjs, { type Dayjs } from 'dayjs';
 
 	import * as ContextMenu from '$lib/components/ui/context-menu';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 
-	import type { Database, Event } from '$lib/states/data';
+	import { Database } from '$lib/states/db';
 	import { highlightFEventIds } from '$lib/states/stores';
 
 	import { interact } from './interact';
-	import { percent } from './utils';
+	import { yStore } from '$lib/states/ystore';
 
-	export let eventId: string;
-	export let db: Database;
-	export let displayStartDay: Dayjs;
+	const db = getContext<Database>('db');
+
 	export let dayHeight: number;
 
-	let event = db.getEventData(eventId);
-	let completed = event.isCompleted;
-	const unobserve = db.observeEvent(eventId, (dbEvent) => {
-		event = dbEvent;
-		completed = event.isCompleted;
-	});
+	export let event: {
+		id: string;
+		isCompleted: boolean;
+		start: number;
+		end: number;
+	};
+	export let textId: string;
+	let start = event.start;
+	let end = event.end;
 
-	let yText = db.getTaskText(event.taskId);
-	let text = yText.toJSON();
-	const updateText = () => {
-		text = yText.toJSON();
-	};
-	yText.observe(updateText);
-	onDestroy(() => {
-		unobserve();
-		yText.unobserve(updateText);
-	});
+	console.log({ textId });
+	let text = yStore(db.texts.get(textId));
 
-	const getDisplayDayNum = (t: number) => {
-		return dayjs(t).diff(displayStartDay, 'day');
-	};
-	const calculateTopOffset = (event: Event, dayHeight: number) => {
-		const start = dayjs(event.start).startOf('day');
-		const end = dayjs(event.start);
-		return Math.floor(percent(start, end) * dayHeight);
-	};
-	const calculateEventHeight = (event: Event, dayHeight: number) => {
-		const start = dayjs(event.start);
-		const end = dayjs(event.end);
-		return Math.floor(percent(start, end) * dayHeight);
-	};
+	export let getColumnIndex: (t: number) => number;
+	export let calculateTopOffset: (start: number) => number;
+	export let calculateEventHeight: (start: number, end: number) => number;
 
-	let highlight = highlightFEventIds.has(eventId);
+	let highlight = highlightFEventIds.has(event.id);
 	onMount(() => {
 		const unsubscribe = highlightFEventIds.subscribe((set) => {
-			highlight = set.has(eventId);
+			highlight = set.has(event.id);
 		});
-		return async () => {
+		return () => {
 			unsubscribe();
 		};
 	});
+
+	function roundToNearest1Minutes(time: Dayjs) {
+		if (time.second() > 30) {
+			time = time.add(1, 'minute');
+		}
+		return time.startOf('minute').valueOf();
+	}
 
 	/**
 	 * 将给定的时间四舍五入到最近的15分钟倍数。
@@ -68,68 +59,74 @@
 		const minutes = time.minute();
 
 		// 计算距离最近的15分钟倍数的分钟数
-		const remainder = minutes % 15;
+		const remainder = minutes % 5;
 		let roundedMinutes = minutes;
 
 		// 如果剩余分钟数小于7.5分钟，则向下取整到最近的15分钟倍数
 		// 如果剩余分钟数大于等于7.5分钟，则向上取整到最近的15分钟倍数
-		if (remainder < 7.5) {
+		if (remainder < 2.5) {
 			roundedMinutes -= remainder;
 		} else {
-			roundedMinutes += 15 - remainder;
+			roundedMinutes += 5 - remainder;
 		}
 
 		// 返回四舍五入后的时间
-		return time.minute(roundedMinutes).second(0).millisecond(0);
+		return time.minute(roundedMinutes).second(0).millisecond(0).valueOf();
 	}
 
 	const onDeleteMyself = () => {
-		db.deleteEvent(eventId);
+		db.instant.transact([db.instant.tx.events[event.id].delete()]);
+	};
+	const updateMyselfPeriod = (start: number, end: number) => {
+		db.instant.transact([db.instant.tx.events[event.id].update({ start, end })]);
 	};
 </script>
 
 <div
 	use:interact={{
 		onDropMove(day, topPx) {
-			let start = day.add(24 * 60 * 60 * 1000 * (topPx / dayHeight), 'milliseconds');
-			// 吸附
-			start = roundToNearest15Minutes(start);
-
-			const duration = event.end - event.start;
-			event.start = start.valueOf();
-			event.end = event.start + duration;
+			// const duration = event.end - event.start;
+			// let startTemp = day.add(24 * 60 * 60 * 1000 * (topPx / dayHeight), 'milliseconds');
+			// // 吸附
+			// start = roundToNearest1Minutes(startTemp);
+			// end = start + duration;
 		},
 		onDropEnd() {
-			db.updateEvent(eventId, event, 'dropping');
+			// const duration = event.end - event.start;
+			// let startTemp = day.add(24 * 60 * 60 * 1000 * (topPx / dayHeight), 'milliseconds');
+			// // 吸附
+			// start = roundToNearest1Minutes(startTemp);
+			// end = start + duration;
+			updateMyselfPeriod(start, end);
 		},
 		onResizeMove(heightPx) {
 			const duration = (24 * 60 * 60 * 1000 * heightPx) / dayHeight;
-			const end = event.start + duration;
-			event.end = roundToNearest15Minutes(dayjs(end)).valueOf();
+			const endTemp = start + duration;
+			end = roundToNearest1Minutes(dayjs(endTemp));
 		},
 		onResizeEnd() {
-			db.updateEvent(eventId, event, 'dropping');
+			updateMyselfPeriod(start, end);
 		}
 	}}
 	style:z-index="8"
-	class="absolute w-full grow-0 overflow-hidden rounded-lg {completed
+	class="absolute w-full grow-0 overflow-hidden rounded-lg {event.isCompleted
 		? 'bg-slate-400'
-		: 'bg-slate-600'} p-1 text-sm text-slate-50 transition-all {highlight
+		: 'bg-slate-600'} p-1 text-sm text-slate-50 opacity-75 transition-all {highlight
 		? 'p-0 shadow-2xl shadow-slate-700'
 		: 'shadow-lg'}"
 	style:grid-row="3"
-	style:grid-column="{getDisplayDayNum(event.start) + 2} / {getDisplayDayNum(event.start) + 2}"
-	style:top="{calculateTopOffset(event, dayHeight)}px"
-	style:height="{calculateEventHeight(event, dayHeight)}px"
+	style:grid-column="{getColumnIndex(start) + 2} / {getColumnIndex(start) + 2}"
+	style:top="{calculateTopOffset(start)}px"
+	style:height="{calculateEventHeight(start, end)}px"
 >
 	<Tooltip.Root openDelay={0} closeDelay={100}>
 		<Tooltip.Trigger class="h-full w-full">
 			<ContextMenu.Root>
 				<ContextMenu.Trigger class="flex h-full w-full flex-col">
 					<div class=" text-xs font-extralight">
-						{dayjs(event.start).format('HH:mm')}-{dayjs(event.end).format('HH:mm')}
+						{dayjs(start).format('HH:mm')}-{dayjs(end).format('HH:mm')}
 					</div>
-					<div class="line-clamp-3 text-wrap">{text}</div>
+					<div class="line-clamp-3 text-wrap">{$text}</div>
 				</ContextMenu.Trigger>
 				<ContextMenu.Content>
 					<ContextMenu.Item on:click={onDeleteMyself}>删除</ContextMenu.Item>
@@ -137,7 +134,7 @@
 			</ContextMenu.Root>
 		</Tooltip.Trigger>
 		<Tooltip.Content>
-			<p class=" text-wrap">{text}</p>
+			<p class=" text-wrap">{$text}</p>
 		</Tooltip.Content>
 	</Tooltip.Root>
 </div>
