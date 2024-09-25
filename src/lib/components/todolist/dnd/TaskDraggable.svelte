@@ -6,7 +6,6 @@
 	const panelId: string = getContext('panelId');
 	export let taskId: string;
 	export let parentTaskId: string;
-	export let orginIndex: number;
 
 	export let meDragging = false;
 
@@ -18,8 +17,7 @@
 			return {
 				originPanelId: panelId,
 				draggingTaskId: taskId,
-				originParentTaskId: parentTaskId,
-				originIndexInParent: orginIndex
+				originParentTaskId: parentTaskId
 			};
 		},
 		onDragEnd() {

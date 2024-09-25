@@ -1,32 +1,22 @@
 <script lang="ts">
 	import TodoList from '$lib/components/todolist/TodoList.svelte';
 	import Title from '$lib/panels/todo/Title.svelte';
-	import { Database } from '$lib/states/data';
+	import { Database } from '$lib/states/db';
 	import { LastOneEmptyStatusKey, type LastOneEmptyStatus } from '$lib/states/types';
 	import { SquarePlus } from 'lucide-svelte';
-	import { setContext } from 'svelte';
+	import { getContext, setContext } from 'svelte';
 	import { writable } from 'svelte/store';
 
-	export let db: Database;
-	export let rootId = 'root';
-	setContext('db', db);
+	const db = getContext<Database>('db');
+	export let rootId;
 
 	const isLastOneEmpty = writable(true);
 	setContext<LastOneEmptyStatus>(LastOneEmptyStatusKey, {
 		isLastOneEmpty: isLastOneEmpty
 	});
 
-	const insertBottom = () => {
-		// 在i下面再加一个
-		let rootTaskChildren = db.getTaskChildren(rootId);
-		const id = db.createTask({
-			id: '',
-			textId: '',
-			text: '',
-			parentIds: [rootId],
-			isCompleted: false
-		});
-		rootTaskChildren.insert(rootTaskChildren.length, [id]);
+	const insertBottom = async () => {
+		db.createTask(rootId, Date.now().valueOf(), '');
 	};
 </script>
 

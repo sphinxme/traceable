@@ -1,16 +1,26 @@
 <script lang="ts">
-	import { Database } from '$lib/states/data';
-	import { onDestroy } from 'svelte';
+	import { Database } from '$lib/states/db';
+	import { yStore } from '$lib/states/ystore';
+	import { getContext } from 'svelte';
+	import type { Writable } from 'svelte/store';
 
 	export let taskId: string;
-	export let db: Database;
+	const db = getContext<Database>('db');
 
-	const yText = db.getTaskText(taskId);
-	let text: string = yText.toJSON();
-	const updateText = () => (text = yText.toJSON());
+	let text: Writable<string>;
 
-	yText.observe(updateText);
-	onDestroy(() => yText.unobserve(updateText));
+	// todo: 替换为top-level await
+	const loading = db.getTask(taskId).then((task) => {
+		const yText = db.texts.get(task.textId);
+		if (!yText) {
+			throw new Error(`invalid textId:${task.textId}`);
+		}
+		text = yStore(yText);
+	});
 </script>
 
-{text}
+{#await loading}
+	loading...
+{:then}
+	{$text || '未命名'}
+{/await}

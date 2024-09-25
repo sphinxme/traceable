@@ -2,12 +2,12 @@ import { Dayjs } from "dayjs";
 
 /**
  * 获取占一天的百分比
- * @param start 
- * @param end 
- * @returns 
+ * @param start
+ * @param end
+ * @returns
  */
-export function percent(start: Dayjs, end: Dayjs) {
-    const a = end.diff(start) / (24 * 60 * 60 * 1000);
+export function percent(start: number, end: number) {
+    const a = (end - start) / (24 * 60 * 60 * 1000);
     if (a < 1 && a > 0) {
         return a;
     }
@@ -22,10 +22,10 @@ export function range(start: number, stop: number, step: number = 1) {
 }
 
 /**
-	 * 将给定的时间四舍五入到最近的15分钟倍数。
-	 * @param {dayjs.Dayjs} time - 需要进行四舍五入的时间。
-	 * @returns {dayjs.Dayjs} 四舍五入后的时间。
-	 */
+ * 将给定的时间四舍五入到最近的15分钟倍数。
+ * @param {dayjs.Dayjs} time - 需要进行四舍五入的时间。
+ * @returns {dayjs.Dayjs} 四舍五入后的时间。
+ */
 export function roundToNearest15Minutes(time: Dayjs) {
     // 获取当前分钟数
     const minutes = time.minute();

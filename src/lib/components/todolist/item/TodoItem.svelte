@@ -3,12 +3,10 @@
 	import Quill from 'quill';
 	import { QuillBinding } from 'y-quill';
 	import { getContext, onDestroy, onMount } from 'svelte';
-	import Handle from './overlay/Handle.svelte';
 	import * as Popover from '$lib/components/ui/popover';
-	import * as Y from 'yjs';
 
 	import { warpKeyHandler, type KeyboardHandler } from './model';
-	import type { Database } from '$lib/states/data';
+	import { type Database, id } from '$lib/states/db';
 	import EventIndicator from './event/EventIndicator.svelte';
 	import NoteEditor from './note/NoteEditor.svelte';
 	import Overlay from './overlay/Overlay.svelte';
@@ -18,30 +16,34 @@
 	let editor: Quill;
 
 	let db: Database = getContext('db');
-	export let taskId: string;
-	export let isEmpty: boolean = true;
-	let text: Y.Text = db.getTaskText(taskId);
+	export let task: {
+		id: string;
+		textId: string;
+		noteId: string;
+		isCompleted: boolean;
+	};
+	let isCompleted = task.isCompleted;
 
-	let rawNote = db.getTaskNoteText(taskId);
+	const eventQuery = db.instant.useQuery({ events: { $: { where: { 'task.id': task.id } } } });
+	if ($eventQuery.error) {
+		throw new Error($eventQuery.error.message);
+	}
+	$: events = $eventQuery.data?.events || [];
+
+	const text = db.texts.get(task.textId);
+	if (!text) {
+		throw new Error(`unknown textId:${task.textId}`);
+	}
+	// const noteText = db.getNoteStore(noteId)
+	const rawNote = db.notes.get(task.noteId);
+	if (!rawNote) {
+		throw new Error(`unknown noteId:${task.noteId}`);
+	}
 	let note = rawNote.toJSON();
 	const noteObserver = () => (note = rawNote.toJSON());
 	rawNote.observe(noteObserver);
 	onDestroy(() => {
 		rawNote.unobserve(noteObserver);
-	});
-	let events = db.getTaskEvents(taskId);
-	const task = db.getTask(taskId);
-	let isCompleted = task.get('isCompleted');
-	let eventArr = events.toArray();
-	events.observe((event) => {
-		eventArr = events.toArray();
-	});
-
-	task.observe((event, transaction) => {
-		const newIsCompleted = event.target.get('isCompleted');
-		if (isCompleted != newIsCompleted) {
-			isCompleted = newIsCompleted;
-		}
 	});
 
 	export let arrowUpHandle: KeyboardHandler = () => true;
@@ -54,11 +56,6 @@
 	};
 
 	export const focus = (index: number) => editor.setSelection(index);
-
-	export let isLastOne: boolean;
-
-	$: if (isLastOne) {
-	}
 
 	// const emit = createEventDispatcher<{
 	//     "arrowUp": KeyboardEvent
@@ -132,22 +129,24 @@
 		<slot name="drag" />
 	</div>
 	<!-- 横条下面的东西 -->
+
 	<div class="flex h-2 flex-row">
 		<div class="h-1 w-6" />
-		{#each eventArr as eventId (eventId)}
-			<EventIndicator {eventId} />
-		{/each}
+		{#if !$eventQuery.isLoading}
+			{#each events as data (data.id)}
+				<EventIndicator {data} />
+			{/each}
+		{/if}
 	</div>
-	{#if true}
-		<Popover.Root bind:open={openNoteEdit}>
-			<Popover.Trigger>
-				<div class=" text-start text-slate-500">{note}</div>
-			</Popover.Trigger>
-			<Popover.Content align="start">
-				<NoteEditor text={rawNote} />
-			</Popover.Content>
-		</Popover.Root>
-	{/if}
+
+	<Popover.Root bind:open={openNoteEdit}>
+		<Popover.Trigger>
+			<div class=" text-start text-slate-500">{note}</div>
+		</Popover.Trigger>
+		<Popover.Content align="start">
+			<NoteEditor text={rawNote} />
+		</Popover.Content>
+	</Popover.Root>
 </div>
 
 <style>

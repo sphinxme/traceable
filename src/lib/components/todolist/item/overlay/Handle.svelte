@@ -1,20 +1,21 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { db } from '$lib/states/data';
+	// import { onMount } from 'svelte';
+	// import { db } from '$lib/states/data';
 
 	export let taskId: string;
+	export let multiParent: boolean;
 
-	const parents = db.getTaskParents(taskId);
-	let parentCount = parents.length;
-	onMount(() => {
-		const updateCount = () => {
-			parentCount = parents.length;
-		};
-		parents.observe(updateCount);
-		return () => {
-			parents.unobserve(updateCount);
-		};
-	});
+	// const parents = db.getTaskParents(taskId);
+	// let parentCount = parents.length;
+	// onMount(() => {
+	// 	const updateCount = () => {
+	// 		parentCount = parents.length;
+	// 	};
+	// 	parents.observe(updateCount);
+	// 	return () => {
+	// 		parents.unobserve(updateCount);
+	// 	};
+	// });
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -29,7 +30,5 @@
 	<span
 		class=" absolute z-0 h-5 w-5 rounded-full bg-slate-200 opacity-0 transition-opacity duration-100 ease-in group-hover:opacity-100"
 	/>
-	<span
-		class={` z-10 h-2 w-2 ${parentCount > 1 ? 'rounded-full' : 'rounded-full'}  bg-slate-500`}
-	/>
+	<span class={` z-10 h-2 w-2 bg-slate-500 ${multiParent ? '' : 'rounded-full'}`} />
 </div>
