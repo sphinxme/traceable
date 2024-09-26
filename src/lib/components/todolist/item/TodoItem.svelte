@@ -22,7 +22,6 @@
 		noteId: string;
 		isCompleted: boolean;
 	};
-	let isCompleted = task.isCompleted;
 
 	const eventQuery = db.instant.useQuery({ events: { $: { where: { 'task.id': task.id } } } });
 	if ($eventQuery.error) {
@@ -34,7 +33,6 @@
 	if (!text) {
 		throw new Error(`unknown textId:${task.textId}`);
 	}
-	// const noteText = db.getNoteStore(noteId)
 	const rawNote = db.notes.get(task.noteId);
 	if (!rawNote) {
 		throw new Error(`unknown noteId:${task.noteId}`);
@@ -120,8 +118,8 @@
 				<slot name="handle"></slot>
 				<div
 					style:font-size="large"
-					style:text-decoration={isCompleted ? 'line-through' : ''}
-					style:opacity={isCompleted ? 0.5 : 1}
+					style:text-decoration={task.isCompleted ? 'line-through' : ''}
+					style:opacity={task.isCompleted ? 0.5 : 1}
 					bind:this={container}
 				/>
 			</div>

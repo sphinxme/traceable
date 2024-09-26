@@ -16,6 +16,8 @@ export class Database {
     texts: Y.Map<Y.Text>; // id-Y.Text
     notes: Y.Map<Y.Text>;
 
+    rootId: string | undefined;
+
     loading: boolean = false;
     provider?: IndexeddbPersistence;
 
@@ -35,11 +37,67 @@ export class Database {
     async load() {
         return new Promise<void>((resolve, reject) => {
             this.provider = new IndexeddbPersistence("traceable", this.doc);
-            this.provider.on("synced", () => {
+            this.provider.on("synced", async () => {
                 console.log("content from the yjs is loaded");
                 this.texts = this.doc.getMap("texts");
                 this.notes = this.doc.getMap("notes");
+
+                this.rootId = await this.getRootId();
                 resolve();
+            });
+        });
+    }
+
+    getRootId() {
+        return new Promise<string>((resolve, reject) => {
+            let got = false;
+            let unsubscribe: (() => void) | undefined;
+            unsubscribe = db.instant._core.subscribeQuery({
+                users: {
+                    $: { limit: 1 },
+                    rootTask: {},
+                },
+            }, async (resp) => {
+                if (got) {
+                    if (unsubscribe) {
+                        unsubscribe();
+                    }
+                    return;
+                }
+                got = true;
+                if (resp.error) {
+                    reject(resp.error);
+                    return;
+                }
+
+                const user = resp.data.users[0];
+
+                // user的root task不存在就创建
+                if (!user.rootTask) {
+                    const newTaskId = id();
+                    const { textId, noteId } = db.newTextAndNote();
+                    await db.instant.transact([
+                        db.instant.tx.tasks[newTaskId].update({
+                            textId,
+                            noteId,
+                            isCompleted: false,
+                        }).link({
+                            user: user.id,
+                        }),
+                    ]);
+                    user.rootTask = {
+                        id: newTaskId,
+                        textId,
+                        noteId,
+                        isCompleted: false,
+                    };
+                }
+
+                resolve(user.rootTask.id);
+
+                if (unsubscribe) {
+                    unsubscribe();
+                }
             });
         });
     }
@@ -392,4 +450,58 @@ export class Database {
 
 export const db = new Database(appID);
 export { id };
+
+export const getRootId = () => {
+    return new Promise<string>((resolve, reject) => {
+        let got = false;
+        let unsubscribe: (() => void) | undefined;
+        unsubscribe = db.instant._core.subscribeQuery({
+            users: {
+                $: { limit: 1 },
+                rootTask: {},
+            },
+        }, async (resp) => {
+            if (got) {
+                if (unsubscribe) {
+                    unsubscribe();
+                }
+                return;
+            }
+            got = true;
+            if (resp.error) {
+                reject(resp.error);
+                return;
+            }
+
+            const user = resp.data.users[0];
+
+            // user的root task不存在就创建
+            if (!user.rootTask) {
+                const newTaskId = id();
+                const { textId, noteId } = db.newTextAndNote();
+                await db.instant.transact([
+                    db.instant.tx.tasks[newTaskId].update({
+                        textId,
+                        noteId,
+                        isCompleted: false,
+                    }).link({
+                        user: user.id,
+                    }),
+                ]);
+                user.rootTask = {
+                    id: newTaskId,
+                    textId,
+                    noteId,
+                    isCompleted: false,
+                };
+            }
+
+            resolve(user.rootTask.id);
+
+            if (unsubscribe) {
+                unsubscribe();
+            }
+        });
+    });
+};
 export const rootId = "edd0c61a-751c-40c1-be8d-5ce3b4d668f5";

@@ -1,36 +1,45 @@
 <script lang="ts">
 	import { getContext, onMount } from 'svelte';
 	import dayjs, { type Dayjs } from 'dayjs';
+	import interact from 'interactjs';
 
 	import * as ContextMenu from '$lib/components/ui/context-menu';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 
 	import { Database } from '$lib/states/db';
 	import { highlightFEventIds } from '$lib/states/stores';
-
-	import { interact } from './interact';
 	import { yStore } from '$lib/states/ystore';
+	import { percent } from './utils';
 
 	const db = getContext<Database>('db');
 
 	export let dayHeight: number;
 
-	export let event: {
+	export let event: Readonly<{
 		id: string;
 		isCompleted: boolean;
 		start: number;
 		end: number;
-	};
+	}>;
 	export let textId: string;
-	let start = event.start;
-	let end = event.end;
-
-	console.log({ textId });
-	let text = yStore(db.texts.get(textId));
-
 	export let getColumnIndex: (t: number) => number;
 	export let calculateTopOffset: (start: number) => number;
 	export let calculateEventHeight: (start: number, end: number) => number;
+
+	const calculateTopOffset2 = (start: number): number => {
+		const startOfDay = dayjs(start).startOf('day');
+		const result = Math.floor(percent(startOfDay.valueOf(), start) * dayHeight);
+		return result;
+	};
+	const calculateEventHeight2 = (start: number, end: number): number => {
+		return Math.floor(percent(start, end) * dayHeight);
+	};
+
+	$: topOffset = calculateTopOffset2(event.start); // 单位px
+	$: eventHeight = calculateEventHeight2(event.start, event.end); // 单位px
+	let columnIndex = getColumnIndex(event.start);
+
+	$: text = yStore(db.texts.get(textId));
 
 	let highlight = highlightFEventIds.has(event.id);
 	onMount(() => {
@@ -49,75 +58,127 @@
 		return time.startOf('minute').valueOf();
 	}
 
-	/**
-	 * 将给定的时间四舍五入到最近的15分钟倍数。
-	 * @param {dayjs.Dayjs} time - 需要进行四舍五入的时间。
-	 * @returns {dayjs.Dayjs} 四舍五入后的时间。
-	 */
-	function roundToNearest15Minutes(time: Dayjs) {
-		// 获取当前分钟数
-		const minutes = time.minute();
-
-		// 计算距离最近的15分钟倍数的分钟数
-		const remainder = minutes % 5;
-		let roundedMinutes = minutes;
-
-		// 如果剩余分钟数小于7.5分钟，则向下取整到最近的15分钟倍数
-		// 如果剩余分钟数大于等于7.5分钟，则向上取整到最近的15分钟倍数
-		if (remainder < 2.5) {
-			roundedMinutes -= remainder;
-		} else {
-			roundedMinutes += 5 - remainder;
-		}
-
-		// 返回四舍五入后的时间
-		return time.minute(roundedMinutes).second(0).millisecond(0).valueOf();
-	}
-
 	const onDeleteMyself = () => {
 		db.instant.transact([db.instant.tx.events[event.id].delete()]);
 	};
 	const updateMyselfPeriod = (start: number, end: number) => {
-		db.instant.transact([db.instant.tx.events[event.id].update({ start, end })]);
+		console.log({ updated: { start, end } });
+		db.instant
+			.transact([db.instant.tx.events[event.id].update({ start, end })])
+			.then((v) => {
+				console.log({ v });
+			})
+			.catch((reason) => {
+				console.log({ reason });
+			});
 	};
+	let container: HTMLDivElement;
+
+	onMount(() => {
+		let preStart = event.start;
+		let preEnd = event.end;
+		interact(container)
+			.resizable({
+				invert: 'reposition',
+				autoScroll: false,
+				edges: {
+					bottom: true
+					// top: true,
+				},
+				listeners: {
+					start(dragEvent) {
+						preStart = event.start;
+						preEnd = event.end;
+						container.style.opacity = '50%';
+					},
+					move(dragEvent) {
+						let heightPx = dragEvent.rect.height;
+						eventHeight = heightPx;
+						end = event.start + (heightPx / dayHeight) * 24 * 60 * 60 * 1000;
+						// const duration = (24 * 60 * 60 * 1000 * heightPx) / dayHeight;
+						// const endTemp = start + duration;
+						// end = roundToNearest1Minutes(dayjs(endTemp));
+						// node.style.height = event.rect.height+'px';
+					},
+					end(dragEvent) {
+						container.style.opacity = '75%';
+						const duration = (24 * 60 * 60 * 1000 * eventHeight) / dayHeight;
+						const endTemp = event.start + duration;
+						const end = roundToNearest1Minutes(dayjs(endTemp));
+						if (end != event.end) {
+							updateMyselfPeriod(event.start, end);
+						}
+					}
+				}
+			})
+			.draggable({
+				// modifiers: [
+				//     interact.modifiers.snap({
+				//       targets: [
+				//         interact.snappers.grid({ x: 1, y: 24 })
+				//       ],
+				//       range: Infinity,
+				//       relativePoints: [ { x: 0, y: 0 } ]
+				//     })
+				//   ],
+
+				listeners: {
+					start(dragEvent) {
+						container.style.opacity = '50%';
+						preStart = event.start;
+						preEnd = event.end;
+					},
+					move(dragEvent) {
+						const targetDayElem = dragEvent.dropzone.target;
+						const targetDayStartTs = Number(targetDayElem.dataset.dayts);
+						columnIndex = getColumnIndex(targetDayStartTs);
+						topOffset += dragEvent.dy;
+
+						const duration = event.end - event.start;
+						start = (topOffset / dayHeight) * 24 * 60 * 60 * 1000 + targetDayStartTs;
+						end = start + duration;
+
+						// node.style.gridColumnStart=String(parseInt(getComputedStyleColNum(targetDay))+1) // 因为子网格跟外面网格不一致 所以+1;
+						// const startDay = dayjs(parseInt(targetDay.dataset.dayts));
+
+						// const duration = event.end - event.start;
+						// let startTemp = day.add(24 * 60 * 60 * 1000 * (topPx / dayHeight), 'milliseconds');
+						// // 吸附
+						// start = roundToNearest1Minutes(startTemp);
+						// end = start + duration;
+					},
+					end(dragEvent) {
+						container.style.opacity = '75%';
+						const targetDayElem = dragEvent.dropzone.target;
+						const targetDayTs = Number(targetDayElem.dataset.dayts);
+						const startTempTs = (topOffset / dayHeight) * (24 * 60 * 60 * 1000) + targetDayTs;
+						const startTemp = dayjs(startTempTs).startOf('minute').valueOf();
+						if (startTemp != event.start) {
+							const duration = event.end - event.start;
+							updateMyselfPeriod(startTemp, startTemp + duration);
+						}
+					}
+				}
+			});
+	});
+
+	// 仅用于事件的展示, 在移动过程中会被offsetTop的即时值替换
+	$: start = event.start;
+	$: end = event.end;
 </script>
 
 <div
-	use:interact={{
-		onDropMove(day, topPx) {
-			// const duration = event.end - event.start;
-			// let startTemp = day.add(24 * 60 * 60 * 1000 * (topPx / dayHeight), 'milliseconds');
-			// // 吸附
-			// start = roundToNearest1Minutes(startTemp);
-			// end = start + duration;
-		},
-		onDropEnd() {
-			// const duration = event.end - event.start;
-			// let startTemp = day.add(24 * 60 * 60 * 1000 * (topPx / dayHeight), 'milliseconds');
-			// // 吸附
-			// start = roundToNearest1Minutes(startTemp);
-			// end = start + duration;
-			updateMyselfPeriod(start, end);
-		},
-		onResizeMove(heightPx) {
-			const duration = (24 * 60 * 60 * 1000 * heightPx) / dayHeight;
-			const endTemp = start + duration;
-			end = roundToNearest1Minutes(dayjs(endTemp));
-		},
-		onResizeEnd() {
-			updateMyselfPeriod(start, end);
-		}
-	}}
+	bind:this={container}
 	style:z-index="8"
 	class="absolute w-full grow-0 overflow-hidden rounded-lg {event.isCompleted
 		? 'bg-slate-400'
-		: 'bg-slate-600'} p-1 text-sm text-slate-50 opacity-75 transition-all {highlight
+		: 'bg-slate-600'} p-1 text-sm text-slate-50 opacity-75 {highlight
 		? 'p-0 shadow-2xl shadow-slate-700'
 		: 'shadow-lg'}"
 	style:grid-row="3"
-	style:grid-column="{getColumnIndex(start) + 2} / {getColumnIndex(start) + 2}"
-	style:top="{calculateTopOffset(start)}px"
-	style:height="{calculateEventHeight(start, end)}px"
+	style:grid-column="{columnIndex + 2} / {columnIndex + 2}"
+	style:top="{topOffset}px"
+	style:height="{eventHeight}px"
 >
 	<Tooltip.Root openDelay={0} closeDelay={100}>
 		<Tooltip.Trigger class="h-full w-full">

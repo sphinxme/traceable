@@ -55,7 +55,8 @@
 	if ($eventResp.error) {
 		throw $eventResp.error;
 	}
-	$: events = $eventResp.data.events || [];
+	$: events = $eventResp?.data?.events || [];
+	$: console.log({ events });
 
 	let dayHeight: number;
 
@@ -68,7 +69,7 @@
 	<!-- 内部大区域 -->
 	<div
 		class=" calendar relative grid"
-		style:height="2400px"
+		style:height="1800px"
 		style:grid-template-columns="{sideWidth} repeat({displayDayNum}, 1fr)"
 		style:grid-template-rows="auto auto 1fr"
 		style:width="{size * displayDayNum}px"

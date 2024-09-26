@@ -5,6 +5,7 @@
 	import type { KeyboardHandler } from './item/model';
 	import CollapseIcon from './item/overlay/CollapseButton.svelte';
 	import CheckButton from './item/overlay/CheckButton.svelte';
+	import * as ContextMenu from '$lib/components/ui/context-menu';
 	import ItemMenuButton from './item/overlay/ItemMenuButton.svelte';
 	import TaskDraggable from './dnd/TaskDraggable.svelte';
 	import { draggingTaskId } from './dnd/state';
@@ -35,7 +36,7 @@
 	export const focus = (index: number) => todoItem.focus(index);
 	export const focusBottom = (index: number) => {
 		console.log('focusBottom');
-		if (todoList.hasChildren()) {
+		if (!folded && todoList.hasChildren()) {
 			todoList.focusBottom(index);
 		} else {
 			todoItem.focus(index);
@@ -54,7 +55,7 @@
 	$: multiParent = ($parentEdgesQuery.data?.taskChildEdges || []).length > 1;
 	let folded = multiParent;
 	const itemArrowDownHandle: KeyboardHandler = (range, context, quill) => {
-		if (todoList.hasChildren()) {
+		if (!folded && todoList.hasChildren()) {
 			todoList.focusTop(0);
 			return false;
 		}
@@ -64,7 +65,7 @@
 		// (后续todo, 模仿幕布行为: 如果是截断的, 那就把光标前面的插入为同级上面; 如果是没截断的, 就加入为孩子中的第一个 )
 		// 1. 如果item当前有孩子 那么top新建一个孩子
 		const { index, length } = range;
-		if (todoList.hasChildren()) {
+		if (!folded && todoList.hasChildren()) {
 			todoList.insertItem(0, '');
 			return false;
 		} else {
@@ -93,16 +94,25 @@
 		{task}
 	>
 		<svelte:fragment slot="handle">
-			<TaskDraggable {parentTaskId} taskId={task.id}>
-				<Handle
-					{multiParent}
-					taskId={task.id}
-					on:click={() => {
-						console.log('mmp');
-						paths.push(currentPath);
-					}}
-				/>
-			</TaskDraggable>
+			<ContextMenu.Root>
+				<ContextMenu.Trigger
+					><TaskDraggable {parentTaskId} taskId={task.id}>
+						<Handle
+							{multiParent}
+							taskId={task.id}
+							on:click={() => {
+								console.log('mmp');
+								paths.push(currentPath);
+							}}
+						/>
+					</TaskDraggable></ContextMenu.Trigger
+				>
+				<ContextMenu.Content>
+					<ContextMenu.Item inset on:click={() => db.deleteTask(task.id, parentTaskId)}
+						>删除</ContextMenu.Item
+					>
+				</ContextMenu.Content>
+			</ContextMenu.Root>
 		</svelte:fragment>
 
 		<svelte:fragment slot="overlay">
@@ -110,7 +120,7 @@
 				<div
 					class="flex flex-row items-center opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
 				>
-					<ItemMenuButton on:delete={() => db.deleteTask(task.id, parentTaskId)} />
+					<!-- <ItemMenuButton on:delete={() => db.deleteTask(task.id, parentTaskId)} /> -->
 					<CheckButton isCompleted={task.isCompleted} on:click={toggleTaskStatus} />
 				</div>
 				<CollapseIcon
