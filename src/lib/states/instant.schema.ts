@@ -26,8 +26,35 @@ const graph = i.graph(
       isAllDay: i.boolean(),
       isCompleted: i.boolean(),
     }),
+    users: i.entity({
+      name: i.string(),
+    }),
   },
   {
+    userRootTask: {
+      forward: {
+        on: "users",
+        has: "one",
+        label: "rootTask",
+      },
+      reverse: {
+        on: "tasks",
+        has: "one",
+        label: "user",
+      },
+    },
+    journalUsers: {
+      forward: {
+        on: "journalTasks",
+        has: "one",
+        label: "owner",
+      },
+      reverse: {
+        on: "users",
+        has: "many",
+        label: "journalTasks",
+      },
+    },
     journalTask: {
       forward: {
         on: "journalTasks",

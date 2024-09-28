@@ -1,9 +1,10 @@
-import { writable } from "svelte/store";
+import { readable, writable } from "svelte/store";
 import * as Y from "yjs";
 
 export function yStore(yText: Y.Text | undefined) {
     if (!yText) {
-        throw new Error("empty yText");
+        console.error("empty yText");
+        return readable("");
     }
 
     const listener = () => {

@@ -20,7 +20,7 @@
 		</Button>
 	</div>
 	{#await db.load()}
-		loading...
+		<div class=" h-full w-full text-center">loading...</div>
 	{:then}
 		<slot></slot>
 	{/await}

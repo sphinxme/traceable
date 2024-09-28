@@ -2,7 +2,7 @@
 	import * as Resizable from '$lib/components/ui/resizable';
 	import Calendar from '$lib/panels/calendar/Calendar.svelte';
 	import Editor from '$lib/panels/todo/Editor.svelte';
-	import { db, rootId } from '$lib/states/db';
+	import { db } from '$lib/states/db';
 	import { setContext } from 'svelte';
 
 	setContext('db', db);
@@ -14,6 +14,6 @@
 	</Resizable.Pane>
 	<Resizable.Handle />
 	<Resizable.Pane>
-		<Editor {rootId} />
+		<Editor rootId={db.rootId} />
 	</Resizable.Pane>
 </Resizable.PaneGroup>

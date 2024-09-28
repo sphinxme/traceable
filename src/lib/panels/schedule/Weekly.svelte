@@ -110,7 +110,9 @@
 </script>
 
 <div class=" h-full overflow-y-auto">
-	{#await docsPromise then weekDocs}
+	{#await docsPromise}
+		loading
+	{:then weekDocs}
 		{#each weekDocs as weekDoc (weekDoc.taskId)}
 			<div bind:this={weekEls[weekDoc.taskId]}>
 				{#if isCurrentWeek(weekDoc.time)}

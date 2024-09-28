@@ -73,7 +73,7 @@
 	}
 </script>
 
-<div class="flex w-full flex-row pl-4" transition:slide>
+<div class="flex w-full flex-row" transition:slide>
 	<slot name="side"></slot>
 
 	<div class="relative w-full" role="list">
