@@ -46,6 +46,8 @@
     "@event-calendar/resource-time-grid": "^2.7.1",
     "@event-calendar/time-grid": "^2.7.1",
     "@instantdb/core": "^0.12.33",
+    "@liveblocks/client": "^2.8.0",
+    "@liveblocks/yjs": "^2.8.0",
     "@sveltejs/adapter-static": "^3.0.1",
     "@tanstack/svelte-virtual": "^3.5.0",
     "@tanstack/virtual-core": "^3.5.0",

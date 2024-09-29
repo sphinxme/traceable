@@ -37,7 +37,7 @@
 
 	$: topOffset = calculateTopOffset2(event.start); // 单位px
 	$: eventHeight = calculateEventHeight2(event.start, event.end); // 单位px
-	let columnIndex = getColumnIndex(event.start);
+	$: columnIndex = getColumnIndex(event.start);
 
 	$: text = yStore(db.texts.get(textId));
 
@@ -170,7 +170,7 @@
 <div
 	bind:this={container}
 	style:z-index="8"
-	class="absolute w-full grow-0 overflow-hidden rounded-lg {event.isCompleted
+	class="absolute w-full grow-0 overflow-hidden rounded-lg transition-all duration-100 ease-linear {event.isCompleted
 		? 'bg-slate-400'
 		: 'bg-slate-600'} p-1 text-sm text-slate-50 opacity-75 {highlight
 		? 'p-0 shadow-2xl shadow-slate-700'
