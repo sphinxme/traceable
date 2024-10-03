@@ -1,9 +1,11 @@
 import schema, { INSTANT_APP_ID } from "./instant.schema";
 import * as Y from "yjs";
-import { id, init, init_experimental } from "svelte-instantdb";
+import { id, init_experimental } from "svelte-instantdb";
 import { IndexeddbPersistence } from "y-indexeddb";
 import { writable } from "svelte/store";
 import { onDestroy } from "svelte";
+import { createClient } from "@liveblocks/client";
+import { LiveblocksYjsProvider } from "@liveblocks/yjs";
 
 type InstantDB = ReturnType<typeof init_experimental<typeof schema>>;
 
@@ -13,13 +15,12 @@ export class Database {
     instant: InstantDB;
 
     doc: Y.Doc;
-    texts: Y.Map<Y.Text>; // id-Y.Text
-    notes: Y.Map<Y.Text>;
+    texts!: Y.Map<Y.Text>; // id-Y.Text
+    notes!: Y.Map<Y.Text>;
 
     rootId: string | undefined;
 
     loading: boolean = false;
-    provider?: IndexeddbPersistence;
 
     constructor(appId: string, apiURI?: string, websocketURI?: string) {
         this.instant = init_experimental({
@@ -27,25 +28,42 @@ export class Database {
             // apiURI: apiURI,
             // websocketURI: websocketURI,
             schema,
+            devtool: import.meta.env.DEV,
         });
 
         this.doc = new Y.Doc();
-        this.texts = this.doc.getMap("texts");
-        this.notes = this.doc.getMap("notes");
+    }
+
+    private loadFromIndexedDB() {
+        return new Promise<void>((resolve, reject) => {
+            const p = new IndexeddbPersistence("traceable-yjs", this.doc);
+            p.once("synced", resolve);
+        });
+    }
+
+    private loadFromLiveBlocks() {
+        return new Promise<void>((resolve, reject) => {
+            const client = createClient({
+                publicApiKey:
+                    "pk_dev_tYlV-ZsJQIn7IOFaQXzXNmPF7qdHA-AHElTnBv1eVTNZwSEvNsABx3WQIVNJp9ad",
+            });
+            const { room, leave } = client.enterRoom("traceable-yjs"); // leave
+            window.addEventListener("beforeunload", leave);
+            const p = new LiveblocksYjsProvider(room, this.doc);
+            p.once("synced", resolve);
+        });
     }
 
     async load() {
-        return new Promise<void>((resolve, reject) => {
-            this.provider = new IndexeddbPersistence("traceable", this.doc);
-            this.provider.on("synced", async () => {
-                console.log("content from the yjs is loaded");
-                this.texts = this.doc.getMap("texts");
-                this.notes = this.doc.getMap("notes");
+        await Promise.all([
+            this.loadFromIndexedDB(),
+            this.loadFromLiveBlocks(),
+        ]);
+        console.log("all loaded");
+        this.texts = this.doc.getMap("texts");
+        this.notes = this.doc.getMap("notes");
 
-                this.rootId = await this.getRootId();
-                resolve();
-            });
-        });
+        this.rootId = await this.getRootId();
     }
 
     getRootId() {
