@@ -2,12 +2,12 @@
 	import { Database } from '$lib/states/db';
 	import { yStore } from '$lib/states/ystore';
 	import { getContext } from 'svelte';
-	import type { Writable } from 'svelte/store';
+	import type { Readable } from 'svelte/store';
 
 	export let taskId: string;
 	const db = getContext<Database>('db');
 
-	let text: Writable<string>;
+	let text: Readable<string>;
 
 	// todo: 替换为top-level await
 	const loading = db.getTask(taskId).then((task) => {

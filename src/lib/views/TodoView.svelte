@@ -8,6 +8,8 @@
 	import { writable } from 'svelte/store';
 
 	const db = getContext<Database>('db');
+	let todoList: TodoList;
+	let title: Title;
 	export let rootId;
 
 	const isLastOneEmpty = writable(true);
@@ -25,11 +27,32 @@
 	<!-- <h1 class="scroll-m-20 py-4 text-3xl font-bold tracking-tight transition-colors first:mt-0">
 		<div bind:this={container} />
 	</h1> -->
-	<Title taskId={rootId} />
+	<Title
+		bind:this={title}
+		taskId={rootId}
+		enterHandle={(range, context, editor) => {
+			todoList.insertItem(0, context.suffix);
+			editor.editor.deleteText(range.index, Number.MAX_SAFE_INTEGER);
+			return false;
+		}}
+		arrowDownHandle={(range, context, editor) => {
+			console.log('got it');
+			todoList.focusTop(range.index);
+			return false;
+		}}
+	/>
 
 	<!-- list -->
 	<div class="pl-6">
-		<TodoList currentPath={[]} parentTaskId={rootId} />
+		<TodoList
+			bind:this={todoList}
+			currentPath={[]}
+			parentTaskId={rootId}
+			arrowUpHandle={(range, context, editor) => {
+				title.focus(range.index);
+				return false;
+			}}
+		/>
 	</div>
 	{#if !$isLastOneEmpty}
 		<!-- svelte-ignore a11y-interactive-supports-focus -->

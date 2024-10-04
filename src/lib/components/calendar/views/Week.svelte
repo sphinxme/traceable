@@ -56,7 +56,6 @@
 		throw $eventResp.error;
 	}
 	$: events = $eventResp?.data?.events || [];
-	$: console.log({ events });
 
 	let dayHeight: number;
 

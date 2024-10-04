@@ -2,16 +2,14 @@
 	import TodoItem from './item/TodoItem.svelte';
 	import TodoList from './TodoList.svelte';
 	import { Database } from '$lib/states/db';
-	import type { KeyboardHandler } from './item/model';
+	import type { KeyboardHandler } from '../quill/model';
 	import CollapseIcon from './item/overlay/CollapseButton.svelte';
 	import CheckButton from './item/overlay/CheckButton.svelte';
 	import * as ContextMenu from '$lib/components/ui/context-menu';
-	import ItemMenuButton from './item/overlay/ItemMenuButton.svelte';
 	import TaskDraggable from './dnd/TaskDraggable.svelte';
 	import { draggingTaskId } from './dnd/state';
 	import Handle from './item/overlay/Handle.svelte';
 	import { getContext } from 'svelte';
-	import { fade, slide } from 'svelte/transition';
 
 	let todoItem: TodoItem;
 	let todoList: TodoList;
@@ -31,11 +29,14 @@
 
 	export let arrowUpHandle: KeyboardHandler;
 	export let arrowDownHandle: KeyboardHandler;
-	export let enterHandle: KeyboardHandler;
+	export let insertBeforeMyself: (text: string) => boolean;
+	export let insertAfterMyself: (text: string) => boolean;
+	export let tabHandle: () => boolean;
+	export let untabHandle: () => boolean;
+	export let moveUp: (childTaskId: string) => boolean;
 
 	export const focus = (index: number) => todoItem.focus(index);
 	export const focusBottom = (index: number) => {
-		console.log('focusBottom');
 		if (!folded && todoList.hasChildren()) {
 			todoList.focusBottom(index);
 		} else {
@@ -54,26 +55,49 @@
 	}
 	$: multiParent = ($parentEdgesQuery.data?.taskChildEdges || []).length > 1;
 	let folded = multiParent;
+	const hasChildren = () => !folded && todoList.hasChildren();
 	const itemArrowDownHandle: KeyboardHandler = (range, context, quill) => {
 		if (!folded && todoList.hasChildren()) {
-			todoList.focusTop(0);
+			todoList.focusTop(range.index);
 			return false;
 		}
 		return arrowDownHandle(range, context, quill);
 	};
 	const itemEnterHandler: KeyboardHandler = (range, context, quill) => {
 		// (后续todo, 模仿幕布行为: 如果是截断的, 那就把光标前面的插入为同级上面; 如果是没截断的, 就加入为孩子中的第一个 )
-		// 1. 如果item当前有孩子 那么top新建一个孩子
-		const { index, length } = range;
-		if (!folded && todoList.hasChildren()) {
-			todoList.insertItem(0, '');
-			return false;
+		// const { index, length } = range;
+
+		if (context.suffix.length) {
+			// 如果是截断的: 让上级在前面加一个同级的兄弟, 内容为光标前面的内容
+			quill.setText(context.suffix);
+			const result = insertBeforeMyself(context.prefix);
+			setTimeout(() => todoItem.focus(0), 100);
+			return result;
 		} else {
-			// 2. 如果没有孩子 那么上抛 下层同级创建一个孩子 然后把剩下的截断放到兄弟里
-			return enterHandle(range, context, quill);
-			// return false;
+			// 如果不是截断的 是在末尾的
+			if (hasChildren()) {
+				// 如果有孩子 在下层顶端插入一个空的孩子
+				todoList.insertItem(0, '');
+				setTimeout(() => todoList.focusTop(0), 100);
+				return false;
+			} else {
+				// 如果没孩子 让上级在下面加一个空的兄弟
+				return insertAfterMyself('');
+			}
 		}
 	};
+
+	// const tabHandle = () => {
+	// 	// 把自己作为自己上面兄弟的孩子
+
+	// 	// db.moveTask(task.id, parentTaskId, t, Number.MAX_SAFE_INTEGER)
+	// 	return false;
+	// };
+
+	// const untabHandle = () => {
+	// 	console.log('untab');
+	// 	return false;
+	// };
 
 	let meDragging: boolean;
 	$: {
@@ -85,13 +109,15 @@
 	};
 </script>
 
-<div transition:slide class="relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}">
+<div class="relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}">
 	<TodoItem
 		bind:this={todoItem}
 		arrowDownHandle={itemArrowDownHandle}
 		{arrowUpHandle}
 		enterHandle={itemEnterHandler}
 		{task}
+		{tabHandle}
+		{untabHandle}
 	>
 		<svelte:fragment slot="handle">
 			<ContextMenu.Root>
@@ -144,6 +170,7 @@
 			{arrowDownHandle}
 			parentTaskId={task.id}
 			{isLastOne}
+			{moveUp}
 		>
 			<div slot="side" class="flex w-9 flex-row items-start pb-0 pl-1">
 				<div class=" h-full bg-slate-300" style="width: 1px;"></div>

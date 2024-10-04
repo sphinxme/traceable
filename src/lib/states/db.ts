@@ -218,7 +218,7 @@ export class Database {
 
     public createTask(parentTaskId: string, seq: number, text?: string) {
         const newTaskId = id();
-        const { textId, noteId } = db.newTextAndNote();
+        const { textId, noteId } = db.newTextAndNote(text);
         db.instant.transact([
             db.instant.tx.tasks[newTaskId].update({
                 textId,
@@ -331,7 +331,6 @@ export class Database {
         parentTaskId: string,
         index: number,
     ) {
-        console.log({ index });
         if (index < 0) {
             throw new Error(`invalid index:${index}`);
         }
@@ -363,14 +362,13 @@ export class Database {
         }
 
         this.instant.transact([
-            ...oldEdges.map(({ id }) =>
-                this.instant.tx.taskChildEdges[id].delete()
-            ),
-
             this.instant.tx.taskChildEdges[id()].update({ seq }).link({
                 parent: parentTaskId,
                 task: draggingTaskId,
             }),
+            // ...oldEdges.map(({ id }) =>
+            //     this.instant.tx.taskChildEdges[id].delete()
+            // ),
         ]);
     }
 
@@ -432,7 +430,6 @@ export class Database {
                         reject(resp.error);
                         return;
                     }
-                    console.log(resp.data);
                     resp.data.taskChildEdges[0].id;
                     resp.data.taskChildEdges[0].seq;
                     resolve(resp.data.taskChildEdges);

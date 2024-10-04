@@ -5,7 +5,7 @@
 	import { getContext, onDestroy, onMount } from 'svelte';
 	import * as Popover from '$lib/components/ui/popover';
 
-	import { warpKeyHandler, type KeyboardHandler } from './model';
+	import { warpKeyHandler, type KeyboardHandler } from '../../quill/model';
 	import { type Database, id } from '$lib/states/db';
 	import EventIndicator from './event/EventIndicator.svelte';
 	import NoteEditor from './note/NoteEditor.svelte';
@@ -47,6 +47,8 @@
 	export let arrowUpHandle: KeyboardHandler = () => true;
 	export let arrowDownHandle: KeyboardHandler = () => true;
 	export let enterHandle: KeyboardHandler = () => true;
+	export let tabHandle = () => true;
+	export let untabHandle = () => true;
 	let shiftEnterHandle: KeyboardHandler = () => {
 		// 弹出
 		openNoteEdit = true;
@@ -87,11 +89,15 @@
 			shiftKey: true,
 			handler: warpKeyHandler(shiftEnterHandle)
 		});
-		editor.keyboard.addBinding({
+		editor.keyboard.bindings['Tab'].unshift({
 			key: 'Tab',
-			handler(range, curContext, binding) {
-				console.log('tab');
-			}
+			shiftKey: true,
+			handler: untabHandle
+		});
+		editor.keyboard.bindings['Tab'].unshift({
+			key: 'Tab',
+			shiftKey: false,
+			handler: tabHandle
 		});
 
 		const binding = new QuillBinding(text, editor /*, provider.awareness*/);
