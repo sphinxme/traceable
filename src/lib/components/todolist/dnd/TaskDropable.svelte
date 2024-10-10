@@ -1,11 +1,12 @@
 <script lang="ts">
+	import { getContext } from 'svelte';
 	import { droppable, type DroppableActionParams } from '$lib/components/dnd/droppable';
 	import type { TaskDnDData } from './state';
 	import { dragging } from '$lib/components/dnd/state';
-	import { db } from '$lib/states/db';
-	import { getContext } from 'svelte';
+	import { type TaskProxy } from '$lib/states/rxdb';
+	import type { Observable } from 'rxjs';
 
-	export let parentTaskId: string;
+	export let parent: Observable<TaskProxy>;
 	export let index: number;
 
 	export let topTaskId: string | undefined = undefined;
@@ -18,15 +19,36 @@
 
 	const droppableOptions: DroppableActionParams<TaskDnDData> = {
 		channel: 'tasks',
-		onMove({ draggingTaskId, originParentTaskId }) {
-			console.log('on task move');
-			db.moveTask(draggingTaskId, originParentTaskId, parentTaskId, index);
+		onMove({ draggingTaskId, originParentTask }) {
+			if (index < 0) {
+				throw new Error(`invalid index:${index}`);
+			}
+
+			// 在同一个parent内move, 仅调换位置
+			if ($parent.id === originParentTask.id) {
+				const originIndex = $parent.children.indexOf(draggingTaskId);
+				if ($parent.children.indexOf(draggingTaskId) === index) {
+					// FIXME:如果是+1的位置 也可能是没动的
+					return;
+				}
+
+				let children = [...$parent.children];
+				children.splice(originIndex, 1);
+				console.log({ index, originIndex, children, draggingTaskId });
+				children.splice(Math.min(index, children.length), 0, draggingTaskId);
+				$parent.patch({ children });
+			} else {
+				// 1.删除原来的边(只删边)
+				originParentTask.removeChild(draggingTaskId);
+				// 2.加新的边
+				$parent.spliceChildren(index, 0, draggingTaskId);
+			}
 		},
 		onLink({ draggingTaskId }) {
 			console.log('on task link');
-			db.copyTask(draggingTaskId, parentTaskId, index);
+			$parent.spliceChildren(index, 0, draggingTaskId);
 		},
-		droppable(hotKey, { draggingTaskId, originPanelId, originParentTaskId }) {
+		droppable(hotKey, { draggingTaskId, originPanelId, originParentTask }) {
 			// 1. 如果是上一个或者下一个的同一个task, 就不能走
 			if (draggingTaskId == topTaskId || draggingTaskId == bottomTaskId) {
 				return;

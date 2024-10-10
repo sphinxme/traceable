@@ -1,24 +1,17 @@
 <script lang="ts">
 	import * as HoverCard from '$lib/components/ui/hover-card';
 	import { highlightFEventIds } from '$lib/states/stores';
+	import { Dayjs } from 'dayjs';
+	import type { EventProxy } from '$lib/states/rxdb';
 
-	interface Event {
-		id: string;
-		start: number;
-		end: number;
-		isAllDay: boolean;
-		isCompleted: boolean;
-	}
-	export let data: Event;
-	function calculateTimeLength(start: number, end: number, isAllDay: boolean) {
-		return 10;
-	}
+	export let data: EventProxy;
+	export let isCompleted: boolean;
+	let start = data.start$;
+	let end = data.end$;
+	$: length = ($start - $end) / ((1000 * 60 * 10) / 5); // 10分钟5px
 </script>
 
-<div
-	style:width={calculateTimeLength(data.start, data.end, data.isAllDay) + 'px'}
-	class=" z-50 mr-1"
->
+<div style:width={length + 'px'} class=" z-50 mr-1">
 	<HoverCard.Root
 		openDelay={100}
 		onOpenChange={(open) => {
@@ -35,11 +28,10 @@
 			/>
 		</HoverCard.Trigger>
 		<HoverCard.Content side="top" sideOffset={24}>
-			start: {new Date(data.start)} <br />
-			end: {data.end}<br />
+			start: {new Dayjs(data.start).format('YYYY/MM/DD HH:mm:ssZ')} <br />
+			end: {new Dayjs(data.end).format('YYYY/MM/DD HH:mm:ssZ')}<br />
 			isAllDay: {data.isAllDay}
-			isCompleted: {data.isCompleted}
-			{JSON.stringify(data)}
+			isCompleted: {isCompleted}
 		</HoverCard.Content>
 	</HoverCard.Root>
 </div>

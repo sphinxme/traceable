@@ -5,11 +5,13 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { ScrollArea } from '$lib/components/ui/scroll-area';
 
-	import { Database, id } from '$lib/states/db';
+	import { Database, id } from '$lib/states/rxdb';
 	import { percent, range, isRestDay, roundToNearest15Minutes } from './utils';
 	import { dayDropZone, dayExternalDropZone } from './interact';
 
 	import WeekEvent from './WeekEvent.svelte';
+	import { firstValueFrom, pipe } from 'rxjs';
+	import { filterNullish } from '$lib/states/rxdb/utils';
 
 	export let dayNum = 7;
 	const db = getContext<Database>('db');
@@ -47,15 +49,8 @@
 	// 	eventSubscriber.destory();
 	// });
 	// let eventIds = eventSubscriber.fetchAllEvents();
-	let eventResp = db.instant.useQuery({
-		events: {
-			task: {}
-		}
-	});
-	if ($eventResp.error) {
-		throw $eventResp.error;
-	}
-	$: events = $eventResp?.data?.events || [];
+	const events = db.events.find().$.pipe(filterNullish());
+	const loadingEvents = firstValueFrom(events);
 
 	let dayHeight: number;
 
@@ -183,20 +178,14 @@
 							start = roundToNearest15Minutes(start);
 							const eventId = id();
 
-							db.instant.transact([
-								db.instant.tx.events[eventId]
-									.update({
-										start: start.valueOf(),
-										end: start.add(30, 'minutes').valueOf(),
-										isAllDay: false,
-										isCompleted: false
-									})
-									.link({
-										task: taskId
-									})
-							]);
+							db.events.insert({
+								id: eventId,
+								start: start.valueOf(),
+								end: start.add(30, 'minutes').valueOf(),
+								isAllDay: false,
+								task: taskId
+							});
 
-							// db.createEvent(draggingTaskEvent, 'dragging');
 							draggingTaskEvent = null;
 						}
 					}}
@@ -206,16 +195,13 @@
 		</div>
 
 		<!-- 事件 -->
-		{#each events as event (event.id)}
-			<WeekEvent
-				{event}
-				textId={event.task?.textId || ''}
-				{getColumnIndex}
-				{calculateEventHeight}
-				{calculateTopOffset}
-				{dayHeight}
-			/>
-		{/each}
+		{#await loadingEvents then}
+			{#each $events as event (event.id)}
+				{#await event.populate('task') then task}
+					<WeekEvent event={event.$} {getColumnIndex} {dayHeight} task={task.$} />
+				{/await}
+			{/each}
+		{/await}
 
 		{#if draggingTaskEvent}
 			<div
