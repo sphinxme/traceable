@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { draggable, type DraggableActionParams } from '$lib/components/dnd/draggable';
+	import type { TaskProxy } from '$lib/states/rxdb';
+	import type { Observable } from 'rxjs';
 	import { draggingTaskId, type TaskDnDData } from './state';
 	import { getContext } from 'svelte';
 
 	const panelId: string = getContext('panelId');
 	export let taskId: string;
-	export let parentTaskId: string;
+	export let parent: Observable<TaskProxy>;
 
 	export let meDragging = false;
 
@@ -17,7 +19,7 @@
 			return {
 				originPanelId: panelId,
 				draggingTaskId: taskId,
-				originParentTaskId: parentTaskId
+				originParentTask: $parent
 			};
 		},
 		onDragEnd() {

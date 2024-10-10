@@ -3,12 +3,14 @@
 	import { Skull, BatteryFull } from 'lucide-svelte';
 	import TodoView from '$lib/views/TodoView.svelte';
 	import Navigator from './Navigator.svelte';
+	import type { TaskProxy } from '$lib/states/rxdb';
+	import type { Observable } from 'rxjs';
 
-	export let rootId;
-
-	let paths = [rootId];
-	$: currentPageId = paths.at(-1);
-	const pushPaths = (subpaths: string[]) => {
+	export let rootTask: Observable<TaskProxy>;
+	let paths: Observable<TaskProxy>[] = [rootTask];
+	$: currentPageTask = paths.at(-1) || rootTask;
+	$: console.log({ c: paths.at(-1) || rootTask });
+	const pushPaths = (subpaths: Observable<TaskProxy>[]) => {
 		paths = [...paths, ...subpaths];
 	};
 
@@ -28,5 +30,5 @@
 			<Skull />
 		</div>
 	</div>
-	<TodoView rootId={currentPageId} />
+	<TodoView task={currentPageTask} />
 </div>

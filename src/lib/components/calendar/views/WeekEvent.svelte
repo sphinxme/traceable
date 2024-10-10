@@ -6,25 +6,18 @@
 	import * as ContextMenu from '$lib/components/ui/context-menu';
 	import * as Tooltip from '$lib/components/ui/tooltip';
 
-	import { Database } from '$lib/states/db';
+	import { Database, type EventProxy, type TaskProxy } from '$lib/states/rxdb';
 	import { highlightFEventIds } from '$lib/states/stores';
 	import { yStore } from '$lib/states/ystore';
 	import { percent } from './utils';
+	import type { Observable } from 'rxjs';
 
 	const db = getContext<Database>('db');
 
 	export let dayHeight: number;
-
-	export let event: Readonly<{
-		id: string;
-		isCompleted: boolean;
-		start: number;
-		end: number;
-	}>;
-	export let textId: string;
+	export let event: Observable<EventProxy>;
+	export let task: Observable<TaskProxy>;
 	export let getColumnIndex: (t: number) => number;
-	export let calculateTopOffset: (start: number) => number;
-	export let calculateEventHeight: (start: number, end: number) => number;
 
 	const calculateTopOffset2 = (start: number): number => {
 		const startOfDay = dayjs(start).startOf('day');
@@ -35,16 +28,16 @@
 		return Math.floor(percent(start, end) * dayHeight);
 	};
 
-	$: topOffset = calculateTopOffset2(event.start); // 单位px
-	$: eventHeight = calculateEventHeight2(event.start, event.end); // 单位px
-	$: columnIndex = getColumnIndex(event.start);
+	$: topOffset = calculateTopOffset2($event.start); // 单位px
+	$: eventHeight = calculateEventHeight2($event.start, $event.end); // 单位px
+	$: columnIndex = getColumnIndex($event.start);
 
-	$: text = yStore(db.texts.get(textId));
+	$: text = yStore(db.texts.get($task.textId || ''));
 
-	let highlight = highlightFEventIds.has(event.id);
+	let highlight = highlightFEventIds.has($event.id);
 	onMount(() => {
 		const unsubscribe = highlightFEventIds.subscribe((set) => {
-			highlight = set.has(event.id);
+			highlight = set.has($event.id);
 		});
 		return () => {
 			unsubscribe();
@@ -59,24 +52,17 @@
 	}
 
 	const onDeleteMyself = () => {
-		db.instant.transact([db.instant.tx.events[event.id].delete()]);
+		$event.remove();
 	};
 	const updateMyselfPeriod = (start: number, end: number) => {
 		console.log({ updated: { start, end } });
-		db.instant
-			.transact([db.instant.tx.events[event.id].update({ start, end })])
-			.then((v) => {
-				console.log({ v });
-			})
-			.catch((reason) => {
-				console.log({ reason });
-			});
+		$event.patch({ start, end });
 	};
 	let container: HTMLDivElement;
 
 	onMount(() => {
-		let preStart = event.start;
-		let preEnd = event.end;
+		let preStart = $event.start;
+		let preEnd = $event.end;
 		interact(container)
 			.resizable({
 				invert: 'reposition',
@@ -87,14 +73,14 @@
 				},
 				listeners: {
 					start(dragEvent) {
-						preStart = event.start;
-						preEnd = event.end;
+						preStart = $event.start;
+						preEnd = $event.end;
 						container.style.opacity = '50%';
 					},
 					move(dragEvent) {
 						let heightPx = dragEvent.rect.height;
 						eventHeight = heightPx;
-						end = event.start + (heightPx / dayHeight) * 24 * 60 * 60 * 1000;
+						end = preStart + (heightPx / dayHeight) * 24 * 60 * 60 * 1000;
 						// const duration = (24 * 60 * 60 * 1000 * heightPx) / dayHeight;
 						// const endTemp = start + duration;
 						// end = roundToNearest1Minutes(dayjs(endTemp));
@@ -103,10 +89,10 @@
 					end(dragEvent) {
 						container.style.opacity = '75%';
 						const duration = (24 * 60 * 60 * 1000 * eventHeight) / dayHeight;
-						const endTemp = event.start + duration;
+						const endTemp = preStart + duration;
 						const end = roundToNearest1Minutes(dayjs(endTemp));
-						if (end != event.end) {
-							updateMyselfPeriod(event.start, end);
+						if (end != preEnd) {
+							updateMyselfPeriod(preStart, end);
 						}
 					}
 				}
@@ -125,8 +111,8 @@
 				listeners: {
 					start(dragEvent) {
 						container.style.opacity = '50%';
-						preStart = event.start;
-						preEnd = event.end;
+						preStart = $event.start;
+						preEnd = $event.end;
 					},
 					move(dragEvent) {
 						const targetDayElem = dragEvent.dropzone.target;
@@ -134,7 +120,7 @@
 						columnIndex = getColumnIndex(targetDayStartTs);
 						topOffset += dragEvent.dy;
 
-						const duration = event.end - event.start;
+						const duration = preEnd - preStart;
 						start = (topOffset / dayHeight) * 24 * 60 * 60 * 1000 + targetDayStartTs;
 						end = start + duration;
 
@@ -153,8 +139,8 @@
 						const targetDayTs = Number(targetDayElem.dataset.dayts);
 						const startTempTs = (topOffset / dayHeight) * (24 * 60 * 60 * 1000) + targetDayTs;
 						const startTemp = dayjs(startTempTs).startOf('minute').valueOf();
-						if (startTemp != event.start) {
-							const duration = event.end - event.start;
+						if (startTemp != preStart) {
+							const duration = preEnd - preStart;
 							updateMyselfPeriod(startTemp, startTemp + duration);
 						}
 					}
@@ -163,14 +149,14 @@
 	});
 
 	// 仅用于事件的展示, 在移动过程中会被offsetTop的即时值替换
-	$: start = event.start;
-	$: end = event.end;
+	$: start = $event.start; // TODO:能不能不要这个了
+	$: end = $event.end;
 </script>
 
 <div
 	bind:this={container}
 	style:z-index="8"
-	class="absolute w-full grow-0 overflow-hidden rounded-lg transition-all duration-100 ease-linear {event.isCompleted
+	class="absolute w-full grow-0 overflow-hidden rounded-lg {$task.isCompleted
 		? 'bg-slate-400'
 		: 'bg-slate-600'} p-1 text-sm text-slate-50 opacity-75 {highlight
 		? 'p-0 shadow-2xl shadow-slate-700'

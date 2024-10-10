@@ -1,8 +1,11 @@
 <script>
 	import '../app.css';
-	import { db } from '$lib/states/db';
+	import { db } from '$lib/states/rxdb';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { PanelTopClose } from 'lucide-svelte';
+	import { setContext } from 'svelte';
+
+	setContext('db', db);
 </script>
 
 <div class="flex h-full flex-col items-start bg-slate-100">

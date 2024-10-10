@@ -2,5 +2,8 @@
     "editor.defaultFormatter": "dbaeumer.vscode-eslint",
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
-    "npm.packageManager":"bun"
+    "npm.packageManager": "bun",
+    "[typescript]": {
+        "editor.defaultFormatter": "vscode.typescript-language-features"
+    }
 }
