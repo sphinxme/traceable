@@ -2,47 +2,42 @@
 	import 'quill/dist/quill.core.css';
 	import Quill from 'quill';
 	import { QuillBinding } from 'y-quill';
-	import { getContext, onDestroy, onMount } from 'svelte';
+	import { getContext, onMount } from 'svelte';
 	import * as Popover from '$lib/components/ui/popover';
 
 	import { warpKeyHandler, type KeyboardHandler } from '../../quill/model';
-	import { type Database, id } from '$lib/states/db';
+	import { type Database, type TaskProxy } from '$lib/states/rxdb';
 	import EventIndicator from './event/EventIndicator.svelte';
 	import NoteEditor from './note/NoteEditor.svelte';
 	import Overlay from './overlay/Overlay.svelte';
 	import { LastOneEmptyStatusKey, type LastOneEmptyStatus } from '$lib/states/types';
+	import { firstValueFrom, type Observable } from 'rxjs';
+	import { yStore } from '$lib/states/ystore';
 
+	export let task: Observable<TaskProxy>;
 	let container: HTMLDivElement;
 	let editor: Quill;
 
 	let db: Database = getContext('db');
-	export let task: {
-		id: string;
-		textId: string;
-		noteId: string;
-		isCompleted: boolean;
-	};
 
-	const eventQuery = db.instant.useQuery({ events: { $: { where: { 'task.id': task.id } } } });
-	if ($eventQuery.error) {
-		throw new Error($eventQuery.error.message);
-	}
-	$: events = $eventQuery.data?.events || [];
-
-	const text = db.texts.get(task.textId);
-	if (!text) {
-		throw new Error(`unknown textId:${task.textId}`);
-	}
-	const rawNote = db.notes.get(task.noteId);
-	if (!rawNote) {
-		throw new Error(`unknown noteId:${task.noteId}`);
-	}
-	let note = rawNote.toJSON();
-	const noteObserver = () => (note = rawNote.toJSON());
-	rawNote.observe(noteObserver);
-	onDestroy(() => {
-		rawNote.unobserve(noteObserver);
+	const events = db.events.find().where({ task: $task.id }).sort({ start: 'asc' }).$;
+	const loadingEvents = firstValueFrom(events);
+	loadingEvents.then((e) => {
+		if (e.length) {
+			console.log({ e });
+		}
 	});
+
+	const text = db.texts.get($task.textId);
+	if (!text) {
+		throw new Error(`unknown textId:${$task.textId}`);
+	}
+
+	const rawNote = db.notes.get($task.noteId);
+	if (!rawNote) {
+		throw new Error(`unknown noteId:${$task.noteId}`);
+	}
+	let note = yStore(rawNote);
 
 	export let arrowUpHandle: KeyboardHandler = () => true;
 	export let arrowDownHandle: KeyboardHandler = () => true;
@@ -109,6 +104,7 @@
 		text.observe(onTextChange);
 		return () => {
 			text.unobserve(onTextChange);
+			binding.destroy();
 		};
 	});
 
@@ -124,8 +120,8 @@
 				<slot name="handle"></slot>
 				<div
 					style:font-size="large"
-					style:text-decoration={task.isCompleted ? 'line-through' : ''}
-					style:opacity={task.isCompleted ? 0.5 : 1}
+					style:text-decoration={$task.isCompleted ? 'line-through' : ''}
+					style:opacity={$task.isCompleted ? 0.5 : 1}
 					bind:this={container}
 				/>
 			</div>
@@ -136,16 +132,18 @@
 
 	<div class="flex h-2 flex-row">
 		<div class="h-1 w-6" />
-		{#if !$eventQuery.isLoading}
-			{#each events as data (data.id)}
-				<EventIndicator {data} />
+		{#await loadingEvents}
+			loading
+		{:then}
+			{#each $events as event (event.id)}
+				<EventIndicator data={event} isCompleted={$task.isCompleted} />
 			{/each}
-		{/if}
+		{/await}
 	</div>
 
 	<Popover.Root bind:open={openNoteEdit}>
 		<Popover.Trigger>
-			<div class=" text-start text-slate-500">{note}</div>
+			<div class=" text-start text-slate-500">{$note}</div>
 		</Popover.Trigger>
 		<Popover.Content align="start">
 			<NoteEditor text={rawNote} />

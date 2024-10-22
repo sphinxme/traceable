@@ -1,26 +1,12 @@
 <script lang="ts">
-	import { Database } from '$lib/states/db';
+	import { Database, type TaskProxy } from '$lib/states/rxdb';
 	import { yStore } from '$lib/states/ystore';
+	import type { Observable } from 'rxjs';
 	import { getContext } from 'svelte';
-	import type { Readable } from 'svelte/store';
 
-	export let taskId: string;
+	export let task: Observable<TaskProxy>;
 	const db = getContext<Database>('db');
-
-	let text: Readable<string>;
-
-	// todo: 替换为top-level await
-	const loading = db.getTask(taskId).then((task) => {
-		const yText = db.texts.get(task.textId);
-		if (!yText) {
-			throw new Error(`invalid textId:${task.textId}`);
-		}
-		text = yStore(yText);
-	});
+	let text = yStore(db.texts.get($task.textId));
 </script>
 
-{#await loading}
-	loading...
-{:then}
-	{$text || '未命名'}
-{/await}
+{$text || '未命名'}
