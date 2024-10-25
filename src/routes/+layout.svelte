@@ -1,27 +1,29 @@
-<script>
+<script lang="ts">
 	import '../app.css';
 	import { db } from '$lib/states/rxdb';
 	import Button from '$lib/components/ui/button/button.svelte';
-	import { PanelTopClose } from 'lucide-svelte';
+	import { PanelTopClose, SquareLibrary, PanelsTopLeft, CalendarRange } from 'lucide-svelte';
 	import { setContext } from 'svelte';
+	import { page } from '$app/stores';
+
+	// 使用导入的 page store 来获取当前路径
+	import { derived } from 'svelte/store';
+	import SidebarItem from '$lib/components/sidebar/SidebarItem.svelte';
+
+	// 创建一个派生存储，用于判断某个链接是否应该被激活
+	export function isActive(path: string) {
+		return derived(page, ($page) => $page.url.pathname === path);
+	}
 
 	setContext('db', db);
 </script>
 
-<div class="flex h-full flex-col items-start bg-slate-100">
-	<!-- <div class="header z-50 ml-5 h-10 overflow-visible rounded-b-lg bg-white shadow-lg">
-		<Tabs.Root value="account">
-			<Tabs.List class="grid w-full grid-cols-2">
-				<Tabs.Trigger value="account">Account</Tabs.Trigger>
-				<Tabs.Trigger value="password">Password</Tabs.Trigger>
-			</Tabs.List>
-		</Tabs.Root>
-	</div> -->
-	<div class=" fixed bottom-0 right-8 z-50 m-4 w-4 rounded bg-white shadow-2xl">
-		<Button size="icon">
-			<PanelTopClose />
-		</Button>
-	</div>
+<div class="flex h-full flex-row items-start bg-slate-100">
+	<nav class="flex flex-col">
+		<SidebarItem path="/trace" href="/trace"><SquareLibrary /></SidebarItem>
+		<SidebarItem path="/organize" href="/organize"><PanelsTopLeft /></SidebarItem>
+		<SidebarItem path="/schedule" href="/schedule"><CalendarRange /></SidebarItem>
+	</nav>
 	{#await db.load()}
 		<div class=" h-full w-full text-center">loading...</div>
 	{:then}
@@ -29,4 +31,5 @@
 	{/await}
 </div>
 
-<style></style>
+<style>
+</style>

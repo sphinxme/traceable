@@ -8,7 +8,7 @@
 	const db = getContext<Database>('db');
 </script>
 
-<Resizable.PaneGroup direction="horizontal">
+<Resizable.PaneGroup direction="horizontal" class="rounded-lg">
 	<Resizable.Pane>
 		<Calendar />
 	</Resizable.Pane>
