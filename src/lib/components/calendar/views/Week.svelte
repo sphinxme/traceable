@@ -62,6 +62,7 @@
 	<!-- <div class="  h-full overflow-scroll" bind:offsetWidth> -->
 	<!-- 内部大区域 -->
 	<div
+		data-tauri-drag-region
 		class=" calendar relative grid"
 		style:height="1800px"
 		style:grid-template-columns="{sideWidth} repeat({displayDayNum}, 1fr)"
@@ -70,6 +71,7 @@
 	>
 		<!-- header -->
 		<div
+			data-tauri-drag-region
 			style:display="grid"
 			style:grid-column="2 / -1"
 			style:grid-row="1 / 1"
@@ -80,6 +82,7 @@
 		>
 			{#each displayDays as day, i (day)}
 				<div
+					data-tauri-drag-region
 					class=" flex flex-col items-center justify-end"
 					style:grid-area="1 / {i + 1} / 1 / {i + 1}"
 				>
@@ -98,6 +101,7 @@
 
 		<!-- 左侧竖栏 -->
 		<div
+			data-tauri-drag-region
 			style:display="grid"
 			style:grid-column="1 / 1"
 			style:grid-row="1 / -1"

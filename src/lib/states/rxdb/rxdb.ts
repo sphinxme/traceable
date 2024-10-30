@@ -8,6 +8,7 @@ import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
 import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
 import { getFetchWithCouchDBAuthorization, replicateCouchDB } from 'rxdb/plugins/replication-couchdb';
+import { fetch } from '@tauri-apps/plugin-http';
 
 import { id } from "./utils";
 import {
@@ -78,13 +79,36 @@ export class Database {
         this.journals = collection.journals as JournalCollection;
         this.users = collection.users as UserCollection;
 
-        const authed_fetch = getFetchWithCouchDBAuthorization("sphinx", "0626");
+        const authed_fetch1 = getFetchWithCouchDBAuthorization("sphinx", "0626");
+        let authed_fetch2: typeof fetch = (input, init) => {
+            // 构建 Basic Auth 字符串
+            const basicAuth = `Basic ${btoa(`sphinx:0626`)}`;
+
+            // 合并原有的headers和新的Authorization header
+            const headers = new Headers(init?.headers || {});
+            headers.set('Authorization', basicAuth);
+
+            // 创建新的init对象,包含更新后的headers
+            const newInit: RequestInit = {
+                ...(init || {}),
+                headers
+            };
+
+            // 调用原始fetch并返回结果
+            return fetch(input, newInit);
+        }
+
+
+        if (!('__TAURI_INTERNALS__' in window)) {
+            authed_fetch2 = authed_fetch1
+        }
+
 
         const replicationEventState = replicateCouchDB({
             replicationIdentifier: 'events',
             collection: this.events,
             url: "http://124.221.36.39:5984/events/",
-            fetch: authed_fetch,
+            fetch: authed_fetch2,
             pull: {},
             push: {},
         })
@@ -93,7 +117,7 @@ export class Database {
             replicationIdentifier: 'journal',
             collection: collection.journals,
             url: "http://124.221.36.39:5984/journals/",
-            fetch: authed_fetch,
+            fetch: authed_fetch2,
             pull: {},
             push: {}
         })
@@ -102,7 +126,7 @@ export class Database {
             replicationIdentifier: 'users',
             collection: collection.users,
             url: "http://124.221.36.39:5984/users/",
-            fetch: authed_fetch,
+            fetch: authed_fetch2,
             pull: {},
             push: {}
         })
@@ -111,7 +135,7 @@ export class Database {
             replicationIdentifier: 'tasks',
             collection: this.rxdb.collections.tasks,
             url: "http://124.221.36.39:5984/tasks/",
-            fetch: authed_fetch,
+            fetch: authed_fetch2,
             pull: {},
             push: {}
         })

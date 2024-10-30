@@ -77,11 +77,16 @@
   }
 }
 
-html, body, #app {
+/* html, body, #app {
   height: 100%;
   width: 100%;
-}
+} */
 
 body {
   user-select:none;
+}
+html, body, #app {
+  overflow: hidden;
+  /* background-color: brown; */
+  border-radius: 20px;
 }
