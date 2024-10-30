@@ -10,6 +10,8 @@ import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
 import { getFetchWithCouchDBAuthorization, replicateCouchDB } from 'rxdb/plugins/replication-couchdb';
 import { fetch } from '@tauri-apps/plugin-http';
 
+import { PUBLIC_LIVEBLOCKS_AUTH_ENDPOINT, PUBLIC_COUCHDB_ENDPOINT, PUBLIC_COUCHDB_USER, PUBLIC_COUCHDB_PASSWORD } from '$env/static/public';
+
 import { id } from "./utils";
 import {
     type TaskCollection,
@@ -50,10 +52,7 @@ export class Database {
 
     private loadFromLiveBlocks() {
         return new Promise<void>((resolve, reject) => {
-            const client = createClient({
-                publicApiKey:
-                    "pk_dev_tYlV-ZsJQIn7IOFaQXzXNmPF7qdHA-AHElTnBv1eVTNZwSEvNsABx3WQIVNJp9ad",
-            });
+            const client = createClient({ authEndpoint: PUBLIC_LIVEBLOCKS_AUTH_ENDPOINT });
             const { room, leave } = client.enterRoom("traceable-yjs"); // leave
             window.addEventListener("beforeunload", leave);
             const p = new LiveblocksYjsProvider(room, this.doc);
@@ -79,10 +78,10 @@ export class Database {
         this.journals = collection.journals as JournalCollection;
         this.users = collection.users as UserCollection;
 
-        const authed_fetch1 = getFetchWithCouchDBAuthorization("sphinx", "0626");
+        const authed_fetch1 = getFetchWithCouchDBAuthorization(PUBLIC_COUCHDB_USER, PUBLIC_COUCHDB_PASSWORD);
         let authed_fetch2: typeof fetch = (input, init) => {
             // 构建 Basic Auth 字符串
-            const basicAuth = `Basic ${btoa(`sphinx:0626`)}`;
+            const basicAuth = `Basic ${btoa(`${PUBLIC_COUCHDB_USER}:${PUBLIC_COUCHDB_PASSWORD}`)}`;
 
             // 合并原有的headers和新的Authorization header
             const headers = new Headers(init?.headers || {});
@@ -107,7 +106,7 @@ export class Database {
         const replicationEventState = replicateCouchDB({
             replicationIdentifier: 'events',
             collection: this.events,
-            url: "http://124.221.36.39:5984/events/",
+            url: `${PUBLIC_COUCHDB_ENDPOINT}/events/`,
             fetch: authed_fetch2,
             pull: {},
             push: {},
@@ -116,7 +115,7 @@ export class Database {
         const replicationJournalState = replicateCouchDB({
             replicationIdentifier: 'journal',
             collection: collection.journals,
-            url: "http://124.221.36.39:5984/journals/",
+            url: `${PUBLIC_COUCHDB_ENDPOINT}/journals/`,
             fetch: authed_fetch2,
             pull: {},
             push: {}
@@ -125,7 +124,7 @@ export class Database {
         const replicationUserState = replicateCouchDB({
             replicationIdentifier: 'users',
             collection: collection.users,
-            url: "http://124.221.36.39:5984/users/",
+            url: `${PUBLIC_COUCHDB_ENDPOINT}/users/`,
             fetch: authed_fetch2,
             pull: {},
             push: {}
@@ -134,7 +133,7 @@ export class Database {
         const replicationTaskState = replicateCouchDB({
             replicationIdentifier: 'tasks',
             collection: this.rxdb.collections.tasks,
-            url: "http://124.221.36.39:5984/tasks/",
+            url: `${PUBLIC_COUCHDB_ENDPOINT}/tasks/`,
             fetch: authed_fetch2,
             pull: {},
             push: {}
