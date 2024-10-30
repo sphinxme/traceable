@@ -5,6 +5,9 @@
 	import { PanelTopClose, SquareLibrary, PanelsTopLeft, CalendarRange } from 'lucide-svelte';
 	import { setContext } from 'svelte';
 	import { page } from '$app/stores';
+	import { Window } from '@tauri-apps/api/window';
+
+	const appWindow = new Window('main');
 
 	// 使用导入的 page store 来获取当前路径
 	import { derived } from 'svelte/store';
@@ -18,12 +21,17 @@
 	setContext('db', db);
 </script>
 
-<div class="flex h-full flex-row items-start bg-slate-100">
-	<nav class="flex flex-col">
-		<SidebarItem path="/trace" href="/trace"><SquareLibrary /></SidebarItem>
-		<SidebarItem path="/organize" href="/organize"><PanelsTopLeft /></SidebarItem>
-		<SidebarItem path="/schedule" href="/schedule"><CalendarRange /></SidebarItem>
-	</nav>
+<div class=" flex h-full flex-row items-start overflow-hidden rounded-lg bg-slate-100">
+	<div data-tauri-drag-region class="flex h-full flex-col">
+		<div class="flex flex-row">
+			<Button on:click={() => appWindow.close()}>close</Button>
+		</div>
+		<nav class="flex flex-col">
+			<SidebarItem path="/trace" href="/trace"><SquareLibrary /></SidebarItem>
+			<SidebarItem path="/organize" href="/organize"><PanelsTopLeft /></SidebarItem>
+			<SidebarItem path="/schedule" href="/schedule"><CalendarRange /></SidebarItem>
+		</nav>
+	</div>
 	{#await db.load()}
 		<div class=" h-full w-full text-center">loading...</div>
 	{:then}

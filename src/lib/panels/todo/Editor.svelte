@@ -20,12 +20,15 @@
 	});
 </script>
 
-<div class="flex h-full grow flex-col overflow-auto rounded bg-background p-4 shadow-xl">
+<div
+	data-tauri-drag-region
+	class="flex h-full grow flex-col overflow-auto rounded bg-background p-4 shadow-xl"
+>
 	<!-- header -->
-	<div class="flex flex-row">
+	<div data-tauri-drag-region class="flex flex-row">
 		<Navigator bind:paths />
-		<div class="flex flex-grow items-center justify-center">---</div>
-		<div class="flex flex-row">
+		<div data-tauri-drag-region class="flex flex-grow items-center justify-center">---</div>
+		<div data-tauri-drag-region class="flex flex-row">
 			<BatteryFull />
 			<Skull />
 		</div>
