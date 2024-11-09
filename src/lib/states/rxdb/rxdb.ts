@@ -10,8 +10,6 @@ import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
 import { getFetchWithCouchDBAuthorization, replicateCouchDB } from 'rxdb/plugins/replication-couchdb';
 import { fetch } from '@tauri-apps/plugin-http';
 
-import { PUBLIC_LIVEBLOCKS_AUTH_ENDPOINT, PUBLIC_COUCHDB_ENDPOINT, PUBLIC_COUCHDB_USER, PUBLIC_COUCHDB_PASSWORD } from '$env/static/public';
-
 import { id } from "./utils";
 import {
     type TaskCollection,
@@ -24,6 +22,9 @@ import { type UserCollection, userCollectionCreator } from "./user";
 addRxPlugin(RxDBQueryBuilderPlugin);
 addRxPlugin(RxDBDevModePlugin);
 
+const PUBLIC_COUCHDB_ENDPOINT = import.meta.env.VITE_COUCHDB_ENDPOINT;
+const PUBLIC_COUCHDB_USER = import.meta.env.VITE_COUCHDB_USER;
+const PUBLIC_COUCHDB_PASSWORD = import.meta.env.VITE_COUCHDB_PASSWORD;
 export class Database {
     doc: Y.Doc;
     texts!: Y.Map<Y.Text>; // id-Y.Text
@@ -52,7 +53,7 @@ export class Database {
 
     private loadFromLiveBlocks() {
         return new Promise<void>((resolve, reject) => {
-            const client = createClient({ authEndpoint: PUBLIC_LIVEBLOCKS_AUTH_ENDPOINT });
+            const client = createClient({ authEndpoint: import.meta.env.VITE_LIVEBLOCKS_AUTH_ENDPOINT });
             const { room, leave } = client.enterRoom("traceable-yjs"); // leave
             window.addEventListener("beforeunload", leave);
             const p = new LiveblocksYjsProvider(room, this.doc);

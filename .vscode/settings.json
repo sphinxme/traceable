@@ -5,5 +5,8 @@
     "npm.packageManager": "bun",
     "[typescript]": {
         "editor.defaultFormatter": "vscode.typescript-language-features"
+    },
+    "[html]": {
+        "editor.defaultFormatter": "denoland.vscode-deno"
     }
 }
