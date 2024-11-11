@@ -10,12 +10,12 @@ import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
 import { getFetchWithCouchDBAuthorization, replicateCouchDB } from 'rxdb/plugins/replication-couchdb';
 import { fetch } from '@tauri-apps/plugin-http';
 
-import { id } from "./utils";
+import { id } from "./utils.svelte";
 import {
     type TaskCollection,
     taskCollectionCreator,
     type TaskProxy,
-} from "./task";
+} from "./task.svelte";
 import { type EventCollection, eventCollectionCreator } from "./event";
 import { type JournalCollection, journalCollectionCreator } from "./journal";
 import { type UserCollection, userCollectionCreator } from "./user";
@@ -149,10 +149,10 @@ export class Database {
         await Promise.all([
             this.loadFromIndexedDB().then(log("indexedDB loaded")),
             this.loadFromLiveBlocks().then(log("loaded from live blocks")),
-            replicationEventState.awaitInitialReplication().then(log("loaded event state")),
-            replicationJournalState.awaitInitialReplication().then(log("loaded journal state")),
-            replicationTaskState.awaitInitialReplication().then(log("loaded task state")),
-            replicationUserState.awaitInitialReplication().then(log("loaded user state")),
+            // replicationEventState.awaitInitialReplication().then(log("loaded event state")),
+            // replicationJournalState.awaitInitialReplication().then(log("loaded journal state")),
+            // replicationTaskState.awaitInitialReplication().then(log("loaded task state")),
+            // replicationUserState.awaitInitialReplication().then(log("loaded user state")),
         ])
 
         this.texts = this.doc.getMap("texts");
@@ -162,6 +162,10 @@ export class Database {
     }
 
     async getRootId() {
+        if (this.rootTask) {
+            return this.rootTask
+        }
+
         let user = await this.users.findOne().exec();
         if (!user) {
             this.rootTask = await this.tasks.insert({

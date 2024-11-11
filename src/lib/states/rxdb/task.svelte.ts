@@ -5,12 +5,12 @@ import {
 } from "rxdb";
 import { type Task, TaskSchema } from "./rxdb.schema";
 import type { Database } from "./rxdb";
-import { id } from "./utils";
+import { id, yStore } from "./utils.svelte";
 
 function getTaskMethods(db: Database) {
     async function addChild(
         this: RxDocument<Task>,
-        seq: number,
+        seq: number = Number.MAX_SAFE_INTEGER,
         text: string = "",
         note: string = "",
     ) {
@@ -80,12 +80,32 @@ function getTaskMethods(db: Database) {
         return (await this.populate("children")) as RxDocument<Task>[];
     }
 
+    function text(this: RxDocument<Task>) {
+        return yStore(db.texts.get(this.textId))
+    }
+
+    function yText(this: RxDocument<Task>) {
+        return db.texts.get(this.textId);
+    }
+
+    function yNote(this: RxDocument<Task>) {
+        return db.notes.get(this.noteId);
+    }
+
+    function note(this: RxDocument<Task>) {
+        return yStore(db.notes.get(this.noteId))
+    }
+
     return {
         addChild,
         moveInto,
         removeChild,
         spliceChildren,
         getChildren,
+        text,
+        note,
+        yNote,
+        yText,
     };
 }
 

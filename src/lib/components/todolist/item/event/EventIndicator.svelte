@@ -1,24 +1,28 @@
 <script lang="ts">
-	import * as HoverCard from '$lib/components/ui/hover-card';
-	import { highlightFEventIds } from '$lib/states/stores';
-	import dayjs from 'dayjs';
-	import type { EventProxy } from '$lib/states/rxdb';
+	import * as HoverCard from "$lib/components/ui/hover-card";
+	import { highlightFEventIds } from "$lib/states/stores.svelte";
+	import dayjs from "dayjs";
+	import type { EventProxy } from "$lib/states/rxdb";
 
-	export let data: EventProxy;
-	export let isCompleted: boolean;
+	interface Props {
+		data: EventProxy;
+		isCompleted: boolean;
+	}
+
+	let { data, isCompleted }: Props = $props();
 	let start = data.start$;
 	let end = data.end$;
-	$: length = ($end - $start) / (1000 * 60 * 10); // 10分钟5px
+	let length = $derived(($end - $start) / (1000 * 60 * 10)); // 10分钟5px
 </script>
 
-<div style:width={length + 'px'} class=" z-50 mr-1">
+<div style:width={length + "px"} class=" z-50 mr-1">
 	<HoverCard.Root
 		openDelay={100}
 		onOpenChange={(open) => {
 			if (open) {
-				highlightFEventIds.add(data.id);
+				highlightFEventIds[data.id] = true;
 			} else {
-				highlightFEventIds.delete(data.id);
+				highlightFEventIds[data.id] = false;
 			}
 		}}
 	>
@@ -28,8 +32,8 @@
 			></div>
 		</HoverCard.Trigger>
 		<HoverCard.Content side="top" sideOffset={24}>
-			start: {dayjs(data.start).format('HH:mm:ssZ')} <br />
-			end: {dayjs(data.end).format('HH:mm:ssZ')}<br />
+			start: {dayjs(data.start).format("HH:mm:ssZ")} <br />
+			end: {dayjs(data.end).format("HH:mm:ssZ")}<br />
 			isAllDay: {data.isAllDay}<br />
 			isCompleted: {isCompleted}<br />
 			length: {length}<br />

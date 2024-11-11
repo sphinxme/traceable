@@ -1,26 +1,26 @@
 <script lang="ts">
-	import TodoList from '$lib/components/todolist/TodoList.svelte';
-	import Title from '$lib/panels/todo/Title.svelte';
-	import { type TaskProxy } from '$lib/states/rxdb';
-	import { LastOneEmptyStatusKey, type LastOneEmptyStatus } from '$lib/states/types';
-	import { SquarePlus } from 'lucide-svelte';
-	import type { Observable } from 'rxjs';
-	import { setContext } from 'svelte';
-	import { writable } from 'svelte/store';
+	import TodoList from "$lib/components/todolist/TodoList.svelte";
+	import Title from "$lib/panels/todo/Title.svelte";
+	import { type TaskProxy } from "$lib/states/rxdb";
+	import { SquarePlus } from "lucide-svelte";
+	import type { Observable } from "rxjs";
+	import { setContext } from "svelte";
 
+	// refs
 	let todoList: TodoList;
 	let title: Title;
-	export let task: Observable<TaskProxy>;
+	interface Props {
+		task: Observable<TaskProxy>;
+	}
+
+	let { task }: Props = $props();
 
 	const foucsByLocation = (paths: { id: string; index: number }[]) => {
 		todoList.foucsIntoByLocation(paths);
 	};
-	setContext('focusByLocation', foucsByLocation);
+	setContext("focusByLocation", foucsByLocation);
 
-	const isLastOneEmpty = writable(true);
-	setContext<LastOneEmptyStatus>(LastOneEmptyStatusKey, {
-		isLastOneEmpty: isLastOneEmpty
-	});
+	let isLastOneEmpty = $state(false);
 </script>
 
 <div class="flex grow flex-col p-4">
@@ -33,7 +33,6 @@
 			return false;
 		}}
 		arrowDownHandle={(range, context, editor) => {
-			console.log('got it');
 			todoList.focusTop(range.index);
 			return false;
 		}}
@@ -42,6 +41,7 @@
 	<!-- list -->
 	<div class="pl-6">
 		<TodoList
+			bind:isLastOneEmpty
 			bind:this={todoList}
 			currentPath={[]}
 			location={[]}
@@ -52,14 +52,15 @@
 			}}
 		/>
 	</div>
-	{#if !$isLastOneEmpty}
-		<!-- svelte-ignore a11y-interactive-supports-focus -->
-		<!-- svelte-ignore a11y-click-events-have-key-events -->
+	<!-- TODO:还没弄好 -->
+	{#if isLastOneEmpty}
+		<!-- svelte-ignore a11y_interactive_supports_focus -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
 		<div
 			role="button"
 			class="ml-3.5 flex w-full flex-row rounded-lg p-1 opacity-20 transition-colors duration-300 hover:bg-slate-300"
-			on:click={async () => {
-				$task.addChild(Number.MAX_SAFE_INTEGER);
+			onclick={() => {
+				$task.addChild();
 			}}
 		>
 			<SquarePlus size={20} />

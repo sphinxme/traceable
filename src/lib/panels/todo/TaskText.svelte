@@ -1,12 +1,13 @@
 <script lang="ts">
-	import { Database, type TaskProxy } from '$lib/states/rxdb';
-	import { yStore } from '$lib/states/ystore';
-	import type { Observable } from 'rxjs';
-	import { getContext } from 'svelte';
+	import type { Observable } from "rxjs";
+	import { type TaskProxy } from "$lib/states/rxdb";
 
-	export let task: Observable<TaskProxy>;
-	const db = getContext<Database>('db');
-	let text = yStore(db.texts.get($task.textId));
+	interface Props {
+		task: Observable<TaskProxy>;
+	}
+
+	let { task }: Props = $props();
+	let text = $task.text();
 </script>
 
-{$text || '未命名'}
+{$text || "未命名"}

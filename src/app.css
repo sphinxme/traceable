@@ -79,6 +79,7 @@ body {
 }
 html, body, #app {
   overflow: hidden;
+  height: 100%;
   /* background-color: brown; */
   border-radius: 20px;
 }

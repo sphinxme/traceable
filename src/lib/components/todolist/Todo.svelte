@@ -1,42 +1,55 @@
 <script lang="ts">
-	import { getContext, tick } from 'svelte';
+	import { getContext, tick } from "svelte";
 
-	import type { KeyboardHandler } from '../quill/model';
-	import CollapseIcon from './item/overlay/CollapseButton.svelte';
-	import CheckButton from './item/overlay/CheckButton.svelte';
-	import * as ContextMenu from '$lib/components/ui/context-menu';
+	import type { KeyboardHandler } from "../quill/model";
+	import CollapseIcon from "./item/overlay/CollapseButton.svelte";
+	import CheckButton from "./item/overlay/CheckButton.svelte";
+	import * as ContextMenu from "$lib/components/ui/context-menu";
 
-	import { draggingTaskId } from './dnd/state';
-	import { Database, type TaskProxy } from '$lib/states/rxdb';
-	import TaskDraggable from './dnd/TaskDraggable.svelte';
-	import Handle from './item/overlay/Handle.svelte';
-	import TodoItem from './item/TodoItem.svelte';
-	import TodoList from './TodoList.svelte';
-	import type { Observable } from 'rxjs';
+	import { draggingTaskId } from "./dnd/state";
+	import { Database, type TaskProxy } from "$lib/states/rxdb";
+	import TaskDraggable from "./dnd/TaskDraggable.svelte";
+	import Handle from "./item/overlay/Handle.svelte";
+	import TodoItem from "./item/TodoItem.svelte";
+	import TodoList from "./TodoList.svelte";
+	import type { Observable } from "rxjs";
 
-	let todoItem: TodoItem;
+	// svelte-ignore non_reactive_update
 	let todoList: TodoList;
+	let todoItem: TodoItem;
+	let db: Database = getContext("db");
+	const focusByLocationFromTop: (paths: { id: string; index: number }[]) => void = getContext("focusByLocation");
+	const paths:{push: (subpaths: Observable<TaskProxy>[]) => void;} = getContext("paths"); // TODO:抽出来
 
-	// export let parentTaskId: string;
-	export let parent: Observable<TaskProxy>;
-	export let task: Observable<TaskProxy>;
-	let db: Database = getContext('db');
+	interface Props {
+		parent: Observable<TaskProxy>;
+		task: Observable<TaskProxy>;
+		currentPath: Observable<TaskProxy>[];
+		location: { id: string; index: number }[];
+		depth?: number;
+		arrowUpHandle: KeyboardHandler;
+		arrowDownHandle: KeyboardHandler;
+		insertBeforeMyself: (text: string) => boolean;
+		insertAfterMyself: (text: string) => boolean;
+		tabHandle: () => boolean;
+		untabHandle: () => boolean;
+		movedUp: (childTaskId: string) => boolean;
+	}
 
-	export let currentPath: Observable<TaskProxy>[];
-	export let location: { id: string; index: number }[];
-	export let depth = 1;
-	export let isLastOne = true;
-
-	const focusByLocationFromTop: (paths: { id: string; index: number }[]) => void =
-		getContext('focusByLocation');
-
-	export let arrowUpHandle: KeyboardHandler;
-	export let arrowDownHandle: KeyboardHandler;
-	export let insertBeforeMyself: (text: string) => boolean;
-	export let insertAfterMyself: (text: string) => boolean;
-	export let tabHandle: () => boolean;
-	export let untabHandle: () => boolean;
-	export let movedUp: (childTaskId: string) => boolean;
+	let {
+		parent,
+		task,
+		currentPath,
+		location,
+		depth = 1,
+		arrowUpHandle,
+		arrowDownHandle,
+		insertBeforeMyself,
+		insertAfterMyself,
+		tabHandle,
+		untabHandle,
+		movedUp
+	}: Props = $props();
 
 	export const focus = (index: number) => todoItem.focus(index);
 	export const focusBottom = (index: number) => {
@@ -47,7 +60,6 @@
 		}
 	};
 	export const addChild = (seq: number) => $task.addChild(seq);
-	console.log(`${$task.id} reloading`);
 	export const moveInto = (seq: number, childId: string) => {
 		$task.moveInto(seq, childId);
 		console.log(`${childId} move into ${$task.id}`);
@@ -56,7 +68,9 @@
 			// todoList.focusBottom(0); // FIXME:整个组件reload, 导致focus失效
 		}, 100);
 	};
-	export const foucsIntoByLocation = (paths: { id: string; index: number }[]) => {
+	export const foucsIntoByLocation = (
+		paths: { id: string; index: number }[],
+	) => {
 		if (!paths.length) {
 			focus(0);
 			return;
@@ -71,8 +85,8 @@
 		}
 	};
 
-	const paths = getContext('paths') as { push: (subpaths: Observable<TaskProxy>[]) => void }; // TODO:抽出来
-	let folded = false;
+
+	let folded = $state(false);
 	const hasChildren = () => !folded && todoList.hasChildren();
 	const itemArrowDownHandle: KeyboardHandler = (range, context, quill) => {
 		if (!folded && todoList.hasChildren()) {
@@ -95,20 +109,16 @@
 			// 如果不是截断的 是在末尾的
 			if (hasChildren()) {
 				// 如果有孩子 在下层顶端插入一个空的孩子
-				todoList.insertItem(0, '');
+				todoList.insertItem(0, "");
 				return false;
 			} else {
 				// 如果没孩子 让上级在下面加一个空的兄弟
-				return insertAfterMyself('');
+				return insertAfterMyself("");
 			}
 		}
 	};
 
-	let meDragging: boolean;
-	$: {
-		meDragging = $draggingTaskId == $task.id;
-	}
-
+	let meDragging: boolean = $derived($draggingTaskId == $task.id);
 	const toggleTaskStatus = () => {
 		$task.patch({ isCompleted: !$task.isCompleted });
 	};
@@ -124,36 +134,47 @@
 		{tabHandle}
 		{untabHandle}
 	>
-		<svelte:fragment slot="handle">
-			<ContextMenu.Root>
-				<ContextMenu.Trigger
-					><TaskDraggable {parent} taskId={$task.id}>
-						<Handle taskId={$task.id} on:click={() => paths.push(currentPath)} />
-					</TaskDraggable></ContextMenu.Trigger
-				>
-				<ContextMenu.Content>
-					<ContextMenu.Item inset on:click={() => db.deleteTask($task.id, $parent.id)}
-						>删除</ContextMenu.Item
+		{#snippet handle()}
+			
+				<ContextMenu.Root>
+					<ContextMenu.Trigger
+						><TaskDraggable {parent} taskId={$task.id}>
+							<Handle
+								taskId={$task.id}
+								onclick={() => paths.push(currentPath)}
+							/>
+						</TaskDraggable></ContextMenu.Trigger
 					>
-				</ContextMenu.Content>
-			</ContextMenu.Root>
-		</svelte:fragment>
+					<ContextMenu.Content>
+						<ContextMenu.Item
+							inset
+							onclick={() => db.deleteTask($task.id, $parent.id)}
+							>删除</ContextMenu.Item
+						>
+					</ContextMenu.Content>
+				</ContextMenu.Root>
+			
+			{/snippet}
 
-		<svelte:fragment slot="overlay">
-			{#if !meDragging}
-				<div
-					class="flex flex-row items-center opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
-				>
-					<!-- <ItemMenuButton on:delete={() => db.deleteTask(task.id, parentTaskId)} /> -->
-					<CheckButton isCompleted={$task.isCompleted} on:click={toggleTaskStatus} />
-				</div>
-				<CollapseIcon
-					bind:folded
-					on:folded={() => console.log('folded')}
-					on:unfolded={() => console.log('unfolded')}
-				/>
-			{/if}
-		</svelte:fragment>
+		{#snippet overlay()}
+			
+				{#if !meDragging}
+					<div
+						class="flex flex-row items-center opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
+					>
+						<CheckButton
+							isCompleted={$task.isCompleted}
+							onclick={toggleTaskStatus}
+						/>
+					</div>
+					<CollapseIcon
+						bind:folded
+						onfolded={() => console.log("folded")}
+						onunfolded={() => console.log("unfolded")}
+					/>
+				{/if}
+			
+			{/snippet}
 	</TodoItem>
 
 	{#if !folded}
@@ -168,12 +189,13 @@
 			}}
 			{arrowDownHandle}
 			parent={task}
-			{isLastOne}
 			moveUp={movedUp}
 		>
-			<div slot="side" class="flex w-9 flex-row items-start pb-0 pl-1">
-				<div class=" h-full bg-slate-300" style="width: 1px;"></div>
-			</div>
+			{#snippet side()}
+				<div class="flex w-9 flex-row items-start pb-0 pl-1">
+					<div class=" h-full bg-slate-300" style="width: 1px;"></div>
+				</div>
+			{/snippet}
 		</TodoList>
 	{/if}
 
@@ -182,6 +204,6 @@
 		<div
 			class=" absolute z-50 ml-5 h-full w-full rounded-md bg-slate-500 opacity-0 transition duration-100"
 			class:opacity-30={meDragging}
-		/>
+		></div>
 	{/if}
 </div>

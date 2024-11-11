@@ -50,5 +50,5 @@ export function roundToNearest15Minutes(time: Dayjs) {
  * 当前这天是否是休息日(周末为休息日)
  */
 export function isRestDay(day: Dayjs) {
-    return (day.day() + 6) % 7 >= 5;
+    return day.day() == 6;
 }

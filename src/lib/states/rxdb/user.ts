@@ -1,6 +1,6 @@
 import type { RxCollection, RxCollectionCreator, RxDocument } from "rxdb";
-import { type User, UserSchema } from "./rxdb.schema";
-import type { Database } from "./rxdb";
+import { type User, UserSchema } from "./rxdb.schema.ts";
+import type { Database } from "./rxdb.ts";
 
 export type UserProxy = RxDocument<User>;
 export type UserCollection = RxCollection<User>;

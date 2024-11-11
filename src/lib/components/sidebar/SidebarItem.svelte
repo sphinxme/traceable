@@ -1,6 +1,9 @@
 <script lang="ts">
-	export let path: string;
-	export let href: string;
+	let {
+		children,
+		path,
+		href,
+	}: { children: any; path: string; href: string } = $props();
 
 	// import { page } from '$app/stores';
 
@@ -14,5 +17,5 @@
 	class="m-1 rounded-lg p-2 px-4 text-center text-lg transition-colors duration-300 hover:bg-slate-200"
 	class:bg-slate-200={false}
 >
-	<slot />
+	{@render children?.()}
 </a>

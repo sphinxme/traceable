@@ -4,7 +4,11 @@
 	import type { Observable } from 'rxjs';
 	import TaskText from './TaskText.svelte';
 
-	export let paths: Observable<TaskProxy>[];
+	interface Props {
+		paths: Observable<TaskProxy>[];
+	}
+
+	let { paths = $bindable() }: Props = $props();
 </script>
 
 <Root>
@@ -12,15 +16,15 @@
 		{#each paths as task, i}
 			{#if i + 1 < paths.length}
 				<Item>
-					<Link asChild href="lang" let:attrs>
-						<button
-							{...attrs}
-							on:click={() => {
-								paths = paths.slice(0, i + 1);
-							}}
-						>
-							<TaskText {task} />
-						</button>
+					<Link href="lang" >
+						{#snippet child(attrs)}
+							<button
+								{...attrs}
+								onclick={() => {paths = paths.slice(0, i + 1)}}
+							>
+								<TaskText {task} />
+							</button>
+						{/snippet}
 					</Link>
 				</Item>
 				<Separator />

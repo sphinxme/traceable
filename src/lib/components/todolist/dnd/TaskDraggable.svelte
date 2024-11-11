@@ -6,10 +6,7 @@
 	import { getContext } from 'svelte';
 
 	const panelId: string = getContext('panelId');
-	export let taskId: string;
-	export let parent: Observable<TaskProxy>;
 
-	export let meDragging = false;
 
 	let dragOpts: DraggableActionParams<TaskDnDData> = {
 		channel: 'tasks',
@@ -28,8 +25,22 @@
 		}
 	};
 
-	let classes: string | undefined = undefined;
-	export { classes as class };
+	interface Props {
+		taskId: string;
+		parent: Observable<TaskProxy>;
+		meDragging?: boolean;
+		class?: string | undefined;
+		children?: import('svelte').Snippet;
+	}
+
+	let {
+		taskId,
+		parent,
+		meDragging = $bindable(false),
+		class: classes = undefined,
+		children
+	}: Props = $props();
+	
 </script>
 
 <div
@@ -38,5 +49,5 @@
 	use:draggable={dragOpts}
 	style:opacity={meDragging ? '100' : '100'}
 >
-	<slot></slot>
+	{@render children?.()}
 </div>

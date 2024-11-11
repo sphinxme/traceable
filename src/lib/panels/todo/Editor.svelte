@@ -1,22 +1,22 @@
 <script lang="ts">
-	import { setContext } from 'svelte';
-	import { Skull, BatteryFull } from 'lucide-svelte';
-	import TodoView from '$lib/views/TodoView.svelte';
-	import Navigator from './Navigator.svelte';
-	import type { TaskProxy } from '$lib/states/rxdb';
-	import type { Observable } from 'rxjs';
+	import { setContext } from "svelte";
+	import { Skull, BatteryFull } from "lucide-svelte";
+	import TodoView from "$lib/views/TodoView.svelte";
+	import Navigator from "./Navigator.svelte";
+	import type { TaskProxy } from "$lib/states/rxdb";
+	import type { Observable } from "rxjs";
 
-	export let rootTask: Observable<TaskProxy>;
-	let paths: Observable<TaskProxy>[] = [rootTask];
-	$: currentPageTask = paths.at(-1) || rootTask;
-	$: console.log({ c: paths.at(-1) || rootTask });
-	const pushPaths = (subpaths: Observable<TaskProxy>[]) => {
-		paths = [...paths, ...subpaths];
-	};
+	interface Props {
+		rootTask: Observable<TaskProxy>;
+	}
 
-	setContext('panelId', 'root');
-	setContext('paths', {
-		push: pushPaths
+	let { rootTask }: Props = $props();
+	let paths: Observable<TaskProxy>[] = $state([rootTask]);
+	let currentPageTask = $derived(paths.at(-1) || rootTask);
+
+	setContext("panelId", "root");
+	setContext("paths", {
+		push: (subpaths: Observable<TaskProxy>[]) => paths.push(...subpaths),
 	});
 </script>
 
@@ -27,7 +27,12 @@
 	<!-- header -->
 	<div data-tauri-drag-region class="flex flex-row">
 		<Navigator bind:paths />
-		<div data-tauri-drag-region class="flex flex-grow items-center justify-center">---</div>
+		<div
+			data-tauri-drag-region
+			class="flex flex-grow items-center justify-center"
+		>
+			---
+		</div>
 		<div data-tauri-drag-region class="flex flex-row">
 			<BatteryFull />
 			<Skull />
