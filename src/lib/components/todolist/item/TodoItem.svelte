@@ -21,9 +21,9 @@
 		tabHandle?: any;
 		untabHandle?: any;
 		isLastOneEmpty?: boolean;
-		overlay?: import('svelte').Snippet;
-		handle?: import('svelte').Snippet;
-		drag?: import('svelte').Snippet;
+		overlay?: import("svelte").Snippet;
+		handle?: import("svelte").Snippet;
+		drag?: import("svelte").Snippet;
 	}
 
 	let {
@@ -36,7 +36,7 @@
 		overlay,
 		handle,
 		drag,
-		isLastOneEmpty = $bindable()
+		isLastOneEmpty = $bindable(),
 	}: Props = $props();
 	let container: HTMLDivElement;
 	let editor: Quill;

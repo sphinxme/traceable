@@ -14,7 +14,7 @@
 	<Pane>
 		<Schedule />
 	</Pane>
-	<PaneResizer />
+	<PaneResizer class=" hover:bg-slate-300 transition-colors w-0.5" />
 	<Pane>
 		{#await db.getRootId() then rootTask}
 			<Editor rootTask={rootTask.$} />

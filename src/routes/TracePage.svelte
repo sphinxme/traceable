@@ -11,12 +11,11 @@
 	const db = getContext<Database>("db");
 </script>
 
-<PaneGroup direction="horizontal" class="rounded-lg">
+<PaneGroup direction="horizontal">
 	<Pane>
 		<Calendar />
 	</Pane>
-	<!-- TODO:resizer还不能用 -->
-	<PaneResizer />
+	<PaneResizer class=" hover:bg-slate-300 transition-colors w-0.5" />
 	<Pane>
 		{#await db.getRootId()}
 			loading

@@ -8,7 +8,7 @@ import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
 import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
 import { getFetchWithCouchDBAuthorization, replicateCouchDB } from 'rxdb/plugins/replication-couchdb';
-import { fetch } from '@tauri-apps/plugin-http';
+// import { fetch } from '@tauri-apps/plugin-http';
 
 import { id } from "./utils.svelte";
 import {
@@ -60,8 +60,12 @@ export class Database {
             p.once("synced", resolve);
         });
     }
+    async load2() {
+        console.log("load2");
+    }
 
     async load() {
+        console.log("im happy2")
         this.rxdb = await createRxDatabase({
             name: "traceable",
             storage: getRxStorageDexie(),
@@ -78,9 +82,12 @@ export class Database {
         this.events = collection.events as EventCollection;
         this.journals = collection.journals as JournalCollection;
         this.users = collection.users as UserCollection;
+        console.log("im happy1")
 
-        const authed_fetch1 = getFetchWithCouchDBAuthorization(PUBLIC_COUCHDB_USER, PUBLIC_COUCHDB_PASSWORD);
-        let authed_fetch2: typeof fetch = (input, init) => {
+
+
+        const authed_fetch_broswer = getFetchWithCouchDBAuthorization(PUBLIC_COUCHDB_USER, PUBLIC_COUCHDB_PASSWORD);
+        const authed_fetch_tauri: typeof fetch = (input, init) => {
             // 构建 Basic Auth 字符串
             const basicAuth = `Basic ${btoa(`${PUBLIC_COUCHDB_USER}:${PUBLIC_COUCHDB_PASSWORD}`)}`;
 
@@ -97,10 +104,9 @@ export class Database {
             // 调用原始fetch并返回结果
             return fetch(input, newInit);
         }
-
-
+        let authed_fetch = authed_fetch_broswer;
         if (!('__TAURI_INTERNALS__' in window)) {
-            authed_fetch2 = authed_fetch1
+            authed_fetch = authed_fetch_tauri;
         }
 
 
@@ -108,7 +114,7 @@ export class Database {
             replicationIdentifier: 'events',
             collection: this.events,
             url: `${PUBLIC_COUCHDB_ENDPOINT}/events/`,
-            fetch: authed_fetch2,
+            fetch: authed_fetch,
             pull: {},
             push: {},
         })
@@ -117,7 +123,7 @@ export class Database {
             replicationIdentifier: 'journal',
             collection: collection.journals,
             url: `${PUBLIC_COUCHDB_ENDPOINT}/journals/`,
-            fetch: authed_fetch2,
+            fetch: authed_fetch,
             pull: {},
             push: {}
         })
@@ -126,7 +132,7 @@ export class Database {
             replicationIdentifier: 'users',
             collection: collection.users,
             url: `${PUBLIC_COUCHDB_ENDPOINT}/users/`,
-            fetch: authed_fetch2,
+            fetch: authed_fetch,
             pull: {},
             push: {}
         })
@@ -135,7 +141,7 @@ export class Database {
             replicationIdentifier: 'tasks',
             collection: this.rxdb.collections.tasks,
             url: `${PUBLIC_COUCHDB_ENDPOINT}/tasks/`,
-            fetch: authed_fetch2,
+            fetch: authed_fetch,
             pull: {},
             push: {}
         })
@@ -149,10 +155,10 @@ export class Database {
         await Promise.all([
             this.loadFromIndexedDB().then(log("indexedDB loaded")),
             this.loadFromLiveBlocks().then(log("loaded from live blocks")),
-            // replicationEventState.awaitInitialReplication().then(log("loaded event state")),
-            // replicationJournalState.awaitInitialReplication().then(log("loaded journal state")),
-            // replicationTaskState.awaitInitialReplication().then(log("loaded task state")),
-            // replicationUserState.awaitInitialReplication().then(log("loaded user state")),
+            replicationEventState.awaitInitialReplication().then(log("loaded event state")),
+            replicationJournalState.awaitInitialReplication().then(log("loaded journal state")),
+            replicationTaskState.awaitInitialReplication().then(log("loaded task state")),
+            replicationUserState.awaitInitialReplication().then(log("loaded user state")),
         ])
 
         this.texts = this.doc.getMap("texts");

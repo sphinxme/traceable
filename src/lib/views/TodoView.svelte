@@ -52,18 +52,15 @@
 			}}
 		/>
 	</div>
-	<!-- TODO:还没弄好 -->
-	{#if isLastOneEmpty}
-		<!-- svelte-ignore a11y_interactive_supports_focus -->
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<div
-			role="button"
-			class="ml-3.5 flex w-full flex-row rounded-lg p-1 opacity-20 transition-colors duration-300 hover:bg-slate-300"
-			onclick={() => {
-				$task.addChild();
-			}}
-		>
-			<SquarePlus size={20} />
-		</div>
-	{/if}
+	<!-- svelte-ignore a11y_interactive_supports_focus -->
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<div
+		role="button"
+		class="ml-3.5 flex w-full flex-row rounded-lg p-1 opacity-20 transition-colors duration-300 hover:bg-slate-300"
+		onclick={() => {
+			$task.addChild();
+		}}
+	>
+		<SquarePlus size={20} />
+	</div>
 </div>

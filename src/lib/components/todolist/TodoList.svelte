@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { KeyboardHandler } from "../quill/model";
-	import type {Snippet} from 'svelte'
+	import type { Snippet } from "svelte";
 	// import { flip } from 'svelte/animate';
 	import { getContext } from "svelte";
 	import { Database, type TaskProxy } from "$lib/states/rxdb";
@@ -34,7 +34,7 @@
 		arrowUpHandle = () => true,
 		arrowDownHandle = () => true,
 		moveUp = () => true,
-		side
+		side,
 	}: Props = $props();
 
 	const focusByLocationFromTop: (
@@ -43,13 +43,17 @@
 
 	const cache = new Map<string, Promise<Observable<TaskProxy>>>();
 	const queryTaskData = (childId: string) => {
-		if (!cache.has(childId)) {	
-			const p = new Promise<Observable<TaskProxy>>(async (resolve, reject) => {	
-				const result = db.tasks.findById(childId).$.pipe(filterNullish());
-				const t = await firstValueFrom(result);
-				result.subscribe((ttt) => console.log({ ttt })); //TODO:为什么????
-				resolve(result);
-			});
+		if (!cache.has(childId)) {
+			const p = new Promise<Observable<TaskProxy>>(
+				async (resolve, reject) => {
+					const result = db.tasks
+						.findById(childId)
+						.$.pipe(filterNullish());
+					const t = await firstValueFrom(result);
+					result.subscribe((ttt) => console.log({ ttt })); //TODO:为什么????
+					resolve(result);
+				},
+			);
 			cache.set(childId, p);
 		}
 		return cache.get(childId);
@@ -110,6 +114,14 @@
 		}, 100);
 		return false;
 	};
+
+	$effect.pre(() => {
+		if ($children) {
+			const a = document.startViewTransition();
+		}
+	});
+
+	// $effect(() => {});
 </script>
 
 <div class="flex w-full flex-row">
@@ -117,75 +129,77 @@
 
 	<div class="relative w-full" role="list">
 		{#each $children as childId, i (childId)}
-			{#await queryTaskData(childId)}
-				loading...
-			{:then child}
-				<TaskDropable
-					{parent}
-					index={i}
-					topTaskId={childId}
-					bottomTaskId={$children[i - 1]}
-					{depth}
-				/>
-				<Todo
-					currentPath={[...currentPath, child!]}
-					location={[...location, { index: i, id: childId }]}
-					depth={depth + 1}
-					bind:this={itemRefs[childId]}
-					arrowUpHandle={(range, context, quill) => {
-						let nextIndex = i - 1;
-						if (nextIndex < 0) {
-							return arrowUpHandle(range, context, quill); // 到头了
-						}
-						getIndexedItem(nextIndex).focusBottom(range.index);
-						return false;
-					}}
-					arrowDownHandle={(range, context, quill) => {
-						let nextIndex = i + 1;
-						if (nextIndex >= $children.length) {
-							return arrowDownHandle(range, context, quill); // 到头了
-						}
-
-						getIndexedItem(nextIndex).focus(range.index);
-						return false;
-					}}
-					insertAfterMyself={(text) => {
-						insertItem(i + 1, text);
-						return false;
-					}}
-					insertBeforeMyself={(text) => {
-						insertItem(i, text);
-						return false;
-					}}
-					tabHandle={() => {
-						if (i === 0) {
+			<div style:view-transition-name={childId}>
+				{#await queryTaskData(childId)}
+					loading...
+				{:then child}
+					<TaskDropable
+						{parent}
+						index={i}
+						topTaskId={childId}
+						bottomTaskId={$children[i - 1]}
+						{depth}
+					/>
+					<Todo
+						currentPath={[...currentPath, child!]}
+						location={[...location, { index: i, id: childId }]}
+						depth={depth + 1}
+						bind:this={itemRefs[childId]}
+						arrowUpHandle={(range, context, quill) => {
+							let nextIndex = i - 1;
+							if (nextIndex < 0) {
+								return arrowUpHandle(range, context, quill); // 到头了
+							}
+							getIndexedItem(nextIndex).focusBottom(range.index);
 							return false;
-						}
-						$parent.removeChild(childId);
-						getIndexedItem(i - 1).moveInto(
-							Number.MAX_SAFE_INTEGER,
-							childId,
-						);
-						return false;
-					}}
-					untabHandle={() => {
-						if (depth === 1) {
-							return false;
-						}
+						}}
+						arrowDownHandle={(range, context, quill) => {
+							let nextIndex = i + 1;
+							if (nextIndex >= $children.length) {
+								return arrowDownHandle(range, context, quill); // 到头了
+							}
 
-						const upMoved = moveUp(childId);
-						if (upMoved === false) {
+							getIndexedItem(nextIndex).focus(range.index);
+							return false;
+						}}
+						insertAfterMyself={(text) => {
+							insertItem(i + 1, text);
+							return false;
+						}}
+						insertBeforeMyself={(text) => {
+							insertItem(i, text);
+							return false;
+						}}
+						tabHandle={() => {
+							if (i === 0) {
+								return false;
+							}
 							$parent.removeChild(childId);
+							getIndexedItem(i - 1).moveInto(
+								Number.MAX_SAFE_INTEGER,
+								childId,
+							);
 							return false;
-						}
-						return true;
-					}}
-					movedUp={(childchildTaskId) =>
-						moveInto(childchildTaskId, childId, i + 1)}
-					task={child!}
-					{parent}
-				/>
-			{/await}
+						}}
+						untabHandle={() => {
+							if (depth === 1) {
+								return false;
+							}
+
+							const upMoved = moveUp(childId);
+							if (upMoved === false) {
+								$parent.removeChild(childId);
+								return false;
+							}
+							return true;
+						}}
+						movedUp={(childchildTaskId) =>
+							moveInto(childchildTaskId, childId, i + 1)}
+						task={child!}
+						{parent}
+					/>
+				{/await}
+			</div>
 		{/each}
 		<TaskDropable
 			{parent}

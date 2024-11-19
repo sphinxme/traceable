@@ -1,1 +1,7 @@
-This is Sphinx/Traceable.
+<script lang="ts">
+    import { push } from "svelte-spa-router";
+
+    push("/trace");
+</script>
+
+Redirecting...

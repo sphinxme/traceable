@@ -22,7 +22,7 @@
 
 <div
 	data-tauri-drag-region
-	class="flex h-full grow flex-col overflow-auto rounded bg-background p-4 shadow-xl"
+	class="flex h-full grow flex-col overflow-auto rounded bg-background p-4 pt-0 shadow-xl"
 >
 	<!-- header -->
 	<div data-tauri-drag-region class="flex flex-row">

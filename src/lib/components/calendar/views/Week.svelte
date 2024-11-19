@@ -62,7 +62,17 @@
 	// 	eventSubscriber.destory();
 	// });
 	// let eventIds = eventSubscriber.fetchAllEvents();
-	const events = db.events.find().$.pipe(filterNullish());
+	const events = db.events
+		.find()
+		.where({
+			start: {
+				$gt: displayStartDay.valueOf(),
+			},
+			// end: {
+			// 	"$lt": displayEndDay.valueOf()
+			// }
+		})
+		.$.pipe(filterNullish());
 	const loadingEvents = firstValueFrom(events);
 
 	const eventTaskCache = new Map<string, Promise<TaskProxy>>();
@@ -97,28 +107,28 @@
 			style:grid-row="1 / 1"
 			style:grid-template-columns="subgrid"
 			style:grid-template-rows="subgrid"
-			class=" header-shadow sticky top-0 bg-background pb-1 pt-4 text-center text-slate-700"
+			class=" header-shadow sticky top-0 bg-background pb-4 pt-0 text-center text-slate-700"
 			style:z-index="11"
 		>
 			{#each displayDays as day, i (day)}
 				<div
 					data-tauri-drag-region
-					class=" flex flex-col items-center justify-end"
+					class=" flex flex-col items-center justify-between"
 					style:grid-area="1 / {i + 1} / 1 / {i + 1}"
 				>
-					{#if day.isSame(dayjs(), "day")}
-						<Badge class=" px-1.5" variant="destructive">
-							{day.format("ddd")}
-						</Badge>
-					{:else}
-						<div class="text-sm">{day.format("ddd")}</div>
-					{/if}
+					<div
+						class="text-base font-light"
+						class:font-light={!day.isSame(dayjs(), "day")}
+						class:text-red-500={day.isSame(dayjs(), "day")}
+					>
+						{day.format("ddd")}
+					</div>
 
 					<div
-						style:font-size="0.6rem"
+						style:font-size="0.7rem"
 						class="text-xs font-extralight text-slate-400"
 					>
-						{day.format("MM/DD")}
+						{day.format("MM-DD")}
 					</div>
 				</div>
 			{/each}
@@ -143,7 +153,7 @@
 					style:z-index="7"
 					class=" absolute left-full top-0 h-0 w-dvw -translate-y-1/2 border-b border-slate-300"
 				></div>
-				all-day
+				<p class=" pr-2">全天</p>
 				<div
 					style:z-index="7"
 					class=" absolute left-full top-full h-0 w-dvw -translate-y-1/2 border-b border-slate-300"
@@ -162,7 +172,7 @@
 						style:flex="2"
 						class="relative flex items-center justify-end text-xs"
 					>
-						<p class=" pr-1">
+						<p class=" pr-2">
 							{hour % 12 ? hour % 12 : hour > 12 ? 12 : 0}
 							{hour > 12 ? "PM" : "AM"}
 						</p>
