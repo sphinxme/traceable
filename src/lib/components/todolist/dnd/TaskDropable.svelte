@@ -1,24 +1,35 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
-	import { droppable, type DroppableActionParams } from '$lib/components/dnd/droppable';
-	import type { TaskDnDData } from './state';
-	import { dragging } from '$lib/components/dnd/state';
-	import { type TaskProxy } from '$lib/states/rxdb';
-	import type { Observable } from 'rxjs';
+	import { getContext } from "svelte";
+	import {
+		droppable,
+		type DroppableActionParams,
+	} from "$lib/components/dnd/droppable";
+	import type { TaskDnDData } from "./state";
+	import { dragging } from "$lib/components/dnd/state";
+	import { type TaskProxy } from "$lib/states/rxdb";
+	import type { Observable } from "rxjs";
+	interface Props {
+		parent: Observable<TaskProxy>;
+		index: number;
+		topTaskId?: string | undefined;
+		bottomTaskId?: string | undefined;
+		depth?: number;
+		panelId?: any;
+		hovering?: boolean;
+	}
 
-	export let parent: Observable<TaskProxy>;
-	export let index: number;
-
-	export let topTaskId: string | undefined = undefined;
-	export let bottomTaskId: string | undefined = undefined;
-
-	export let depth = 1;
-	export let panelId = getContext('panelId');
-
-	export let hovering = false;
+	let {
+		parent,
+		index,
+		topTaskId = undefined,
+		bottomTaskId = undefined,
+		depth = 1,
+		panelId = getContext("panelId"),
+		hovering = $bindable(false),
+	}: Props = $props();
 
 	const droppableOptions: DroppableActionParams<TaskDnDData> = {
-		channel: 'tasks',
+		channel: "tasks",
 		onMove({ draggingTaskId, originParentTask }) {
 			if (index < 0) {
 				throw new Error(`invalid index:${index}`);
@@ -35,7 +46,11 @@
 				let children = [...$parent.children];
 				children.splice(originIndex, 1);
 				console.log({ index, originIndex, children, draggingTaskId });
-				children.splice(Math.min(index, children.length), 0, draggingTaskId);
+				children.splice(
+					Math.min(index, children.length),
+					0,
+					draggingTaskId,
+				);
 				$parent.patch({ children });
 			} else {
 				// 1.删除原来的边(只删边)
@@ -45,7 +60,7 @@
 			}
 		},
 		onLink({ draggingTaskId }) {
-			console.log('on task link');
+			console.log("on task link");
 			$parent.spliceChildren(index, 0, draggingTaskId);
 		},
 		droppable(hotKey, { draggingTaskId, originPanelId, originParentTask }) {
@@ -60,18 +75,22 @@
 			if (hotKey) {
 				shouldMove = !shouldMove;
 				console.log({ shouldMove });
-				console.log(shouldMove ? 'move' : 'link');
+				console.log(shouldMove ? "move" : "link");
 			}
-			return shouldMove ? 'move' : 'link';
+			return shouldMove ? "move" : "link";
 		},
 
 		setHoverStatus: (status) => (hovering = status),
-		getHoverStatus: () => hovering
+		getHoverStatus: () => hovering,
 	};
 </script>
 
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class=" relative {hovering ? 'h-2' : 'h-0'} transition-height w-full duration-300">
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div
+	class=" relative {hovering
+		? 'h-2'
+		: 'h-0'} transition-height w-full duration-300"
+>
 	<!-- 拖拽检测区域(超出上方的relative范围) -->
 	{#if true || $dragging}
 		<div
@@ -87,7 +106,7 @@
 	/* 指示器 */
 	.hovering::after {
 		position: absolute;
-		content: '';
+		content: "";
 		height: 4px;
 		width: 100%;
 		/* left: rem; */

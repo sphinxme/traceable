@@ -10,20 +10,21 @@ import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
 import { getFetchWithCouchDBAuthorization, replicateCouchDB } from 'rxdb/plugins/replication-couchdb';
 import { fetch } from '@tauri-apps/plugin-http';
 
-import { PUBLIC_LIVEBLOCKS_AUTH_ENDPOINT, PUBLIC_COUCHDB_ENDPOINT, PUBLIC_COUCHDB_USER, PUBLIC_COUCHDB_PASSWORD } from '$env/static/public';
-
-import { id } from "./utils";
+import { id } from "./utils.svelte";
 import {
     type TaskCollection,
     taskCollectionCreator,
     type TaskProxy,
-} from "./task";
+} from "./task.svelte";
 import { type EventCollection, eventCollectionCreator } from "./event";
 import { type JournalCollection, journalCollectionCreator } from "./journal";
 import { type UserCollection, userCollectionCreator } from "./user";
 addRxPlugin(RxDBQueryBuilderPlugin);
 addRxPlugin(RxDBDevModePlugin);
 
+const PUBLIC_COUCHDB_ENDPOINT = import.meta.env.VITE_COUCHDB_ENDPOINT;
+const PUBLIC_COUCHDB_USER = import.meta.env.VITE_COUCHDB_USER;
+const PUBLIC_COUCHDB_PASSWORD = import.meta.env.VITE_COUCHDB_PASSWORD;
 export class Database {
     doc: Y.Doc;
     texts!: Y.Map<Y.Text>; // id-Y.Text
@@ -52,12 +53,15 @@ export class Database {
 
     private loadFromLiveBlocks() {
         return new Promise<void>((resolve, reject) => {
-            const client = createClient({ authEndpoint: PUBLIC_LIVEBLOCKS_AUTH_ENDPOINT });
+            const client = createClient({ authEndpoint: import.meta.env.VITE_LIVEBLOCKS_AUTH_ENDPOINT });
             const { room, leave } = client.enterRoom("traceable-yjs"); // leave
             window.addEventListener("beforeunload", leave);
             const p = new LiveblocksYjsProvider(room, this.doc);
             p.once("synced", resolve);
         });
+    }
+    async load2() {
+        console.log("load2");
     }
 
     async load() {
@@ -78,8 +82,7 @@ export class Database {
         this.journals = collection.journals as JournalCollection;
         this.users = collection.users as UserCollection;
 
-        const authed_fetch1 = getFetchWithCouchDBAuthorization(PUBLIC_COUCHDB_USER, PUBLIC_COUCHDB_PASSWORD);
-        let authed_fetch2: typeof fetch = (input, init) => {
+        const authed_fetch: typeof fetch = (input, init) => {
             // 构建 Basic Auth 字符串
             const basicAuth = `Basic ${btoa(`${PUBLIC_COUCHDB_USER}:${PUBLIC_COUCHDB_PASSWORD}`)}`;
 
@@ -97,17 +100,11 @@ export class Database {
             return fetch(input, newInit);
         }
 
-
-        if (!('__TAURI_INTERNALS__' in window)) {
-            authed_fetch2 = authed_fetch1
-        }
-
-
         const replicationEventState = replicateCouchDB({
             replicationIdentifier: 'events',
             collection: this.events,
             url: `${PUBLIC_COUCHDB_ENDPOINT}/events/`,
-            fetch: authed_fetch2,
+            fetch: authed_fetch,
             pull: {},
             push: {},
         })
@@ -116,7 +113,7 @@ export class Database {
             replicationIdentifier: 'journal',
             collection: collection.journals,
             url: `${PUBLIC_COUCHDB_ENDPOINT}/journals/`,
-            fetch: authed_fetch2,
+            fetch: authed_fetch,
             pull: {},
             push: {}
         })
@@ -125,7 +122,7 @@ export class Database {
             replicationIdentifier: 'users',
             collection: collection.users,
             url: `${PUBLIC_COUCHDB_ENDPOINT}/users/`,
-            fetch: authed_fetch2,
+            fetch: authed_fetch,
             pull: {},
             push: {}
         })
@@ -134,7 +131,7 @@ export class Database {
             replicationIdentifier: 'tasks',
             collection: this.rxdb.collections.tasks,
             url: `${PUBLIC_COUCHDB_ENDPOINT}/tasks/`,
-            fetch: authed_fetch2,
+            fetch: authed_fetch,
             pull: {},
             push: {}
         })
@@ -161,6 +158,10 @@ export class Database {
     }
 
     async getRootId() {
+        if (this.rootTask) {
+            return this.rootTask
+        }
+
         let user = await this.users.findOne().exec();
         if (!user) {
             this.rootTask = await this.tasks.insert({

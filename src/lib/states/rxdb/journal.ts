@@ -1,8 +1,8 @@
 import type { RxCollection, RxCollectionCreator, RxDocument } from "rxdb";
-import { type Journal, JournalSchema } from "./rxdb.schema";
-import type { Database } from "./rxdb";
-import { id } from "./utils";
-import type { TaskProxy } from "./task";
+import { type Journal, JournalSchema } from "./rxdb.schema.ts";
+import type { Database } from "./rxdb.ts";
+import { id } from "./utils.svelte.js";
+import type { TaskProxy } from "./task.svelte.js";
 
 function methods(db: Database) {
     // async function getOrCreateJounral(

@@ -1,8 +1,12 @@
 <script lang="ts">
-	import { quill } from '$lib/components/quill/quill';
-	import * as Y from 'yjs';
+	import { quill } from "$lib/components/quill/quill";
+	import * as Y from "yjs";
 
-	export let text: Y.Text;
+	interface Props {
+		text: Y.Text;
+	}
+
+	let { text }: Props = $props();
 </script>
 
-<div use:quill={{ text }} />
+<div use:quill={{ text }}></div>

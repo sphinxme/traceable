@@ -1,37 +1,18 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "$schema": "https://schema.tauri.app/config/2.0.0-rc",
   "productName": "traceable",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "identifier": "com.sphinx.traceable",
   "build": {
-    "frontendDist": "../build",
+    "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
     "beforeDevCommand": "deno task dev",
     "beforeBuildCommand": "deno task build"
   },
-
   "app": {
-    "macOSPrivateApi": true,
     "windows": [
-      {
-        "title": "traceable",
-        "width": 1024,
-        "height": 768,
-        "resizable": true,
-        "fullscreen": false,
-        "decorations": false,
-        "transparent": true,
-        "dragDropEnabled": false
-      }
     ],
     "security": {
-      "assetProtocol": {
-        "enable": true,
-        "scope": [
-          "http://*/*",
-          "http://124.221.36.39:5984/*"
-        ]
-      },
       "csp": null
     }
   },

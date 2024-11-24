@@ -1,26 +1,52 @@
 <script lang="ts">
-	import 'quill/dist/quill.core.css';
-	import Quill from 'quill';
-	import { QuillBinding } from 'y-quill';
-	import { getContext, onMount } from 'svelte';
-	import * as Popover from '$lib/components/ui/popover';
+	import "quill/dist/quill.core.css";
+	import Quill from "quill";
+	import { QuillBinding } from "y-quill";
+	import { getContext, onMount } from "svelte";
+	import * as Popover from "$lib/components/ui/popover";
 
-	import { warpKeyHandler, type KeyboardHandler } from '../../quill/model';
-	import { type Database, type TaskProxy } from '$lib/states/rxdb';
-	import EventIndicator from './event/EventIndicator.svelte';
-	import NoteEditor from './note/NoteEditor.svelte';
-	import Overlay from './overlay/Overlay.svelte';
-	import { LastOneEmptyStatusKey, type LastOneEmptyStatus } from '$lib/states/types';
-	import { firstValueFrom, type Observable } from 'rxjs';
-	import { yStore } from '$lib/states/ystore';
+	import { warpKeyHandler, type KeyboardHandler } from "../../quill/model";
+	import { type Database, type TaskProxy } from "$lib/states/rxdb";
+	import EventIndicator from "./event/EventIndicator.svelte";
+	import NoteEditor from "./note/NoteEditor.svelte";
+	import Overlay from "./overlay/Overlay.svelte";
+	import { firstValueFrom, type Observable } from "rxjs";
+	import { yStore } from "$lib/states/rxdb/utils.svelte";
 
-	export let task: Observable<TaskProxy>;
+	interface Props {
+		task: Observable<TaskProxy>;
+		arrowUpHandle?: KeyboardHandler;
+		arrowDownHandle?: KeyboardHandler;
+		enterHandle?: KeyboardHandler;
+		tabHandle?: any;
+		untabHandle?: any;
+		isLastOneEmpty?: boolean;
+		overlay?: import("svelte").Snippet;
+		handle?: import("svelte").Snippet;
+		drag?: import("svelte").Snippet;
+	}
+
+	let {
+		task,
+		arrowUpHandle = () => true,
+		arrowDownHandle = () => true,
+		enterHandle = () => true,
+		tabHandle = () => true,
+		untabHandle = () => true,
+		overlay,
+		handle,
+		drag,
+		isLastOneEmpty = $bindable(),
+	}: Props = $props();
 	let container: HTMLDivElement;
 	let editor: Quill;
 
-	let db: Database = getContext('db');
+	let db: Database = getContext("db");
 
-	const events = db.events.find().where({ task: $task.id }).sort({ start: 'asc' }).$;
+	const events = db.events
+		.find()
+		.where({ task: $task.id })
+		.sort({ start: "asc" }).$;
 	const loadingEvents = firstValueFrom(events);
 	loadingEvents.then((e) => {
 		if (e.length) {
@@ -28,77 +54,68 @@
 		}
 	});
 
-	const text = db.texts.get($task.textId);
+	const text = $task.yText();
 	if (!text) {
 		throw new Error(`unknown textId:${$task.textId}`);
 	}
 
-	const rawNote = db.notes.get($task.noteId);
+	let rawNote = $task.yNote();
 	if (!rawNote) {
-		throw new Error(`unknown noteId:${$task.noteId}`);
+		throw new Error("empty note id!");
 	}
 	let note = yStore(rawNote);
 
-	export let arrowUpHandle: KeyboardHandler = () => true;
-	export let arrowDownHandle: KeyboardHandler = () => true;
-	export let enterHandle: KeyboardHandler = () => true;
-	export let tabHandle = () => true;
-	export let untabHandle = () => true;
 	let shiftEnterHandle: KeyboardHandler = () => {
 		// 弹出
 		openNoteEdit = true;
+
 		return false;
 	};
 
 	export const focus = (index: number) => editor.setSelection(index);
-
-	// const emit = createEventDispatcher<{
-	//     "arrowUp": KeyboardEvent
-	// }>();
-	// Quill.register("modules/cursors", QuillCursors);
-	let openNoteEdit = false;
+	let openNoteEdit = $state(false);
 
 	onMount(() => {
 		editor = new Quill(container, {
 			modules: {
-				toolbar: false
+				toolbar: false,
 			},
-			theme: 'bubble',
-			placeholder: 'placeholder'
+			theme: "bubble",
+			placeholder: "",
 		});
 		editor.keyboard.addBinding({
-			key: 'ArrowUp',
-			handler: warpKeyHandler(arrowUpHandle)
+			key: "ArrowUp",
+			handler: warpKeyHandler(arrowUpHandle),
 		});
 		editor.keyboard.addBinding({
-			key: 'ArrowDown',
-			handler: warpKeyHandler(arrowDownHandle)
+			key: "ArrowDown",
+			handler: warpKeyHandler(arrowDownHandle),
 		});
-		editor.keyboard.bindings['Enter'].unshift({
-			key: 'Enter',
+		editor.keyboard.bindings["Enter"].unshift({
+			key: "Enter",
 			shiftKey: false,
-			handler: warpKeyHandler(enterHandle)
+			handler: warpKeyHandler(enterHandle),
 		});
-		editor.keyboard.bindings['Enter'].unshift({
-			key: 'Enter',
+		editor.keyboard.bindings["Enter"].unshift({
+			key: "Enter",
 			shiftKey: true,
-			handler: warpKeyHandler(shiftEnterHandle)
+			handler: warpKeyHandler(shiftEnterHandle),
 		});
-		editor.keyboard.bindings['Tab'].unshift({
-			key: 'Tab',
+		editor.keyboard.bindings["Tab"].unshift({
+			key: "Tab",
 			shiftKey: true,
-			handler: untabHandle
+			handler: untabHandle,
 		});
-		editor.keyboard.bindings['Tab'].unshift({
-			key: 'Tab',
+		editor.keyboard.bindings["Tab"].unshift({
+			key: "Tab",
 			shiftKey: false,
-			handler: tabHandle
+			handler: tabHandle,
 		});
 
 		const binding = new QuillBinding(text, editor /*, provider.awareness*/);
 
 		const onTextChange = () => {
-			isLastOneEmpty.set(text.length === 0);
+			isLastOneEmpty = text.length === 0;
 		};
 		onTextChange();
 		text.observe(onTextChange);
@@ -107,31 +124,31 @@
 			binding.destroy();
 		};
 	});
-
-	const isLastOneEmpty = getContext<LastOneEmptyStatus>(LastOneEmptyStatusKey).isLastOneEmpty;
 </script>
 
 <div class="group flex flex-col">
 	<!-- 一整个横条 -->
 	<div class=" relative w-full">
 		<div class="flex w-full flex-row items-center">
-			<Overlay><slot name="overlay"></slot></Overlay>
+			<Overlay>{@render overlay?.()}</Overlay>
 			<div class="flex w-full flex-row items-center">
-				<slot name="handle"></slot>
+				{@render handle?.()}
 				<div
 					style:font-size="large"
-					style:text-decoration={$task.isCompleted ? 'line-through' : ''}
+					style:text-decoration={$task.isCompleted
+						? "line-through"
+						: ""}
 					style:opacity={$task.isCompleted ? 0.5 : 1}
 					bind:this={container}
-				/>
+				></div>
 			</div>
 		</div>
-		<slot name="drag" />
+		{@render drag?.()}
 	</div>
 	<!-- 横条下面的东西 -->
 
 	<div class="flex h-2 flex-row">
-		<div class="h-1 w-6" />
+		<div class="h-1 w-6"></div>
 		{#await loadingEvents}
 			loading
 		{:then}
@@ -141,7 +158,12 @@
 		{/await}
 	</div>
 
-	<Popover.Root bind:open={openNoteEdit}>
+	<Popover.Root
+		bind:open={openNoteEdit}
+		onOpenChange={(e) => {
+			console.log({ e });
+		}}
+	>
 		<Popover.Trigger>
 			<div class=" text-start text-slate-500">{$note}</div>
 		</Popover.Trigger>

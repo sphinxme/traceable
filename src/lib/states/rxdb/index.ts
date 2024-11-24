@@ -1,10 +1,10 @@
-import { Database, db } from "./rxdb";
-import { id } from "./utils";
-import type { TaskProxy } from "./task";
-import type { JournalProxy } from "./journal";
-import type { EventProxy } from "./event";
-import type { UserProxy } from "./user";
-import type { Event, Journal, Task, User } from "./rxdb.schema";
+import { Database, db } from "./rxdb.ts";
+import { id } from "./utils.svelte.js";
+import type { TaskProxy } from "./task.svelte.js";
+import type { JournalProxy } from "./journal.ts";
+import type { EventProxy } from "./event.ts";
+import type { UserProxy } from "./user.ts";
+import type { Event, Journal, Task, User } from "./rxdb.schema.ts";
 
 export { Database, db, id };
 export type {
