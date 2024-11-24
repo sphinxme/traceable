@@ -33,13 +33,13 @@
 		class="flex h-full flex-col bg-slate-100 rounded-lg"
 	>
 		<nav class="flex flex-col">
-			<SidebarItem path="/trace" href="/#/trace">
+			<SidebarItem path="/trace">
 				<SquareLibrary />
 			</SidebarItem>
-			<SidebarItem path="/organize" href="/#/organize">
+			<SidebarItem path="/organize">
 				<PanelsTopLeft />
 			</SidebarItem>
-			<SidebarItem path="/schedule" href="/#/schedule">
+			<SidebarItem path="/schedule">
 				<CalendarRange />
 			</SidebarItem>
 		</nav>

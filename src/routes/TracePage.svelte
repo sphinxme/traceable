@@ -1,6 +1,5 @@
 <script lang="ts">
-	// import * as Resizable from "$lib/components/ui/resizable";
-	import { PaneGroup, Pane, PaneResizer } from "paneforge";
+	import { PaneGroup, Pane, PaneResizer } from "$lib/components/ui/resizable";
 	import Calendar from "$lib/panels/calendar/Calendar.svelte";
 	import Editor from "$lib/panels/todo/Editor.svelte";
 	import type { Database } from "$lib/states/rxdb";
@@ -15,7 +14,7 @@
 	<Pane>
 		<Calendar />
 	</Pane>
-	<PaneResizer class=" hover:bg-slate-300 transition-colors w-0.5" />
+	<PaneResizer />
 	<Pane>
 		{#await db.getRootId()}
 			loading

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { getContext } from "svelte";
-	import dayjs from "dayjs";
+	import { getContext, onDestroy, onMount } from "svelte";
+	import dayjs, { Dayjs } from "dayjs";
 
 	import { Badge } from "$lib/components/ui/badge";
 	import { ScrollArea } from "$lib/components/ui/scroll-area";
@@ -86,6 +86,27 @@
 
 	let dayHeight = $state(0); // binding
 	let draggingTaskEvent: any = $state(null);
+
+	let currentTimePercentage = $state(0);
+	let animationFrameId = 0;
+	const totalMilliseconds = 24 * 60 * 60 * 1000; // 一天总毫秒数
+	const updateTimePosition = () => {
+		const now = dayjs();
+		const startOfDay = now.startOf("day");
+		const currentMilliseconds = now.diff(startOfDay);
+		currentTimePercentage = (currentMilliseconds / totalMilliseconds) * 100;
+	};
+	const animate = () => {
+		updateTimePosition();
+		animationFrameId = requestAnimationFrame(animate);
+	};
+
+	// onMount(() => {
+	// 	animate(); // 启动动画循环
+	// 	return () => {
+	// 		cancelAnimationFrame(animationFrameId);
+	// 	};
+	// });
 </script>
 
 <!-- 可滚动区域 -->
@@ -99,6 +120,18 @@
 		style:grid-template-rows="auto auto 1fr"
 		style:width="{sideWidth + size * displayDayNum}rem"
 	>
+		<!-- 时间指示器红线 -->
+		<div
+			style:grid-template-columns="1 / -1"
+			class="w-full flex-row border-b-2 border-red-500 top-0"
+			style:height="calc({70}%)"
+		>
+			<!-- <div
+				style:z-index="100"
+				class=" w-full h-1 absolute bg-red-500"
+				style:transform="translateY({currentTimePercentage}%)"
+			></div> -->
+		</div>
 		<!-- header -->
 		<div
 			data-tauri-drag-region
@@ -183,8 +216,7 @@
 						></div>
 					</div>
 				{/each}
-				<!-- TODO:查清楚这个是干嘛用的 -->
-				<!-- <div style:flex="1"></div>  -->
+				<div style:flex="1"></div>
 			</div>
 		</div>
 

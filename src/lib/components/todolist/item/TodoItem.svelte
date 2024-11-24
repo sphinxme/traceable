@@ -68,6 +68,7 @@
 	let shiftEnterHandle: KeyboardHandler = () => {
 		// 弹出
 		openNoteEdit = true;
+
 		return false;
 	};
 
@@ -80,7 +81,7 @@
 				toolbar: false,
 			},
 			theme: "bubble",
-			placeholder: "placeholder",
+			placeholder: "",
 		});
 		editor.keyboard.addBinding({
 			key: "ArrowUp",
@@ -157,7 +158,12 @@
 		{/await}
 	</div>
 
-	<Popover.Root bind:open={openNoteEdit}>
+	<Popover.Root
+		bind:open={openNoteEdit}
+		onOpenChange={(e) => {
+			console.log({ e });
+		}}
+	>
 		<Popover.Trigger>
 			<div class=" text-start text-slate-500">{$note}</div>
 		</Popover.Trigger>

@@ -81,9 +81,15 @@
 		getIndexedItem(-1)?.focusBottom(index);
 	};
 
-	export const insertItem = (i: number, text?: string) => {
+	export const insertItem = (
+		i: number,
+		text?: string,
+		focusToNew: boolean = false,
+	) => {
 		$parent.addChild(i, text);
-		setTimeout(() => focus(i), 100);
+		if (focusToNew) {
+			setTimeout(() => focus(i, text?.length), 100);
+		}
 	};
 
 	export const foucsIntoByLocation = (
@@ -115,11 +121,11 @@
 		return false;
 	};
 
-	$effect.pre(() => {
-		if ($children) {
-			const a = document.startViewTransition();
-		}
-	});
+	// $effect.pre(() => {
+	// 	if ($children) {
+	// 		const a = document.startViewTransition();
+	// 	}
+	// });
 
 	// $effect(() => {});
 </script>
@@ -163,7 +169,7 @@
 							return false;
 						}}
 						insertAfterMyself={(text) => {
-							insertItem(i + 1, text);
+							insertItem(i + 1, text, true);
 							return false;
 						}}
 						insertBeforeMyself={(text) => {

@@ -18,8 +18,11 @@
 	let todoList: TodoList;
 	let todoItem: TodoItem;
 	let db: Database = getContext("db");
-	const focusByLocationFromTop: (paths: { id: string; index: number }[]) => void = getContext("focusByLocation");
-	const paths:{push: (subpaths: Observable<TaskProxy>[]) => void;} = getContext("paths"); // TODO:抽出来
+	const focusByLocationFromTop: (
+		paths: { id: string; index: number }[],
+	) => void = getContext("focusByLocation");
+	const paths: { push: (subpaths: Observable<TaskProxy>[]) => void } =
+		getContext("paths"); // TODO:抽出来
 
 	interface Props {
 		parent: Observable<TaskProxy>;
@@ -48,7 +51,7 @@
 		insertAfterMyself,
 		tabHandle,
 		untabHandle,
-		movedUp
+		movedUp,
 	}: Props = $props();
 
 	export const focus = (index: number) => todoItem.focus(index);
@@ -84,7 +87,6 @@
 			todoList.foucsIntoByLocation(paths);
 		}
 	};
-
 
 	let folded = $state(false);
 	const hasChildren = () => !folded && todoList.hasChildren();
@@ -135,46 +137,42 @@
 		{untabHandle}
 	>
 		{#snippet handle()}
-			
-				<ContextMenu.Root>
-					<ContextMenu.Trigger
-						><TaskDraggable {parent} taskId={$task.id}>
-							<Handle
-								taskId={$task.id}
-								onclick={() => paths.push(currentPath)}
-							/>
-						</TaskDraggable></ContextMenu.Trigger
+			<ContextMenu.Root>
+				<ContextMenu.Trigger
+					><TaskDraggable {parent} taskId={$task.id}>
+						<Handle
+							taskId={$task.id}
+							onclick={() => paths.push(currentPath)}
+						/>
+					</TaskDraggable></ContextMenu.Trigger
+				>
+				<ContextMenu.Content>
+					<ContextMenu.Item
+						inset
+						onclick={() => db.deleteTask($task.id, $parent.id)}
+						>删除</ContextMenu.Item
 					>
-					<ContextMenu.Content>
-						<ContextMenu.Item
-							inset
-							onclick={() => db.deleteTask($task.id, $parent.id)}
-							>删除</ContextMenu.Item
-						>
-					</ContextMenu.Content>
-				</ContextMenu.Root>
-			
-			{/snippet}
+				</ContextMenu.Content>
+			</ContextMenu.Root>
+		{/snippet}
 
 		{#snippet overlay()}
-			
-				{#if !meDragging}
-					<div
-						class="flex flex-row items-center opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
-					>
-						<CheckButton
-							isCompleted={$task.isCompleted}
-							onclick={toggleTaskStatus}
-						/>
-					</div>
-					<CollapseIcon
-						bind:folded
-						onfolded={() => console.log("folded")}
-						onunfolded={() => console.log("unfolded")}
+			{#if !meDragging}
+				<div
+					class="flex flex-row items-center opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
+				>
+					<CheckButton
+						isCompleted={$task.isCompleted}
+						onclick={toggleTaskStatus}
 					/>
-				{/if}
-			
-			{/snippet}
+				</div>
+				<CollapseIcon
+					bind:folded
+					onfolded={() => console.log("folded")}
+					onunfolded={() => console.log("unfolded")}
+				/>
+			{/if}
+		{/snippet}
 	</TodoItem>
 
 	{#if !folded}

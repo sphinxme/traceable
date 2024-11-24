@@ -1,6 +1,6 @@
 <script lang="ts">
 	// TODO: 支持无限滚动
-	import TodoView from "$lib/views/TodoView.svelte";
+	import TodoView from "$lib/components/todolist/TodoView.svelte";
 	import { Database } from "$lib/states/rxdb";
 	import dayjs from "dayjs";
 	import { getContext } from "svelte";

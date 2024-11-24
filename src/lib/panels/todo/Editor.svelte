@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { setContext } from "svelte";
 	import { Skull, BatteryFull } from "lucide-svelte";
-	import TodoView from "$lib/views/TodoView.svelte";
+	import TodoView from "$lib/components/todolist/TodoView.svelte";
 	import Navigator from "./Navigator.svelte";
 	import type { TaskProxy } from "$lib/states/rxdb";
 	import type { Observable } from "rxjs";
