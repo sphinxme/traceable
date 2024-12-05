@@ -1,12 +1,32 @@
 <script lang="ts">
 	// TODO: 支持无限滚动
+	import * as Y from "yjs";
 	import TodoView from "$lib/components/todolist/TodoView.svelte";
 	import { Database } from "$lib/states/rxdb";
 	import dayjs from "dayjs";
-	import { getContext } from "svelte";
+	import { getContext, setContext } from "svelte";
 	import { range } from "radash";
+	import type { StateMap } from "$lib/states/rxdb/rxdb";
 
 	const db = getContext<Database>("db");
+	const panelId = "weekly-"; /* + userId */
+	setContext("panelId", panelId);
+
+	// svelte-ignore non_reactive_update
+	let panelState = db.panelStates.get(panelId)!;
+	if (!panelState) {
+		panelState = new Y.Map();
+		db.panelStates.set(panelId, panelState);
+	}
+
+	function getOrNewState(id: string) {
+		let state = panelState.get(id) as StateMap | undefined;
+		if (!state) {
+			state = new Y.Map();
+			panelState.set(id, state);
+		}
+		return state;
+	}
 
 	function isCurrentWeek(t: number) {
 		return dayjs(t).startOf("week").isSame(dayjs().startOf("week"));
@@ -27,10 +47,6 @@
 			`${time.format("YYYY-MM-DD")} - ${time.add(1, "week").format("YYYY-MM-DD")}`,
 		),
 	);
-	const a = Promise.all(journalPromiseList).then((value) => {
-		console.log({ value });
-	});
-	console.log({ journalPromiseList });
 	const weekEls: Record<string, HTMLDivElement> = $state({});
 </script>
 
@@ -43,7 +59,10 @@
 				{#if isCurrentWeek(weekDoc.time)}
 					<div class=" h-0.5 w-full bg-slate-500"></div>
 				{/if}
-				<TodoView task={weekDoc.task.$} />
+				<TodoView
+					task={weekDoc.task.$}
+					stateMap={getOrNewState(weekDoc.task.id)}
+				/>
 			</div>
 		{/await}
 	{/each}

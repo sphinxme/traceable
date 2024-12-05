@@ -16,7 +16,7 @@
 	</Pane>
 	<PaneResizer />
 	<Pane>
-		{#await db.getRootId()}
+		{#await db.getAndInitRootId()}
 			loading
 		{:then rootTask}
 			<Editor rootTask={rootTask.$} />

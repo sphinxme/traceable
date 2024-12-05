@@ -1,11 +1,17 @@
 <script lang="ts">
-	import { Root, List, Item, Separator, Page, Link } from '$lib/components/ui/breadcrumb';
-	import type { TaskProxy } from '$lib/states/rxdb';
-	import type { Observable } from 'rxjs';
-	import TaskText from './TaskText.svelte';
+	import {
+		Root,
+		List,
+		Item,
+		Separator,
+		Page,
+		Link,
+	} from "$lib/components/ui/breadcrumb";
+	import TaskText from "./TaskText.svelte";
+	import type { PathItem } from "$lib/states/stores.svelte";
 
 	interface Props {
-		paths: Observable<TaskProxy>[];
+		paths: PathItem[];
 	}
 
 	let { paths = $bindable() }: Props = $props();
@@ -13,16 +19,18 @@
 
 <Root>
 	<List>
-		{#each paths as task, i}
+		{#each paths as item, i}
 			{#if i + 1 < paths.length}
 				<Item>
-					<Link href="lang" >
+					<Link href="lang">
 						{#snippet child(attrs)}
 							<button
 								{...attrs}
-								onclick={() => {paths = paths.slice(0, i + 1)}}
+								onclick={() => {
+									paths = paths.slice(0, i + 1);
+								}}
 							>
-								<TaskText {task} />
+								<TaskText task={item.proxy} />
 							</button>
 						{/snippet}
 					</Link>
@@ -30,7 +38,7 @@
 				<Separator />
 			{:else}
 				<Item>
-					<Page><TaskText {task} /></Page>
+					<Page><TaskText task={item.proxy} /></Page>
 				</Item>
 			{/if}
 		{/each}

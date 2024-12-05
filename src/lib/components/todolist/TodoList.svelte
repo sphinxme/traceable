@@ -1,4 +1,5 @@
 <script lang="ts">
+	import * as Y from "yjs";
 	import type { KeyboardHandler } from "../quill/model";
 	import type { Snippet } from "svelte";
 	// import { flip } from 'svelte/animate';
@@ -10,19 +11,23 @@
 	import { firstValueFrom } from "rxjs";
 	import { filterNullish } from "$lib/states/rxdb/utils.svelte";
 	import type { Observable } from "rxjs/internal/Observable";
+	import type { StateMap } from "$lib/states/rxdb/rxdb";
+	import type { PathItem } from "$lib/states/stores.svelte";
 
 	let db: Database = getContext("db");
 
 	interface Props {
 		parent: Observable<TaskProxy>;
-		currentPath: Observable<TaskProxy>[];
+		currentPath: PathItem[];
 		location: { id: string; index: number }[];
 		depth?: number;
 		isLastOneEmpty?: boolean;
 		arrowUpHandle?: KeyboardHandler;
 		arrowDownHandle?: KeyboardHandler;
-		moveUp?: (taskId: string) => boolean;
+		moveUp?: (taskId: string, childStateMap: StateMap) => boolean;
 		side?: Snippet;
+		stateMap: StateMap;
+		display: boolean;
 	}
 
 	let {
@@ -35,7 +40,18 @@
 		arrowDownHandle = () => true,
 		moveUp = () => true,
 		side,
+		stateMap,
+		display,
 	}: Props = $props();
+
+	function getOrNewState(id: string) {
+		let state = stateMap.get(id) as StateMap | undefined;
+		if (!state) {
+			state = new Y.Map();
+			stateMap.set(id, state);
+		}
+		return state;
+	}
 
 	const focusByLocationFromTop: (
 		paths: { id: string; index: number }[],
@@ -50,7 +66,7 @@
 						.findById(childId)
 						.$.pipe(filterNullish());
 					const t = await firstValueFrom(result);
-					result.subscribe((ttt) => console.log({ ttt })); //TODO:为什么????
+					result.subscribe((ttt) => {}); //TODO:不加这个 就会获取不到值
 					resolve(result);
 				},
 			);
@@ -109,12 +125,19 @@
 		itemRefs[curId].foucsIntoByLocation(paths);
 	};
 
-	const moveInto = (
+	export const moveInto = (
 		childTaskId: string,
-		originParentTaskId: string,
 		index: number,
+		childStateMap: StateMap | undefined,
 	) => {
-		$parent.spliceChildren(index, 0, childTaskId);
+		if (childStateMap) {
+			stateMap.set(childTaskId, childStateMap.clone());
+			const preParentMap = childStateMap.parent as StateMap | undefined;
+			if (preParentMap) {
+				preParentMap.delete(childTaskId);
+			}
+		}
+		$parent.moveInto(index, childTaskId);
 		setTimeout(() => {
 			focusByLocationFromTop([...location, { id: childTaskId, index }]);
 		}, 100);
@@ -130,7 +153,7 @@
 	// $effect(() => {});
 </script>
 
-<div class="flex w-full flex-row">
+<div class="flex w-full flex-row" style:display={display ? "" : "none"}>
 	{@render side?.()}
 
 	<div class="relative w-full" role="list">
@@ -147,7 +170,10 @@
 						{depth}
 					/>
 					<Todo
-						currentPath={[...currentPath, child!]}
+						currentPath={[
+							...currentPath,
+							{ proxy: child!, id: childId },
+						]}
 						location={[...location, { index: i, id: childId }]}
 						depth={depth + 1}
 						bind:this={itemRefs[childId]}
@@ -176,7 +202,7 @@
 							insertItem(i, text);
 							return false;
 						}}
-						tabHandle={() => {
+						tabHandle={(childStateMap) => {
 							if (i === 0) {
 								return false;
 							}
@@ -184,25 +210,26 @@
 							getIndexedItem(i - 1).moveInto(
 								Number.MAX_SAFE_INTEGER,
 								childId,
+								childStateMap,
 							);
 							return false;
 						}}
-						untabHandle={() => {
+						untabHandle={(childStateMap) => {
 							if (depth === 1) {
 								return false;
 							}
-
-							const upMoved = moveUp(childId);
-							if (upMoved === false) {
+							const upMoved = !moveUp(childId, childStateMap);
+							if (upMoved) {
 								$parent.removeChild(childId);
 								return false;
 							}
 							return true;
 						}}
-						movedUp={(childchildTaskId) =>
-							moveInto(childchildTaskId, childId, i + 1)}
+						movedUp={(childchildTaskId, childStateMap) =>
+							moveInto(childchildTaskId, i + 1, childStateMap)}
 						task={child!}
 						{parent}
+						stateMap={getOrNewState(childId)}
 					/>
 				{/await}
 			</div>

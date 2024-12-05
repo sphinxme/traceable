@@ -22,6 +22,8 @@ import { type UserCollection, userCollectionCreator } from "./user";
 addRxPlugin(RxDBQueryBuilderPlugin);
 addRxPlugin(RxDBDevModePlugin);
 
+export type StateMap = Y.Map<boolean | StateMap>
+
 const PUBLIC_COUCHDB_ENDPOINT = import.meta.env.VITE_COUCHDB_ENDPOINT;
 const PUBLIC_COUCHDB_USER = import.meta.env.VITE_COUCHDB_USER;
 const PUBLIC_COUCHDB_PASSWORD = import.meta.env.VITE_COUCHDB_PASSWORD;
@@ -29,6 +31,7 @@ export class Database {
     doc: Y.Doc;
     texts!: Y.Map<Y.Text>; // id-Y.Text
     notes!: Y.Map<Y.Text>;
+    panelStates!: Y.Map<StateMap>; // panel_id-Y.Text
 
     rxdb!: RxDatabase;
     tasks!: TaskCollection;
@@ -59,9 +62,6 @@ export class Database {
             const p = new LiveblocksYjsProvider(room, this.doc);
             p.once("synced", resolve);
         });
-    }
-    async load2() {
-        console.log("load2");
     }
 
     async load() {
@@ -153,11 +153,17 @@ export class Database {
 
         this.texts = this.doc.getMap("texts");
         this.notes = this.doc.getMap("notes");
+        this.panelStates = this.doc.getMap("panelStates");
 
-        this.rootTask = await this.getRootId();
+        this.rootTask = await this.getAndInitRootId();
     }
 
-    async getRootId() {
+    async getUserId() {
+        let user = await this.users.findOne().exec();
+        return user?.id!;
+    }
+
+    async getAndInitRootId() {
         if (this.rootTask) {
             return this.rootTask
         }

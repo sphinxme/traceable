@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getContext, tick } from "svelte";
+	import { getContext, onDestroy, tick } from "svelte";
 
 	import type { KeyboardHandler } from "../quill/model";
 	import CollapseIcon from "./item/overlay/CollapseButton.svelte";
@@ -13,6 +13,8 @@
 	import TodoItem from "./item/TodoItem.svelte";
 	import TodoList from "./TodoList.svelte";
 	import type { Observable } from "rxjs";
+	import type { StateMap } from "$lib/states/rxdb/rxdb";
+	import type { PathItem, Paths } from "$lib/states/stores.svelte";
 
 	// svelte-ignore non_reactive_update
 	let todoList: TodoList;
@@ -21,22 +23,22 @@
 	const focusByLocationFromTop: (
 		paths: { id: string; index: number }[],
 	) => void = getContext("focusByLocation");
-	const paths: { push: (subpaths: Observable<TaskProxy>[]) => void } =
-		getContext("paths"); // TODO:抽出来
+	const paths: Paths = getContext("paths");
 
 	interface Props {
 		parent: Observable<TaskProxy>;
 		task: Observable<TaskProxy>;
-		currentPath: Observable<TaskProxy>[];
+		currentPath: PathItem[];
 		location: { id: string; index: number }[];
 		depth?: number;
 		arrowUpHandle: KeyboardHandler;
 		arrowDownHandle: KeyboardHandler;
 		insertBeforeMyself: (text: string) => boolean;
 		insertAfterMyself: (text: string) => boolean;
-		tabHandle: () => boolean;
-		untabHandle: () => boolean;
-		movedUp: (childTaskId: string) => boolean;
+		tabHandle: (stateMap: StateMap) => boolean;
+		untabHandle: (stateMap: StateMap) => boolean;
+		movedUp: (childTaskId: string, childStateMap: StateMap) => boolean;
+		stateMap: StateMap;
 	}
 
 	let {
@@ -52,6 +54,7 @@
 		tabHandle,
 		untabHandle,
 		movedUp,
+		stateMap,
 	}: Props = $props();
 
 	export const focus = (index: number) => todoItem.focus(index);
@@ -63,8 +66,12 @@
 		}
 	};
 	export const addChild = (seq: number) => $task.addChild(seq);
-	export const moveInto = (seq: number, childId: string) => {
-		$task.moveInto(seq, childId);
+	export const moveInto = (
+		seq: number,
+		childId: string,
+		childStateMap?: StateMap,
+	) => {
+		todoList.moveInto(childId, seq, childStateMap);
 		console.log(`${childId} move into ${$task.id}`);
 		setTimeout(() => {
 			focusByLocationFromTop([...location, { index: seq, id: childId }]);
@@ -88,7 +95,24 @@
 		}
 	};
 
-	let folded = $state(false);
+	let folded = $state(
+		(stateMap.get("__state__") as boolean | undefined) || false,
+	);
+	$effect(() => {
+		stateMap.set("__state__", folded);
+	});
+	const updateFolded = () => {
+		const remoteFolded =
+			(stateMap.get("__state__") as boolean | undefined) || false;
+		if (remoteFolded != folded) {
+			folded = remoteFolded;
+		}
+	};
+	stateMap.observe(updateFolded);
+	onDestroy(() => {
+		stateMap.unobserve(updateFolded);
+	});
+
 	const hasChildren = () => !folded && todoList.hasChildren();
 	const itemArrowDownHandle: KeyboardHandler = (range, context, quill) => {
 		if (!folded && todoList.hasChildren()) {
@@ -133,8 +157,12 @@
 		{arrowUpHandle}
 		enterHandle={itemEnterHandler}
 		{task}
-		{tabHandle}
-		{untabHandle}
+		tabHandle={() => {
+			tabHandle(stateMap);
+		}}
+		untabHandle={() => {
+			untabHandle(stateMap);
+		}}
 	>
 		{#snippet handle()}
 			<ContextMenu.Root>
@@ -175,27 +203,27 @@
 		{/snippet}
 	</TodoItem>
 
-	{#if !folded}
-		<TodoList
-			{currentPath}
-			{location}
-			depth={depth + 1}
-			bind:this={todoList}
-			arrowUpHandle={(range, context) => {
-				todoItem.focus(range.index);
-				return false;
-			}}
-			{arrowDownHandle}
-			parent={task}
-			moveUp={movedUp}
-		>
-			{#snippet side()}
-				<div class="flex w-9 flex-row items-start pb-0 pl-1">
-					<div class=" h-full bg-slate-300" style="width: 1px;"></div>
-				</div>
-			{/snippet}
-		</TodoList>
-	{/if}
+	<TodoList
+		display={!folded}
+		{currentPath}
+		{location}
+		depth={depth + 1}
+		bind:this={todoList}
+		arrowUpHandle={(range, context) => {
+			todoItem.focus(range.index);
+			return false;
+		}}
+		{arrowDownHandle}
+		parent={task}
+		moveUp={movedUp}
+		{stateMap}
+	>
+		{#snippet side()}
+			<div class="flex w-9 flex-row items-start pb-0 pl-1">
+				<div class=" h-full bg-slate-300" style="width: 1px;"></div>
+			</div>
+		{/snippet}
+	</TodoList>
 
 	{#if meDragging}
 		<!-- dragging mask -->
