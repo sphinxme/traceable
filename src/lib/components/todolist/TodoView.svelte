@@ -2,6 +2,7 @@
 	import TodoList from "$lib/components/todolist/TodoList.svelte";
 	import Title from "$lib/panels/todo/Title.svelte";
 	import { type TaskProxy } from "$lib/states/rxdb";
+	import type { StateMap } from "$lib/states/rxdb/rxdb";
 	import { SquarePlus } from "lucide-svelte";
 	import type { Observable } from "rxjs";
 	import { setContext } from "svelte";
@@ -11,9 +12,10 @@
 	let title: Title;
 	interface Props {
 		task: Observable<TaskProxy>;
+		stateMap: StateMap;
 	}
 
-	let { task }: Props = $props();
+	let { task, stateMap }: Props = $props();
 
 	const foucsByLocation = (paths: { id: string; index: number }[]) => {
 		todoList.foucsIntoByLocation(paths);
@@ -41,11 +43,13 @@
 	<!-- list -->
 	<div class="pl-6">
 		<TodoList
+			display
 			bind:isLastOneEmpty
 			bind:this={todoList}
 			currentPath={[]}
 			location={[]}
 			parent={task}
+			{stateMap}
 			arrowUpHandle={(range, context, editor) => {
 				title.focus(range.index);
 				return false;

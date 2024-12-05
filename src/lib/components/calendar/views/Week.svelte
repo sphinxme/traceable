@@ -101,12 +101,12 @@
 		animationFrameId = requestAnimationFrame(animate);
 	};
 
-	// onMount(() => {
-	// 	animate(); // 启动动画循环
-	// 	return () => {
-	// 		cancelAnimationFrame(animationFrameId);
-	// 	};
-	// });
+	onMount(() => {
+		animate(); // 启动动画循环
+		return () => {
+			cancelAnimationFrame(animationFrameId);
+		};
+	});
 </script>
 
 <!-- 可滚动区域 -->
@@ -122,15 +122,27 @@
 	>
 		<!-- 时间指示器红线 -->
 		<div
-			style:grid-template-columns="1 / -1"
-			class="w-full flex-row border-b-2 border-red-500 top-0"
-			style:height="calc({70}%)"
+			style:grid-template-columns="subgrid"
+			style:grid-template-rows="subgrid"
+			style:grid-column="1 / -1"
+			style:grid-row="3 / -1"
+			class="relative"
 		>
-			<!-- <div
-				style:z-index="100"
-				class=" w-full h-1 absolute bg-red-500"
-				style:transform="translateY({currentTimePercentage}%)"
-			></div> -->
+			<div
+				style:z-index="10"
+				style:top="{currentTimePercentage}%"
+				style:height="1px"
+				class=" w-full absolute bg-red-400"
+			></div>
+			<div
+				style:z-index="12"
+				style:grid-column="3 / 3"
+				style:top="{currentTimePercentage}%"
+				style:transform="translateY(-50%)"
+				class="absolute text-xs text-red-400 font-light pl-6"
+			>
+				{dayjs().format("HH:mm")}
+			</div>
 		</div>
 		<!-- header -->
 		<div
@@ -222,6 +234,7 @@
 
 		<!-- 日期格子 -->
 		<div
+			style:z-index="7"
 			style:display="grid"
 			style:grid-column="2 / -1"
 			style:grid-row="3 / 3"
