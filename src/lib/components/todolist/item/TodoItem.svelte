@@ -2,7 +2,7 @@
 	import "quill/dist/quill.core.css";
 	import Quill from "quill";
 	import { QuillBinding } from "y-quill";
-	import { getContext, onMount } from "svelte";
+	import { getContext, onMount, tick } from "svelte";
 	import * as Popover from "$lib/components/ui/popover";
 
 	import { warpKeyHandler, type KeyboardHandler } from "../../quill/model";
@@ -24,6 +24,7 @@
 		overlay?: import("svelte").Snippet;
 		handle?: import("svelte").Snippet;
 		drag?: import("svelte").Snippet;
+		hasNote: boolean;
 	}
 
 	let {
@@ -36,10 +37,12 @@
 		overlay,
 		handle,
 		drag,
+		hasNote = $bindable(),
 		isLastOneEmpty = $bindable(),
 	}: Props = $props();
 	let container: HTMLDivElement;
 	let editor: Quill;
+	let noteEditor: NoteEditor;
 
 	let db: Database = getContext("db");
 
@@ -65,12 +68,26 @@
 	}
 	let note = yStore(rawNote);
 
+	$effect(() => {
+		hasNote = $note?.length > 0;
+	});
+
 	let shiftEnterHandle: KeyboardHandler = () => {
 		// 弹出
 		openNoteEdit = true;
-
 		return false;
 	};
+	$effect(() => {
+		if (openNoteEdit) {
+			tick().then(() => {
+				noteEditor.focus();
+			});
+		} else {
+			setTimeout(() => {
+				focus(Number.MAX_VALUE);
+			}, 300);
+		}
+	});
 
 	export const focus = (index: number) => editor.setSelection(index);
 	let openNoteEdit = $state(false);
@@ -134,6 +151,7 @@
 			<div class="flex w-full flex-row items-center">
 				{@render handle?.()}
 				<div
+					class="todoitem"
 					style:font-size="large"
 					style:text-decoration={$task.isCompleted
 						? "line-through"
@@ -165,27 +183,35 @@
 		}}
 	>
 		<Popover.Trigger>
-			<div class=" text-start text-slate-500">{$note}</div>
+			<div style:padding-left="18px" class=" text-start text-slate-500">
+				{$note}
+			</div>
 		</Popover.Trigger>
 		<Popover.Content align="start">
-			<NoteEditor text={rawNote} />
+			<NoteEditor
+				bind:this={noteEditor}
+				onClose={() => {
+					openNoteEdit = false;
+				}}
+				text={rawNote}
+			/>
 		</Popover.Content>
 	</Popover.Root>
 </div>
 
 <style>
-	:global(.ql-editor) {
+	:global(.todoitem .ql-editor) {
 		padding-top: 0px;
 		padding-bottom: 0px;
 		/* padding-top: 12px; */
-		padding-left: 15px;
+		padding-left: 10px;
 		padding-right: 15px;
 		width: 100%;
 		flex-grow: 1;
 		/* padding-bottom: 2px; */
 	}
 
-	:global(.ql-container) {
+	:global(.todoitem .ql-container) {
 		display: flex;
 		flex-grow: 1;
 		/* padding-bottom: 2px; */

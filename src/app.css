@@ -82,3 +82,12 @@ html, body, #app {
   height: 100%;
   /* background-color: brown; */
 }
+
+.ql-editor {
+  padding-top: 0px;
+  padding-bottom: 0px;
+  /* padding-top: 12px; */
+  width: 100%;
+  flex-grow: 1;
+  /* padding-bottom: 2px; */
+}

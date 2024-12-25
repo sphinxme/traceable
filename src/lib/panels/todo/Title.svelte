@@ -82,9 +82,22 @@
 <style>
 	:global(.traceable-quill-title .ql-container) {
 		font-size: xx-large;
+		padding-top: 0px;
+		padding-bottom: 0px;
+
 		/* display: flex; */
 
 		/* flex-grow: 1; */
+		/* padding
+		
+		-bottom: 2px; */
+	}
+	:global(.traceable-quill-title .ql-editor) {
+		padding-top: 0px;
+		padding-bottom: 0px;
+		/* padding-top: 12px; */
+		width: 100%;
+		flex-grow: 1;
 		/* padding-bottom: 2px; */
 	}
 </style>

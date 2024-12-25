@@ -1,12 +1,33 @@
 <script lang="ts">
 	import { quill } from "$lib/components/quill/quill";
+	import type Quill from "quill";
 	import * as Y from "yjs";
 
 	interface Props {
 		text: Y.Text;
+		onClose: () => void;
 	}
 
-	let { text }: Props = $props();
+	let { text, onClose }: Props = $props();
+	let editor: Quill;
+
+	export function focus() {
+		editor.focus();
+	}
 </script>
 
-<div use:quill={{ text }}></div>
+<div
+	use:quill={{
+		text,
+		init(_editor) {
+			editor = _editor;
+			_editor.keyboard.bindings["Enter"].unshift({
+				key: "Enter",
+				shiftKey: true,
+				handler(range, curContext, binding) {
+					onClose();
+				},
+			});
+		},
+	}}
+></div>

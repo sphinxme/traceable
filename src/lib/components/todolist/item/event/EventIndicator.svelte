@@ -15,7 +15,7 @@
 	let length = $derived(($end - $start) / (1000 * 60 * 10)); // 10分钟5px
 </script>
 
-<div style:width={length + "px"} class=" z-50 mr-1">
+<div style:width={length + "px"} class=" z-40 mr-1">
 	<HoverCard.Root
 		openDelay={100}
 		onOpenChange={(open) => {

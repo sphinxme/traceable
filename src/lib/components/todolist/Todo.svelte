@@ -144,6 +144,7 @@
 		}
 	};
 
+	let hasNote: boolean = $state(false);
 	let meDragging: boolean = $derived($draggingTaskId == $task.id);
 	const toggleTaskStatus = () => {
 		$task.patch({ isCompleted: !$task.isCompleted });
@@ -153,6 +154,7 @@
 <div class="relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}">
 	<TodoItem
 		bind:this={todoItem}
+		bind:hasNote
 		arrowDownHandle={itemArrowDownHandle}
 		{arrowUpHandle}
 		enterHandle={itemEnterHandler}
@@ -176,6 +178,7 @@
 				>
 				<ContextMenu.Content>
 					<ContextMenu.Item
+						class="z-50"
 						inset
 						onclick={() => db.deleteTask($task.id, $parent.id)}
 						>删除</ContextMenu.Item
@@ -186,14 +189,6 @@
 
 		{#snippet overlay()}
 			{#if !meDragging}
-				<div
-					class="flex flex-row items-center opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
-				>
-					<CheckButton
-						isCompleted={$task.isCompleted}
-						onclick={toggleTaskStatus}
-					/>
-				</div>
 				<CollapseIcon
 					bind:folded
 					onfolded={() => console.log("folded")}
@@ -219,8 +214,15 @@
 		{stateMap}
 	>
 		{#snippet side()}
-			<div class="flex w-9 flex-row items-start pb-0 pl-1">
-				<div class=" h-full bg-slate-300" style="width: 1px;"></div>
+			<div
+				class=" {hasNote
+					? ' -mt-8'
+					: ''} group flex w-9 flex-shrink-0 flex-row items-start pb-0 pl-1"
+			>
+				<div
+					class=" h-full bg-slate-300 group-hover:bg-slate-400 transition-colors duration-700"
+					style="width: 1px;"
+				></div>
 			</div>
 		{/snippet}
 	</TodoList>

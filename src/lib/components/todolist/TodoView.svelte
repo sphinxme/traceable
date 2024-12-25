@@ -25,7 +25,7 @@
 	let isLastOneEmpty = $state(false);
 </script>
 
-<div class="flex grow flex-col p-4">
+<div class="flex grow flex-col py-4">
 	<Title
 		bind:this={title}
 		{task}
@@ -41,7 +41,7 @@
 	/>
 
 	<!-- list -->
-	<div class="pl-6">
+	<div class="pl-4">
 		<TodoList
 			display
 			bind:isLastOneEmpty
@@ -60,7 +60,7 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		role="button"
-		class="ml-3.5 flex w-full flex-row rounded-lg p-1 opacity-20 transition-colors duration-300 hover:bg-slate-300"
+		class=" flex w-full flex-row rounded-lg p-1 opacity-20 transition-colors duration-300 hover:bg-slate-300"
 		onclick={() => {
 			$task.addChild();
 		}}

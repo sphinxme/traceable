@@ -98,7 +98,9 @@
 	};
 	const animate = () => {
 		updateTimePosition();
-		animationFrameId = requestAnimationFrame(animate);
+		setTimeout(() => {
+			animationFrameId = requestAnimationFrame(animate);
+		}, 10000);
 	};
 
 	onMount(() => {
