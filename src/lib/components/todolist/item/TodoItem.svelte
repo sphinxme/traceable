@@ -151,7 +151,7 @@
 			<div class="flex w-full flex-row items-center">
 				{@render handle?.()}
 				<div
-					class="todoitem"
+					class="todoitem w-full"
 					style:font-size="large"
 					style:text-decoration={$task.isCompleted
 						? "line-through"

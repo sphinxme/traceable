@@ -27,7 +27,7 @@
 			onunfolded();
 		}
 	}}
-	class={`${displayClass(folded)} cursor-pointer transition-all duration-300 ease-out ${folded ? "-rotate-90" : ""}`}
+	class={`${displayClass(folded)} bg-white cursor-pointer transition-all duration-300 ease-out ${folded ? "-rotate-90" : ""}`}
 >
 	<ChevronDown size={16} strokeWidth={3} />
 </div>

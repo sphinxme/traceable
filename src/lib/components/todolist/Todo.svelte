@@ -217,10 +217,10 @@
 			<div
 				class=" {hasNote
 					? ' -mt-8'
-					: ''} group flex w-9 flex-shrink-0 flex-row items-start pb-0 pl-1"
+					: ''} group flex w-5 flex-shrink-0 flex-row items-start pb-0 pl-1"
 			>
 				<div
-					class=" h-full bg-slate-300 group-hover:bg-slate-400 transition-colors duration-700"
+					class=" h-full bg-slate-100 group-hover:bg-slate-300 transition-colors duration-300"
 					style="width: 1px;"
 				></div>
 			</div>
