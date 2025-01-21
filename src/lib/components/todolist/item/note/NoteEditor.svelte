@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { quill } from "$lib/components/quill/quill";
 	import type Quill from "quill";
+	import { onMount } from "svelte";
 	import * as Y from "yjs";
 
 	interface Props {
@@ -14,6 +15,10 @@
 	export function focus() {
 		editor.focus();
 	}
+
+	onMount(() => {
+		editor.focus();
+	});
 </script>
 
 <div
@@ -26,6 +31,7 @@
 				shiftKey: true,
 				handler(range, curContext, binding) {
 					onClose();
+					return false;
 				},
 			});
 		},

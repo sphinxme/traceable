@@ -73,24 +73,12 @@
 	});
 
 	let shiftEnterHandle: KeyboardHandler = () => {
-		// 弹出
-		openNoteEdit = true;
+		isNoteEditOpen = true;
 		return false;
 	};
-	$effect(() => {
-		if (openNoteEdit) {
-			tick().then(() => {
-				noteEditor.focus();
-			});
-		} else {
-			setTimeout(() => {
-				focus(Number.MAX_VALUE);
-			}, 300);
-		}
-	});
 
 	export const focus = (index: number) => editor.setSelection(index);
-	let openNoteEdit = $state(false);
+	let isNoteEditOpen = $state(false);
 
 	onMount(() => {
 		editor = new Quill(container, {
@@ -176,22 +164,28 @@
 		{/await}
 	</div>
 
-	<Popover.Root
-		bind:open={openNoteEdit}
-		onOpenChange={(e) => {
-			console.log({ e });
-		}}
-	>
+	<Popover.Root bind:open={isNoteEditOpen}>
 		<Popover.Trigger>
 			<div style:padding-left="18px" class=" text-start text-slate-500">
 				{$note}
 			</div>
 		</Popover.Trigger>
-		<Popover.Content align="start">
+		<Popover.Content
+			onOpenAutoFocus={(e) => {
+				e.preventDefault();
+				noteEditor.focus();
+			}}
+			onCloseAutoFocus={(e) => {
+				e.preventDefault();
+				editor.focus();
+			}}
+			align="start"
+		>
 			<NoteEditor
 				bind:this={noteEditor}
 				onClose={() => {
-					openNoteEdit = false;
+					isNoteEditOpen = false;
+					return false;
 				}}
 				text={rawNote}
 			/>
