@@ -56,7 +56,7 @@
 			parent={task}
 			{stateMap}
 			arrowUpHandle={(range, context, editor) => {
-				title.focus(range.index);
+				title?.focus(range.index);
 				return false;
 			}}
 		/>
