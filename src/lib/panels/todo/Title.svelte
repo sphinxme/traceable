@@ -14,6 +14,7 @@
 		enterHandle?: KeyboardHandler;
 		arrowUpHandle?: KeyboardHandler;
 		arrowDownHandle?: KeyboardHandler;
+		highlightTitle?: boolean;
 	}
 
 	let {
@@ -21,6 +22,7 @@
 		enterHandle = () => true,
 		arrowUpHandle = () => true,
 		arrowDownHandle = () => true,
+		highlightTitle,
 	}: Props = $props();
 	export const focus = (index: number = 0) => {
 		qEditor.setSelection({ index, length: 0 });
@@ -74,8 +76,14 @@
 
 <!-- svelte-ignore a11y_missing_content -->
 <h1
-	class="traceable-quill-title scroll-m-20 py-4 text-3xl font-bold tracking-tight transition-colors first:mt-0"
+	class="traceable-quill-title scroll-m-20 group py-4 text-3xl font-bold tracking-tight relative transition-colors first:mt-0"
 >
+	{#if highlightTitle}
+		<div
+			class=" absolute h-full bg-slate-300 group-hover:bg-slate-500 transition duration-500 rounded-full"
+			style:width="2px"
+		></div>
+	{/if}
 	<div use:quill={{ text, configs, init }}></div>
 </h1>
 

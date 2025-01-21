@@ -22,6 +22,7 @@
 	import WeekEvent from "./WeekEvent.svelte";
 	import { firstValueFrom } from "rxjs";
 	import { filterNullish } from "$lib/states/rxdb/utils.svelte";
+	import Focusable from "$lib/components/ui/focusable/Focusable.svelte";
 
 	let { dayNum = 10 } = $props();
 	const db = getContext<Database>("db");
@@ -170,6 +171,11 @@
 					>
 						{day.format("ddd")}
 					</div>
+					<Focusable
+						focus={day.isSame(dayjs(), "day")}
+						inline="center"
+						block="start"
+					/>
 
 					<div
 						style:font-size="0.7rem"

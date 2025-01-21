@@ -50,10 +50,10 @@
 
 <div
 	data-tauri-drag-region
-	class="flex h-full grow flex-col overflow-auto rounded bg-background p-4 pt-0 shadow-xl"
+	class="flex h-full grow flex-col overflow-auto rounded bg-background py-4 pt-0 shadow-xl"
 >
 	<!-- header -->
-	<div data-tauri-drag-region class="flex flex-row">
+	<div data-tauri-drag-region class="flex flex-row px-1">
 		<Navigator bind:paths />
 		<div
 			data-tauri-drag-region
@@ -66,5 +66,11 @@
 			<Skull />
 		</div>
 	</div>
-	<TodoView stateMap={getCurrentStateMap()} task={currentPageTask} />
+	<div class="px-3">
+		<TodoView
+			showTitle={paths.length !== 1}
+			stateMap={getCurrentStateMap()}
+			task={currentPageTask}
+		/>
+	</div>
 </div>

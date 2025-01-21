@@ -158,7 +158,7 @@
 
 	<div class="relative w-full" role="list">
 		{#each $children as childId, i (childId)}
-			<div style:view-transition-name={childId}>
+			<div>
 				{#await queryTaskData(childId)}
 					loading...
 				{:then child}

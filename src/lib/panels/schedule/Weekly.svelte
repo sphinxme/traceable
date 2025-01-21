@@ -7,6 +7,7 @@
 	import { getContext, setContext } from "svelte";
 	import { range } from "radash";
 	import type { StateMap } from "$lib/states/rxdb/rxdb";
+	import Focusable from "$lib/components/ui/focusable/Focusable.svelte";
 
 	const db = getContext<Database>("db");
 	const panelId = "weekly-"; /* + userId */
@@ -50,16 +51,16 @@
 	const weekEls: Record<string, HTMLDivElement> = $state({});
 </script>
 
-<div class=" h-full overflow-y-auto">
+<div class="pl-2 h-full overflow-y-auto">
 	{#each journalPromiseList as promise}
 		{#await promise}
 			loading
 		{:then weekDoc}
 			<div bind:this={weekEls[weekDoc.task.id]}>
-				{#if isCurrentWeek(weekDoc.time)}
-					<div class=" h-0.5 w-full bg-slate-500"></div>
-				{/if}
+				<Focusable focus={isCurrentWeek(weekDoc.time)} inline="start" />
 				<TodoView
+					highlightTitle={isCurrentWeek(weekDoc.time)}
+					showTitle
 					task={weekDoc.task.$}
 					stateMap={getOrNewState(weekDoc.task.id)}
 				/>

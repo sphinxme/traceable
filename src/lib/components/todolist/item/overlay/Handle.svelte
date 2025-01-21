@@ -73,10 +73,12 @@
 		width: 0rem;
 	}
 	.handle:hover .extra-panel {
+		transition-delay: 300ms;
 		width: 15rem;
 		height: 100%;
 	}
 	.handle:hover .plate {
+		transition-delay: 300ms;
 		opacity: 1;
 	}
 
