@@ -7,8 +7,8 @@
 	import type { Observable } from "rxjs";
 	import { setContext } from "svelte";
 
-	// refs
 	let todoList: TodoList;
+	// svelte-ignore non_reactive_update
 	let title: Title;
 	interface Props {
 		task: Observable<TaskProxy>;

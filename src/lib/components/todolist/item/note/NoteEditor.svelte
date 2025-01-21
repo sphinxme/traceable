@@ -15,10 +15,6 @@
 	export function focus() {
 		editor.focus();
 	}
-
-	onMount(() => {
-		editor.focus();
-	});
 </script>
 
 <div
