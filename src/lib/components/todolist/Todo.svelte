@@ -3,7 +3,6 @@
 
 	import type { KeyboardHandler } from "../quill/model";
 	import CollapseIcon from "./item/overlay/CollapseButton.svelte";
-	import CheckButton from "./item/overlay/CheckButton.svelte";
 	import * as ContextMenu from "$lib/components/ui/context-menu";
 
 	import { draggingTaskId } from "./dnd/state";

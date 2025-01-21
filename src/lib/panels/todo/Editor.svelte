@@ -50,7 +50,7 @@
 
 <div
 	data-tauri-drag-region
-	class="flex h-full grow flex-col overflow-auto rounded bg-background py-4 pt-0 shadow-xl"
+	class="flex h-full grow flex-col overflow-auto rounded bg-background py-4 pt-0 shadow-xl pl-0.5"
 >
 	<!-- header -->
 	<div data-tauri-drag-region class="flex flex-row px-1">
