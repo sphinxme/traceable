@@ -30,6 +30,7 @@
 
 	const calculateTopOffset2 = (start: number): number => {
 		const startOfDay = dayjs(start)
+			.add(-offsetByHour, "hour")
 			.startOf("day")
 			.add(offsetByHour, "hour");
 		const result = Math.floor(
