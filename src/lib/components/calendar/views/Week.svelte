@@ -25,8 +25,9 @@
 	import Focusable from "$lib/components/ui/focusable/Focusable.svelte";
 
 	let { dayNum = 10 } = $props();
+	let offsetByHour = 6; // 每天从几点开始(当前每天从6点开始)
 	const db = getContext<Database>("db");
-	let today = dayjs().startOf("day");
+	let today = dayjs().startOf("day").add(6, "hour");
 
 	// 以startDay为0
 	let displayDayNum = 2 * dayNum + 1;
@@ -41,7 +42,9 @@
 		return dayjs(t).diff(displayStartDay, "day");
 	};
 	const calculateTopOffset = (start: number): number => {
-		const startOfDay = dayjs(start).startOf("day");
+		const startOfDay = dayjs(start)
+			.startOf("day")
+			.add(offsetByHour, "hour");
 		return Math.floor(percent(startOfDay.valueOf(), start) * dayHeight);
 	};
 	const calculateEventHeight = (start: number, end: number): number => {
@@ -93,7 +96,7 @@
 	const totalMilliseconds = 24 * 60 * 60 * 1000; // 一天总毫秒数
 	const updateTimePosition = () => {
 		const now = dayjs();
-		const startOfDay = now.startOf("day");
+		const startOfDay = now.startOf("day").add(offsetByHour, "hour");
 		const currentMilliseconds = now.diff(startOfDay);
 		currentTimePercentage = (currentMilliseconds / totalMilliseconds) * 100;
 	};
@@ -103,7 +106,6 @@
 			animationFrameId = requestAnimationFrame(animate);
 		}, 10000);
 	};
-
 	onMount(() => {
 		animate(); // 启动动画循环
 		return () => {
@@ -166,13 +168,22 @@
 				>
 					<div
 						class="text-base font-light"
-						class:font-light={!day.isSame(dayjs(), "day")}
-						class:text-red-500={day.isSame(dayjs(), "day")}
+						class:font-light={!day.isSame(
+							dayjs().add(-offsetByHour, "hour"),
+							"day",
+						)}
+						class:text-red-500={day.isSame(
+							dayjs().add(-offsetByHour, "hour"),
+							"day",
+						)}
 					>
 						{day.format("ddd")}
 					</div>
 					<Focusable
-						focus={day.isSame(dayjs(), "day")}
+						focus={day.isSame(
+							dayjs().add(-offsetByHour, "hour"),
+							"day",
+						)}
 						inline="center"
 						block="start"
 					/>
@@ -218,16 +229,16 @@
 				class=" flex flex-col font-extralight text-slate-400"
 				style:grid-area="3 / 1 "
 			>
-				<!-- 上方下方各垫一个1单位高的格子, 然后中间23个2单位高的格子, 第i个格子的中间就是i+1AM/PM -->
+				<!-- 上方下方各垫一个1单位高的格子, 然后中间23个2单位高的格子, 第i个格子的中间就是i+offsetAM/PM -->
 				<div style:flex="1"></div>
-				{#each range(1, 23) as hour}
+				{#each range(1 + offsetByHour, 23 + offsetByHour) as hour}
 					<div
 						style:flex="2"
 						class="relative flex items-center justify-end text-xs"
 					>
 						<p class=" pr-2">
 							{hour % 12 ? hour % 12 : hour > 12 ? 12 : 0}
-							{hour > 12 ? "PM" : "AM"}
+							{hour > 12 && hour < 24 ? "PM" : "AM"}
 						</p>
 						<!-- 横线 -->
 
@@ -264,6 +275,7 @@
 						onDragOver(taskId, topPx) {
 							let start = day
 								.startOf("day")
+								.add(offsetByHour, "hour")
 								.add(
 									(topPx / dayHeight) * 24 * 60 * 60 * 1000,
 									"milliseconds",
@@ -281,6 +293,7 @@
 						onDrop(taskId, topPx) {
 							let start = day
 								.startOf("day")
+								.add(offsetByHour, "hour")
 								.add(
 									(24 * 60 * 60 * 1000 * topPx) / dayHeight,
 									"milliseconds",
@@ -309,6 +322,7 @@
 			{#each $events as event (event.id)}
 				{#await getEventTask(event) then task}
 					<WeekEvent
+						{offsetByHour}
 						event={event.$}
 						{getColumnIndex}
 						{dayHeight}

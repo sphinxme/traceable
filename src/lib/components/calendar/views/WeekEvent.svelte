@@ -21,13 +21,17 @@
 		dayHeight: number;
 		event: Observable<EventProxy>;
 		task: Observable<TaskProxy>;
+		offsetByHour: number;
 		getColumnIndex: (t: number) => number;
 	}
 
-	let { dayHeight, event, task, getColumnIndex }: Props = $props();
+	let { dayHeight, event, task, offsetByHour, getColumnIndex }: Props =
+		$props();
 
 	const calculateTopOffset2 = (start: number): number => {
-		const startOfDay = dayjs(start).startOf("day");
+		const startOfDay = dayjs(start)
+			.startOf("day")
+			.add(offsetByHour, "hour");
 		const result = Math.floor(
 			percent(startOfDay.valueOf(), start) * dayHeight,
 		);
