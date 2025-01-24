@@ -3,6 +3,6 @@
 </script>
 
 <PaneResizer
-    class="h-full bg-slate-200 transition hover:bg-slate-300 mx-1 mb-4"
+    class="h-full bg-slate-200 transition hover:bg-slate-300 mx-1"
     style="width:1px;"
 />

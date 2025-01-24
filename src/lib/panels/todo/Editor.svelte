@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as Y from "yjs";
-	import { getContext, setContext } from "svelte";
+	import { getContext, onDestroy, setContext } from "svelte";
 	import { Skull, BatteryFull } from "lucide-svelte";
 	import TodoView from "$lib/components/todolist/TodoView.svelte";
 	import Navigator from "./Navigator.svelte";
@@ -8,6 +8,7 @@
 	import type { Observable } from "rxjs";
 	import type { StateMap } from "$lib/states/rxdb/rxdb";
 	import type { PathItem } from "$lib/states/stores.svelte";
+	import { getPrePaths, storePaths } from "./state.svelte";
 
 	interface Props {
 		rootTask: Observable<TaskProxy>;
@@ -15,7 +16,15 @@
 	const db = getContext<Database>("db");
 
 	let { rootTask }: Props = $props();
-	let paths: PathItem[] = $state([{ id: $rootTask.id, proxy: rootTask }]);
+	let paths: PathItem[] = $state(getPrePaths());
+	// svelte-ignore state_referenced_locally
+	if (paths.length == 0) {
+		paths = [{ id: $rootTask.id, proxy: rootTask }];
+	}
+	onDestroy(() => {
+		storePaths(paths);
+	});
+
 	let currentPageTask = $derived(paths.at(-1)?.proxy || rootTask);
 
 	let panelId = "root";
