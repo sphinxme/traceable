@@ -10,10 +10,7 @@ import {
 } from "rxjs";
 import { readable, writable } from "svelte/store";
 
-export const id = () => {
-
-    return ObjectID().toHexString();
-};
+export const id = () => ObjectID().toHexString();
 
 export function filterNullish<T>(): UnaryFunction<
     Observable<T | null | undefined>,

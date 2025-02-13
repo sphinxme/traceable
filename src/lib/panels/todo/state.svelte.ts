@@ -5,6 +5,10 @@ export function storePaths(newPaths: PathItem[]) {
     paths = newPaths;
 }
 
+export function clearPaths() {
+    paths = [];
+}
+
 export function getPrePaths() {
     return paths;
 }

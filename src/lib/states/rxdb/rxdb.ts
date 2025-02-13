@@ -4,11 +4,14 @@ import { createClient } from "@liveblocks/client";
 import { LiveblocksYjsProvider } from "@liveblocks/yjs";
 
 import { addRxPlugin, createRxDatabase, type RxDatabase } from "rxdb";
+import { RxDBJsonDumpPlugin } from 'rxdb/plugins/json-dump';
+import { RxDBCleanupPlugin } from 'rxdb/plugins/cleanup'
 import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 import { RxDBDevModePlugin } from "rxdb/plugins/dev-mode";
 import { RxDBQueryBuilderPlugin } from "rxdb/plugins/query-builder";
 import { getFetchWithCouchDBAuthorization, replicateCouchDB } from 'rxdb/plugins/replication-couchdb';
-import { fetch } from '@tauri-apps/plugin-http';
+import { fetch as tauri_fetch } from '@tauri-apps/plugin-http';
+import { isTauri } from '@tauri-apps/api/core'
 
 import { id } from "./utils.svelte";
 import {
@@ -21,6 +24,8 @@ import { type JournalCollection, journalCollectionCreator } from "./journal";
 import { type UserCollection, userCollectionCreator } from "./user";
 addRxPlugin(RxDBQueryBuilderPlugin);
 addRxPlugin(RxDBDevModePlugin);
+addRxPlugin(RxDBJsonDumpPlugin);
+addRxPlugin(RxDBCleanupPlugin);
 
 export type StateMap = Y.Map<boolean | StateMap>
 
@@ -77,10 +82,15 @@ export class Database {
             users: userCollectionCreator(db),
         });
 
+
         this.tasks = collection.tasks as TaskCollection;
         this.events = collection.events as EventCollection;
         this.journals = collection.journals as JournalCollection;
         this.users = collection.users as UserCollection;
+        let adapted_fetch = fetch;
+        if (isTauri()) {
+            adapted_fetch = tauri_fetch;
+        }
 
         const authed_fetch: typeof fetch = (input, init) => {
             // 构建 Basic Auth 字符串
@@ -97,7 +107,7 @@ export class Database {
             };
 
             // 调用原始fetch并返回结果
-            return fetch(input, newInit);
+            return adapted_fetch(input, newInit);
         }
 
         const replicationEventState = replicateCouchDB({
@@ -149,7 +159,7 @@ export class Database {
             replicationJournalState.awaitInitialReplication().then(log("loaded journal state")),
             replicationTaskState.awaitInitialReplication().then(log("loaded task state")),
             replicationUserState.awaitInitialReplication().then(log("loaded user state")),
-        ])
+        ]).catch((e) => { console.error(e) })
 
         this.texts = this.doc.getMap("texts");
         this.notes = this.doc.getMap("notes");
@@ -271,6 +281,66 @@ export class Database {
                 ...recurivelyRemoveTaskPromises,
             ]);
         }
+    }
+
+    /**
+     * 将整个数据导出为JSON格式以便备份或再次导入
+     */
+    public async export() {
+        return {
+            tasks: await this.tasks.exportJSON(),
+            events: await this.events.exportJSON(),
+            journals: await this.journals.exportJSON(),
+            users: await this.users.exportJSON(),
+            texts: this.texts.toJSON() as Record<string, string>, // id->Y.Text
+            notes: this.notes.toJSON() as Record<string, string>,  // id->Y.Text
+        };
+    }
+
+    public async clear() {
+        Promise.all([
+            this.tasks.find({}).remove(),
+            this.events.find({}).remove(),
+            this.journals.find({}).remove(),
+            this.users.find({}).remove()
+        ])
+        Promise.all([
+            this.tasks.cleanup(),
+            this.events.cleanup(),
+            this.journals.cleanup(),
+            this.users.cleanup()
+        ]);
+        this.texts.clear();
+        this.notes.clear();
+        this.panelStates.clear();
+        this.rootTask = undefined as unknown as TaskProxy;
+    }
+
+    public async import(data: Awaited<ReturnType<this['export']>>) {
+        await this.clear();
+        this.doc.transact(() => {
+            Object.entries(data.texts).forEach(([id, text]) => {
+                this.texts.set(id, new Y.Text(text))
+            })
+            Object.entries(data.notes).forEach(([id, note]) => {
+                this.notes.set(id, new Y.Text(note))
+            })
+        })
+
+        function deleteMetaFields(docs: any[]) {
+            return docs.map(({ _deleted, _meta, ...rest }) => rest)
+        }
+
+        await this.tasks.bulkInsert(deleteMetaFields(data.tasks.docs))
+        await this.events.bulkInsert(deleteMetaFields(data.events.docs))
+        await this.journals.bulkInsert(deleteMetaFields(data.journals.docs))
+        await this.users.bulkInsert(deleteMetaFields(data.users.docs))
+
+        await this.tasks.cleanup();
+        await this.events.cleanup();
+        await this.journals.cleanup();
+        await this.users.cleanup();
+
     }
 }
 

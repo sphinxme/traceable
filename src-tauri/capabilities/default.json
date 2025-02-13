@@ -20,6 +20,8 @@
           "url": "http://*:*"
         }
       ]
-    }
-  ]
+    },
+    "dialog:default",
+    "fs:default"  
+]
 }
