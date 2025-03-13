@@ -1,8 +1,12 @@
 <script lang="ts">
 	import * as HoverCard from "$lib/components/ui/hover-card";
-	import { highlightFEventIds } from "$lib/states/stores.svelte";
+	import type { EventProxy } from "$lib/states/meta/event.svelte";
+	import {
+		foucsingEventIds,
+		highlightFEventIds,
+	} from "$lib/states/stores.svelte";
 	import dayjs from "dayjs";
-	import type { EventProxy } from "$lib/states/rxdb";
+	import { tick } from "svelte";
 
 	interface Props {
 		data: EventProxy;
@@ -26,15 +30,18 @@
 			}
 		}}
 	>
-		<HoverCard.Trigger>
+		<HoverCard.Trigger
+			onclick={() => {
+				foucsingEventIds[data.id] = true;
+			}}
+		>
 			<div
-				class=" h-1 w-full cursor-pointer rounded-full bg-slate-600 transition-all duration-100 hover:h-2"
+				class=" h-1 w-full cursor-pointer rounded-full bg-zinc-600 transition-all duration-100 hover:h-2"
 			></div>
 		</HoverCard.Trigger>
 		<HoverCard.Content side="top" sideOffset={24}>
 			start: {dayjs(data.start).format("HH:mm:ssZ")} <br />
 			end: {dayjs(data.end).format("HH:mm:ssZ")}<br />
-			isAllDay: {data.isAllDay}<br />
 			isCompleted: {isCompleted}<br />
 			length: {length}<br />
 		</HoverCard.Content>

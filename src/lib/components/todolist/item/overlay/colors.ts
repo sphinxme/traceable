@@ -1,5 +1,5 @@
 export const colors = {
-    "TODO": "bg-slate-500",
+    "TODO": "bg-zinc-500",
     "BLOCK": "bg-blue-300",
-    "DONE": "bg-slate-100",
+    "DONE": "bg-zinc-100",
 }

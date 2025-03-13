@@ -1,51 +1,58 @@
 <script lang="ts">
-	import { getContext, onDestroy, tick } from "svelte";
+	import { onMount, tick } from "svelte";
 
 	import type { KeyboardHandler } from "../quill/model";
 	import CollapseIcon from "./item/overlay/CollapseButton.svelte";
 	import * as ContextMenu from "$lib/components/ui/context-menu";
 
 	import { draggingTaskId } from "./dnd/state";
-	import { Database, type TaskProxy } from "$lib/states/rxdb";
 	import TaskDraggable from "./dnd/TaskDraggable.svelte";
 	import Handle from "./item/overlay/Handle.svelte";
 	import TodoItem from "./item/TodoItem.svelte";
 	import TodoList from "./TodoList.svelte";
-	import type { Observable } from "rxjs";
-	import type { StateMap } from "$lib/states/rxdb/rxdb";
-	import type { PathItem, Paths } from "$lib/states/stores.svelte";
+	import type { TaskProxy } from "$lib/states/meta/task.svelte";
+	import {
+		EditorItemState,
+		getParentStateContext,
+		loadStateFromContext,
+		setStateIntoContext,
+	} from "$lib/states/states/panel_states";
+	import { getRegisterFromContext } from "$lib/panels/todo/context.svelte";
 
 	// svelte-ignore non_reactive_update
 	let todoList: TodoList;
 	let todoItem: TodoItem;
-	let db: Database = getContext("db");
-	const focusByLocationFromTop: (
-		paths: { id: string; index: number }[],
-	) => void = getContext("focusByLocation");
-	const paths: Paths = getContext("paths");
 
 	interface Props {
-		parent: Observable<TaskProxy>;
-		task: Observable<TaskProxy>;
-		currentPath: PathItem[];
-		location: { id: string; index: number }[];
-		depth?: number;
-		arrowUpHandle: KeyboardHandler;
-		arrowDownHandle: KeyboardHandler;
+		parent: TaskProxy;
+		task: TaskProxy;
+
 		insertBeforeMyself: (text: string) => boolean;
 		insertAfterMyself: (text: string) => boolean;
-		tabHandle: (stateMap: StateMap) => boolean;
-		untabHandle: (stateMap: StateMap) => boolean;
-		movedUp: (childTaskId: string, childStateMap: StateMap) => boolean;
-		stateMap: StateMap;
+
+		arrowUpHandle: KeyboardHandler;
+		arrowDownHandle: KeyboardHandler;
+
+		tabHandle: (
+			child: TaskProxy,
+			itemState: EditorItemState,
+			cursorIndex: number,
+		) => boolean;
+		untabHandle: (
+			child: TaskProxy,
+			itemState: EditorItemState,
+			cursorIndex: number,
+		) => boolean;
+		movedUp: (
+			child: TaskProxy,
+			itemState: EditorItemState,
+			cursorIndex?: number,
+		) => boolean;
 	}
 
 	let {
 		parent,
 		task,
-		currentPath,
-		location,
-		depth = 1,
 		arrowUpHandle,
 		arrowDownHandle,
 		insertBeforeMyself,
@@ -53,68 +60,19 @@
 		tabHandle,
 		untabHandle,
 		movedUp,
-		stateMap,
 	}: Props = $props();
+	export const id = task.id;
 
-	export const focus = (index: number) => todoItem.focus(index);
-	export const focusBottom = (index: number) => {
-		if (!folded && todoList.hasChildren()) {
-			todoList.focusBottom(index);
-		} else {
-			todoItem.focus(index);
-		}
-	};
-	export const addChild = (seq: number) => $task.addChild(seq);
-	export const moveInto = (
-		seq: number,
-		childId: string,
-		childStateMap?: StateMap,
-	) => {
-		todoList.moveInto(childId, seq, childStateMap);
-		console.log(`${childId} move into ${$task.id}`);
-		setTimeout(() => {
-			focusByLocationFromTop([...location, { index: seq, id: childId }]);
-			// todoList.focusBottom(0); // FIXME:整个组件reload, 导致focus失效
-		}, 100);
-	};
-	export const foucsIntoByLocation = (
-		paths: { id: string; index: number }[],
-	) => {
-		if (!paths.length) {
-			focus(0);
-			return;
-		}
-		if (folded) {
-			folded = false;
-			tick().then(() => {
-				todoList.foucsIntoByLocation(paths);
-			});
-		} else {
-			todoList.foucsIntoByLocation(paths);
-		}
-	};
+	let parentState = getParentStateContext();
+	let itemState = $parentState.loadChild(task).$;
+	setStateIntoContext(itemState);
+	let container: HTMLDivElement; // bind
 
-	let folded = $state(
-		(stateMap.get("__state__") as boolean | undefined) || false,
-	);
-	$effect(() => {
-		stateMap.set("__state__", folded);
-	});
-	const updateFolded = () => {
-		const remoteFolded =
-			(stateMap.get("__state__") as boolean | undefined) || false;
-		if (remoteFolded != folded) {
-			folded = remoteFolded;
-		}
-	};
-	stateMap.observe(updateFolded);
-	onDestroy(() => {
-		stateMap.unobserve(updateFolded);
-	});
+	// const itemState = loadStateFromContext(task).$;
 
-	const hasChildren = () => !folded && todoList.hasChildren();
+	const hasChildren = () => !$itemState.folded && todoList.hasChildren();
 	const itemArrowDownHandle: KeyboardHandler = (range, context, quill) => {
-		if (!folded && todoList.hasChildren()) {
+		if (!$itemState.folded && todoList.hasChildren()) {
 			todoList.focusTop(range.index);
 			return false;
 		}
@@ -144,13 +102,73 @@
 	};
 
 	let hasNote: boolean = $state(false);
-	let meDragging: boolean = $derived($draggingTaskId == $task.id);
-	const toggleTaskStatus = () => {
-		$task.patch({ isCompleted: !$task.isCompleted });
+	let meDragging: boolean = $derived($draggingTaskId == task.id);
+
+	export const focus = (index: number) => todoItem.focus(index);
+	export const focusBottom = (index: number) => {
+		if (!$itemState.folded && todoList.hasChildren()) {
+			todoList.focusBottom(index);
+		} else {
+			todoItem.focus(index);
+		}
 	};
+	export const moveInto = (
+		seq: number,
+		child: TaskProxy,
+		childState?: EditorItemState | undefined,
+		cursorIndex?: number,
+	) => {
+		todoList.moveInto(child, seq, childState, cursorIndex);
+	};
+	let highlighting = $state(false);
+	export const foucsIntoByLocation = (
+		paths: TaskProxy[],
+		index: number = 0,
+		highlight: boolean = false,
+	) => {
+		if (!paths.length) {
+			if (highlight) {
+				tick().then(() => {
+					setTimeout(() => {
+						container.scrollIntoView({
+							behavior: "smooth",
+							inline: "center",
+							block: "center",
+						});
+
+						highlighting = true;
+						setTimeout(() => {
+							highlighting = false;
+						}, 3400);
+					}, 300);
+				});
+			} else {
+				focus(index);
+			}
+			return;
+		}
+		if ($itemState.folded) {
+			$itemState.folded = false;
+			tick().then(() => {
+				todoList.foucsIntoByLocation(paths, index, highlight);
+			});
+		} else {
+			todoList.foucsIntoByLocation(paths, index, highlight);
+		}
+	};
+
+	// 方便highlight
+	const register = getRegisterFromContext();
+	onMount(() => {
+		register($itemState);
+	});
 </script>
 
-<div class="relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}">
+<div
+	bind:this={container}
+	class:highlight-box={highlighting}
+	class="relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}"
+>
 	<TodoItem
 		bind:this={todoItem}
 		bind:hasNote
@@ -158,30 +176,31 @@
 		{arrowUpHandle}
 		enterHandle={itemEnterHandler}
 		{task}
-		tabHandle={() => {
-			tabHandle(stateMap);
+		tabHandle={(range: { index: number }) => {
+			tabHandle(task, $itemState, range.index);
 		}}
-		untabHandle={() => {
-			untabHandle(stateMap);
+		untabHandle={(range: { index: number }) => {
+			untabHandle(task, $itemState, range.index);
 		}}
 	>
 		{#snippet handle()}
 			<ContextMenu.Root>
-				<ContextMenu.Trigger
-					><TaskDraggable {parent} taskId={$task.id}>
+				<ContextMenu.Trigger>
+					<TaskDraggable {parent} {task}>
 						<Handle
-							taskId={$task.id}
-							onclick={() => paths.push(currentPath)}
+							taskId={task.id}
+							onclick={() => $itemState.zoomIn()}
 						/>
-					</TaskDraggable></ContextMenu.Trigger
-				>
+					</TaskDraggable>
+				</ContextMenu.Trigger>
 				<ContextMenu.Content>
 					<ContextMenu.Item
 						class="z-50"
 						inset
-						onclick={() => db.deleteTask($task.id, $parent.id)}
-						>删除</ContextMenu.Item
+						onclick={() => parent.deleteChild(task)}
 					>
+						删除
+					</ContextMenu.Item>
 				</ContextMenu.Content>
 			</ContextMenu.Root>
 		{/snippet}
@@ -189,7 +208,7 @@
 		{#snippet overlay()}
 			{#if !meDragging}
 				<CollapseIcon
-					bind:folded
+					bind:folded={$itemState.folded}
 					onfolded={() => console.log("folded")}
 					onunfolded={() => console.log("unfolded")}
 				/>
@@ -198,10 +217,7 @@
 	</TodoItem>
 
 	<TodoList
-		display={!folded}
-		{currentPath}
-		{location}
-		depth={depth + 1}
+		display={!$itemState.folded}
 		bind:this={todoList}
 		arrowUpHandle={(range, context) => {
 			todoItem.focus(range.index);
@@ -210,7 +226,6 @@
 		{arrowDownHandle}
 		parent={task}
 		moveUp={movedUp}
-		{stateMap}
 	>
 		{#snippet side()}
 			<div
@@ -219,7 +234,7 @@
 					: ''} group flex w-5 flex-shrink-0 flex-row items-start pb-0 pl-1"
 			>
 				<div
-					class=" h-full bg-slate-100 group-hover:bg-slate-300 transition-colors duration-300"
+					class=" h-full bg-zinc-100 group-hover:bg-zinc-300 transition-colors duration-300"
 					style="width: 1px;"
 				></div>
 			</div>
@@ -229,8 +244,52 @@
 	{#if meDragging}
 		<!-- dragging mask -->
 		<div
-			class=" absolute z-50 ml-5 h-full w-full rounded-md bg-slate-500 opacity-0 transition duration-100"
-			class:opacity-30={meDragging}
+			class=" dragging absolute -ml-2 z-50 h-full w-full rounded-md bg-zinc-500 opacity-0 transition duration-100"
 		></div>
 	{/if}
 </div>
+
+<style>
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+			transform: scaleX(0);
+		}
+		to {
+			opacity: 0.3;
+			transform: scaleX(1);
+		}
+	}
+	.dragging {
+		opacity: 0; /* 初始状态为透明 */
+		transform: scaleX(0);
+		transform-origin: top left; /* 设置缩放原点为左上角 */
+		animation: fadeIn 150ms ease-out forwards; /* 动画持续300毫秒，并保持最终状态 */
+	}
+
+	/* 使用伪元素创建高亮层 */
+	.highlight-box::before {
+		content: "";
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		border-radius: 8px;
+		background-color: rgba(255, 215, 0, 0.5);
+		animation: blink 1.7s infinite;
+		z-index: 1;
+		pointer-events: none;
+	}
+
+	/* 定义闪烁动画 */
+	@keyframes blink {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0;
+		}
+	}
+</style>

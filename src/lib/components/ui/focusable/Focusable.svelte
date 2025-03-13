@@ -12,7 +12,6 @@
 
     onMount(() => {
         if (focus) {
-            console.log("scrolling");
             setTimeout(() => {
                 container.scrollIntoView({
                     behavior: "smooth",

@@ -1,8 +1,11 @@
 <script lang="ts">
 	import TodoList from "$lib/components/todolist/TodoList.svelte";
 	import Title from "$lib/panels/todo/Title.svelte";
-	import { type TaskProxy } from "$lib/states/rxdb";
-	import type { StateMap } from "$lib/states/rxdb/rxdb";
+	import type { TaskProxy } from "$lib/states/meta/task.svelte";
+	import {
+		setStateIntoContext,
+		type EditorItemState,
+	} from "$lib/states/states/panel_states";
 	import { CirclePlus, SquarePlus } from "lucide-svelte";
 	import type { Observable } from "rxjs";
 	import { setContext } from "svelte";
@@ -11,20 +14,32 @@
 	// svelte-ignore non_reactive_update
 	let title: Title;
 	interface Props {
-		task: Observable<TaskProxy>;
-		stateMap: StateMap;
-		showTitle: boolean;
+		task: TaskProxy;
+		showTitle?: boolean;
 		highlightTitle?: boolean;
+		rootItemState: Observable<EditorItemState>;
 	}
 
-	let { task, stateMap, showTitle, highlightTitle }: Props = $props();
+	let {
+		task,
+		showTitle = true,
+		highlightTitle,
+		rootItemState,
+	}: Props = $props();
+	setStateIntoContext(rootItemState);
+	$effect(() => {
+		setStateIntoContext(rootItemState);
+	});
 
-	const foucsByLocation = (paths: { id: string; index: number }[]) => {
-		todoList.foucsIntoByLocation(paths);
+	export const foucsByLocation = (
+		paths: TaskProxy[],
+		index: number,
+		highlight: boolean = false,
+	) => {
+		paths.shift();
+		todoList.foucsIntoByLocation(paths, index, highlight);
 	};
 	setContext("focusByLocation", foucsByLocation);
-
-	let isLastOneEmpty = $state(false);
 </script>
 
 <div class="flex grow flex-col">
@@ -49,12 +64,8 @@
 	<div class="pl-4">
 		<TodoList
 			display
-			bind:isLastOneEmpty
 			bind:this={todoList}
-			currentPath={[]}
-			location={[]}
 			parent={task}
-			{stateMap}
 			arrowUpHandle={(range, context, editor) => {
 				title?.focus(range.index);
 				return false;
@@ -65,9 +76,9 @@
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
 		role="button"
-		class="pl-3 flex w-full flex-row rounded-lg p-1 opacity-20 transition-colors duration-300 hover:bg-slate-300"
+		class="pl-3 flex w-full flex-row rounded-lg p-1 opacity-20 transition-colors duration-300 hover:bg-zinc-300"
 		onclick={() => {
-			$task.addChild();
+			task.insertChild();
 		}}
 	>
 		<CirclePlus size={16} />

@@ -2,35 +2,28 @@
 	// TODO: 支持无限滚动
 	import * as Y from "yjs";
 	import TodoView from "$lib/components/todolist/TodoView.svelte";
-	import { Database } from "$lib/states/rxdb";
-	import dayjs from "dayjs";
+	import dayjs, { Dayjs } from "dayjs";
 	import { getContext, setContext } from "svelte";
 	import { range } from "radash";
-	import type { StateMap } from "$lib/states/rxdb/rxdb";
 	import Focusable from "$lib/components/ui/focusable/Focusable.svelte";
+	import type { JournalProxyManager } from "$lib/states/meta/journal.svelte";
+	import { loadJournalPanelState } from "../todo/state.svelte";
+	import type { StateMap } from "$lib/states/states/panel_states";
 
-	const db = getContext<Database>("db");
+	let {
+		journalProxyManager,
+		panelStates,
+	}: {
+		journalProxyManager: JournalProxyManager;
+		panelStates: Y.Map<StateMap>;
+	} = $props();
+
 	const panelId = "weekly-"; /* + userId */
 	setContext("panelId", panelId);
+	const panelState = loadJournalPanelState(panelId, panelStates);
 
-	// svelte-ignore non_reactive_update
-	let panelState = db.panelStates.get(panelId)!;
-	if (!panelState) {
-		panelState = new Y.Map();
-		db.panelStates.set(panelId, panelState);
-	}
-
-	function getOrNewState(id: string) {
-		let state = panelState.get(id) as StateMap | undefined;
-		if (!state) {
-			state = new Y.Map();
-			panelState.set(id, state);
-		}
-		return state;
-	}
-
-	function isCurrentWeek(t: number) {
-		return dayjs(t).startOf("week").isSame(dayjs().startOf("week"));
+	function isCurrentWeek(t: Dayjs) {
+		return t.startOf("week").isSame(dayjs().startOf("week"));
 	}
 
 	function genTimes() {
@@ -40,31 +33,27 @@
 		);
 	}
 
-	const journalPromiseList = genTimes().map((time) =>
-		db.journals.getOrCreateJounral(
-			time.valueOf(),
-			"week",
+	const journalPromiseList = genTimes().map((time) => {
+		return journalProxyManager.getOrCreateJournal(
+			time,
+			"WEEK",
 			time.format("MM/DD"),
 			`${time.format("YYYY-MM-DD")} - ${time.add(1, "week").format("YYYY-MM-DD")}`,
-		),
-	);
+		);
+	});
 	const weekEls: Record<string, HTMLDivElement> = $state({});
 </script>
 
 <div class="pl-2 h-full overflow-y-auto">
-	{#each journalPromiseList as promise}
-		{#await promise}
-			loading
-		{:then weekDoc}
-			<div bind:this={weekEls[weekDoc.task.id]}>
-				<Focusable focus={isCurrentWeek(weekDoc.time)} inline="start" />
-				<TodoView
-					highlightTitle={isCurrentWeek(weekDoc.time)}
-					showTitle
-					task={weekDoc.task.$}
-					stateMap={getOrNewState(weekDoc.task.id)}
-				/>
-			</div>
-		{/await}
+	{#each journalPromiseList as weekDoc}
+		<div bind:this={weekEls[weekDoc.task.id]}>
+			<Focusable focus={isCurrentWeek(weekDoc.time)} inline="start" />
+			<TodoView
+				highlightTitle={isCurrentWeek(weekDoc.time)}
+				showTitle
+				task={weekDoc.task}
+				rootItemState={panelState.loadChild(weekDoc.task)}
+			/>
+		</div>
 	{/each}
 </div>

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { type TaskProxy } from "$lib/states/rxdb";
 	import { quill } from "$lib/components/quill/quill";
 	import type { QuillOptions } from "quill";
 	import type Quill from "quill/core/quill";
@@ -7,10 +6,10 @@
 		warpKeyHandler,
 		type KeyboardHandler,
 	} from "$lib/components/quill/model";
-	import type { Observable } from "rxjs";
+	import type { TaskProxy } from "$lib/states/meta/task.svelte";
 
 	interface Props {
-		task: Observable<TaskProxy>;
+		task: TaskProxy;
 		enterHandle?: KeyboardHandler;
 		arrowUpHandle?: KeyboardHandler;
 		arrowDownHandle?: KeyboardHandler;
@@ -32,15 +31,7 @@
 		// openNoteEdit = true;
 		return false;
 	};
-	let text = $state($task.yText());
-	// svelte-ignore state_referenced_locally
-	if (!text) {
-		throw new Error(`invalid taskId: ${$task.textId}`);
-	}
-
-	$effect(() => {
-		text = $task.yText();
-	});
+	let text = $derived(task.text);
 
 	const configs: QuillOptions = {
 		modules: {
@@ -80,7 +71,7 @@
 >
 	{#if highlightTitle}
 		<div
-			class=" absolute h-full bg-slate-300 group-hover:bg-slate-500 transition duration-500 rounded-full"
+			class=" absolute h-full bg-zinc-300 group-hover:bg-zinc-500 transition duration-500 rounded-full"
 			style:width="2px"
 		></div>
 	{/if}

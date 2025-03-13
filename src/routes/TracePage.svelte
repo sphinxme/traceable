@@ -2,24 +2,19 @@
 	import { PaneGroup, Pane, PaneResizer } from "$lib/components/ui/resizable";
 	import Calendar from "$lib/panels/calendar/Calendar.svelte";
 	import Editor from "$lib/panels/todo/Editor.svelte";
-	import type { Database } from "$lib/states/rxdb";
-	import { getContext } from "svelte";
+	import { db } from "@/state";
 
-	let props = $props();
-
-	const db = getContext<Database>("db");
+	let rootTask = db.userManager.rootTask;
+	let panelStateMap = db.doc.getMap("panelStates");
+	let eventProxyManager = db.eventProxyManager;
 </script>
 
 <PaneGroup direction="horizontal">
 	<Pane>
-		<Calendar />
+		<Calendar {eventProxyManager} />
 	</Pane>
 	<PaneResizer />
 	<Pane>
-		{#await db.getAndInitRootId()}
-			loading
-		{:then rootTask}
-			<Editor rootTask={rootTask.$} />
-		{/await}
+		<Editor {rootTask} {panelStateMap} />
 	</Pane>
 </PaneGroup>

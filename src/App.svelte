@@ -1,3 +1,5 @@
+<svelte:options runes={true} />
+
 <script lang="ts">
 	// import Button from "$lib/components/ui/button/button.svelte";
 	// import { SquareLibrary, PanelsTopLeft, CalendarRange } from "lucide-svelte";
@@ -16,7 +18,6 @@
 	// 使用导入的 page store 来获取当前路径
 	// import SidebarItem from "$lib/components/sidebar/SidebarItem.svelte";
 	import DefaultPage from "./routes/DefaultPage.svelte";
-	import { db } from "$lib/states/rxdb";
 	import TracePage from "./routes/TracePage.svelte";
 	import OrganizePage from "./routes/OrganizePage.svelte";
 	import SchedulePage from "./routes/SchedulePage.svelte";
@@ -27,15 +28,27 @@
 		SquareLibrary,
 	} from "lucide-svelte";
 	import SidebarItem from "$lib/components/sidebar/SidebarItem.svelte";
-	import { Button } from "$lib/components/ui/button";
 	import hotkeys from "hotkeys-js";
-	import * as Dialog from "$lib/components/ui/dialog";
-	import Setting from "$lib/components/setting/Setting.svelte";
 	import SettingsPage from "./routes/SettingsPage.svelte";
+	import {
+		loadFromIndexedDB,
+		loadFromLiveBlocks,
+		newYDoc,
+	} from "$lib/states/yjs/load";
+	import { load } from "./state";
 
-	setContext("db", db);
 	const appWindow = new Window("main");
 	let open = $state(false); // open dialog
+	const doc = newYDoc();
+	const loadingFromIndexedDBPromise = loadFromIndexedDB(doc);
+	const loadingFromLiveBlocksPromise = loadFromLiveBlocks(doc);
+	const loadPromise = Promise.all([
+		loadingFromIndexedDBPromise,
+		loadingFromLiveBlocksPromise,
+	]);
+	const finalLoad = loadPromise.then(() => {
+		load(doc);
+	});
 
 	const routes = {
 		"/": DefaultPage,
@@ -101,7 +114,7 @@
 <div class=" flex h-full flex-row items-start overflow-hidden">
 	<div
 		data-tauri-drag-region
-		class="flex h-full flex-col bg-slate-100 rounded-lg"
+		class="flex h-full flex-col bg-zinc-100 rounded-lg"
 	>
 		<nav class="flex flex-col h-full">
 			<SidebarItem path="/trace">
@@ -120,8 +133,31 @@
 			</SidebarItem>
 		</nav>
 	</div>
-	{#await db.load()}
-		<div class=" h-full w-full text-center">loading...</div>
+	{#await finalLoad}
+		<div class=" flex-row items-center">
+			{#await loadFromIndexedDB}
+				<div class=" h-full w-full text-center">
+					loading from indexDB...
+				</div>
+			{:then}
+				<div class=" h-full w-full text-center">indexDB loaded</div>
+			{:catch error}
+				<div class=" h-full w-full text-center">
+					indexDB error: {error.message}
+				</div>
+			{/await}
+			{#await loadFromLiveBlocks}
+				<div class=" h-full w-full text-center">
+					loading from liveblocks...
+				</div>
+			{:then}
+				<div class=" h-full w-full text-center">liveblocks loaded</div>
+			{:catch error}
+				<div class=" h-full w-full text-center">
+					liveblocks error:{error.message}
+				</div>
+			{/await}
+		</div>
 	{:then}
 		<!-- <DefaultPage /> -->
 		<Router {routes} />

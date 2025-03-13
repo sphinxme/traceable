@@ -22,17 +22,17 @@
 	class="handle relative flex items-center justify-center"
 >
 	<span
-		class=" plate absolute h-5 w-5 rounded-full bg-slate-300 opacity-0 duration-300 group-hover:opacity-60"
+		class=" plate absolute h-5 w-5 rounded-full bg-zinc-300 opacity-0 duration-300 group-hover:opacity-60"
 		style:z-index="5"
 	>
 		<div
-			class="extra-panel flex transition ease-in-out justify-stretch items-stretch absolute rounded-full bg-slate-300 left-0 h-5 w-0 overflow-hidden duration-300"
+			class="extra-panel flex transition ease-in-out justify-stretch items-stretch absolute rounded-full bg-zinc-300 left-0 h-5 w-0 overflow-hidden duration-300"
 			style:z-index="8"
 			style:transition-property="width"
 		>
 			<div class="w-5 flex-shrink-0"></div>
 			<div
-				class="toggle flex flex-grow justify-stretch items-stretch text-slate-700 font-bold text-xs"
+				class="toggle flex flex-grow justify-stretch items-stretch text-zinc-700 font-bold text-xs"
 				onclick={(e) => e.stopPropagation()}
 			>
 				<ToggleGroup.Root type="single">
@@ -42,7 +42,7 @@
 				</ToggleGroup.Root>
 
 				<!-- <div
-					class="my-1 px-1 rounded-full bg-slate-500 text-white"
+					class="my-1 px-1 rounded-full bg-zinc-500 text-white"
 					style:font-size="0.5rem"
 					onclick={() => console.log("todo")}
 				>
@@ -56,7 +56,7 @@
 					BLOCK
 				</div>
 				<div
-					class="my-1 px-1 rounded-full bg-slate-100"
+					class="my-1 px-1 rounded-full bg-zinc-100"
 					style:font-size="0.5rem"
 					onclick={() => console.log("done")}
 				>
@@ -71,16 +71,23 @@
 <style>
 	.handle:active .extra-panel {
 		width: 0rem;
+		height: 0%;
+		display: none;
 	}
-	.handle:hover .extra-panel {
+	/* .extra-panel:active {
+		display: none;
+	} */
+	/* .handle:hover .extra-panel {
 		transition-delay: 300ms;
 		width: 15rem;
 		height: 100%;
-	}
-	.handle:hover .plate {
+	} */
+	/* .handle:hover .plate {
 		transition-delay: 300ms;
 		opacity: 1;
-	}
+	} */
+
+	/* 以下废弃 */
 
 	/* .extra-panel:hover {
 		width: 15rem;

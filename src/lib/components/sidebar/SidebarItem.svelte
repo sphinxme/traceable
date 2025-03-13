@@ -7,8 +7,8 @@
 	onclick={() => {
 		push(path);
 	}}
-	class="m-1 rounded-lg p-2 px-4 text-center text-lg transition-colors duration-300 hover:bg-slate-200"
-	class:bg-slate-200={$location == path}
+	class="m-1 rounded-lg p-2 px-4 text-center text-lg transition-colors duration-300 hover:bg-zinc-200"
+	class:bg-zinc-200={$location == path}
 >
 	{@render children?.()}
 </button>

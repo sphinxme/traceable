@@ -2,25 +2,22 @@
 	import "quill/dist/quill.core.css";
 	import Quill from "quill";
 	import { QuillBinding } from "y-quill";
-	import { getContext, onMount, tick } from "svelte";
+	import { getContext, onMount } from "svelte";
 	import * as Popover from "$lib/components/ui/popover";
 
 	import { warpKeyHandler, type KeyboardHandler } from "../../quill/model";
-	import { type Database, type TaskProxy } from "$lib/states/rxdb";
 	import EventIndicator from "./event/EventIndicator.svelte";
 	import NoteEditor from "./note/NoteEditor.svelte";
 	import Overlay from "./overlay/Overlay.svelte";
-	import { firstValueFrom, type Observable } from "rxjs";
-	import { yStore } from "$lib/states/rxdb/utils.svelte";
+	import type { TaskProxy } from "$lib/states/meta/task.svelte";
 
 	interface Props {
-		task: Observable<TaskProxy>;
+		task: TaskProxy;
 		arrowUpHandle?: KeyboardHandler;
 		arrowDownHandle?: KeyboardHandler;
 		enterHandle?: KeyboardHandler;
 		tabHandle?: any;
 		untabHandle?: any;
-		isLastOneEmpty?: boolean;
 		overlay?: import("svelte").Snippet;
 		handle?: import("svelte").Snippet;
 		drag?: import("svelte").Snippet;
@@ -38,36 +35,15 @@
 		handle,
 		drag,
 		hasNote = $bindable(),
-		isLastOneEmpty = $bindable(),
 	}: Props = $props();
 	let container: HTMLDivElement;
 	let editor: Quill;
 	let noteEditor: NoteEditor;
 
-	let db: Database = getContext("db");
-
-	const events = db.events
-		.find()
-		.where({ task: $task.id })
-		.sort({ start: "asc" }).$;
-	const loadingEvents = firstValueFrom(events);
-	loadingEvents.then((e) => {
-		if (e.length) {
-			console.log({ e });
-		}
-	});
-
-	const text = $task.yText();
-	if (!text) {
-		throw new Error(`unknown textId:${$task.textId}`);
-	}
-
-	let rawNote = $task.yNote();
-	if (!rawNote) {
-		throw new Error("empty note id!");
-	}
-	let note = yStore(rawNote);
-
+	const events = task.events.$;
+	const text = task.text;
+	let note = task.note$;
+	let isCompleted = task.isCompleted$;
 	$effect(() => {
 		hasNote = $note?.length > 0;
 	});
@@ -118,14 +94,7 @@
 		});
 
 		const binding = new QuillBinding(text, editor /*, provider.awareness*/);
-
-		const onTextChange = () => {
-			isLastOneEmpty = text.length === 0;
-		};
-		onTextChange();
-		text.observe(onTextChange);
 		return () => {
-			text.unobserve(onTextChange);
 			binding.destroy();
 		};
 	});
@@ -141,10 +110,8 @@
 				<div
 					class="todoitem w-full"
 					style:font-size="large"
-					style:text-decoration={$task.isCompleted
-						? "line-through"
-						: ""}
-					style:opacity={$task.isCompleted ? 0.5 : 1}
+					style:text-decoration={$isCompleted ? "line-through" : ""}
+					style:opacity={$isCompleted ? 0.5 : 1}
 					bind:this={container}
 				></div>
 			</div>
@@ -155,18 +122,17 @@
 
 	<div class="flex h-2 flex-row">
 		<div class="h-1 w-6"></div>
-		{#await loadingEvents}
-			loading
-		{:then}
-			{#each $events as event (event.id)}
-				<EventIndicator data={event} isCompleted={$task.isCompleted} />
-			{/each}
-		{/await}
+		{#each $events as event (event.id)}
+			<EventIndicator data={event} isCompleted={$isCompleted} />
+		{/each}
 	</div>
 
 	<Popover.Root bind:open={isNoteEditOpen}>
 		<Popover.Trigger>
-			<div style:padding-left="18px" class=" text-start text-slate-500">
+			<div
+				style:padding-left="18px"
+				class=" line-clamp-3 text-nowrap whitespace-pre-line text-ellipsis text-start text-zinc-500 w-full"
+			>
 				{$note}
 			</div>
 		</Popover.Trigger>
@@ -187,7 +153,7 @@
 					isNoteEditOpen = false;
 					return false;
 				}}
-				text={rawNote}
+				text={task.note}
 			/>
 		</Popover.Content>
 	</Popover.Root>

@@ -27,7 +27,6 @@ export const quill: Action<HTMLDivElement, QuillActionParams> = (
     return {
         update(params) {
             if (yText != params.text) {
-                console.log("updating quill");
                 yText = params.text;
                 if (binding) {
                     binding.destroy();

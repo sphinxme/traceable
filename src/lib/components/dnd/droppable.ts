@@ -24,7 +24,6 @@ function droppableAction<T>(
     };
 
     node.ondragleave = (event: DragEvent) => {
-        console.log("leaving");
         // if (node.contains(event.target)) {
         //     return
         // }
@@ -52,10 +51,6 @@ function droppableAction<T>(
                 }
                 if (event.dataTransfer) {
                     event.dataTransfer.dropEffect = "link";
-                    console.log(
-                        "setted dropEffect",
-                        event.dataTransfer.dropEffect,
-                    );
                 }
                 break;
             default:
@@ -73,13 +68,11 @@ function droppableAction<T>(
         const data = getDnDData<T>(channel);
         const dropEffect = droppable(event.shiftKey, data);
         if (dropEffect) {
-            console.log("onDrop1", dropEffect);
             event.preventDefault();
         }
         setHoverStatus(false);
         switch (dropEffect) {
             case "link":
-                console.log("onDrop2-Link", dropEffect);
                 onLink(data);
                 break;
             case "move":

@@ -17,5 +17,6 @@
     },
     "[svelte]": {
         "editor.defaultFormatter": "svelte.svelte-vscode"
-    }
+    },
+    "workbench.editor.mouseBackForwardToNavigate": true
 }

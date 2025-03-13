@@ -1,9 +1,8 @@
 <script>
     import { Button } from "../ui/button";
     import * as Dialog from "$lib/components/ui/dialog";
-    import { db } from "$lib/states/rxdb";
     import { Textarea } from "../ui/textarea";
-    import { clearPaths } from "$lib/panels/todo/state.svelte";
+    import { db } from "@/state";
 
     let open = $state(false);
     let value = $state("");
@@ -24,7 +23,6 @@
 <Button
     onclick={async () => {
         await db.clear();
-        clearPaths();
         message2 = "已清空";
     }}
 >
@@ -38,7 +36,6 @@
         <Button
             onclick={async () => {
                 message = "";
-                await clearPaths();
                 await db.import(JSON.parse(value));
                 message = "已导入";
             }}
