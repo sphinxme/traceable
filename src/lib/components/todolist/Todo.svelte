@@ -65,6 +65,9 @@
 
 	let parentState = getParentStateContext();
 	let itemState = $parentState.loadChild(task).$;
+	$inspect($itemState).with((type, value) => {
+		console.log({ type, value });
+	});
 	setStateIntoContext(itemState);
 	let container: HTMLDivElement; // bind
 
@@ -132,14 +135,14 @@
 					setTimeout(() => {
 						container.scrollIntoView({
 							behavior: "smooth",
-							inline: "center",
+							inline: "start",
 							block: "center",
 						});
 
 						highlighting = true;
 						setTimeout(() => {
 							highlighting = false;
-						}, 3400);
+						}, 3000);
 					}, 300);
 				});
 			} else {
@@ -160,7 +163,7 @@
 	// 方便highlight
 	const register = getRegisterFromContext();
 	onMount(() => {
-		register($itemState);
+		return register($itemState);
 	});
 </script>
 
@@ -276,19 +279,27 @@
 		right: 0;
 		bottom: 0;
 		border-radius: 8px;
-		background-color: rgba(255, 215, 0, 0.5);
-		animation: blink 1.7s infinite;
+		background-color: rgba(255, 215, 0, 0.3);
+		animation: blink 3s infinite;
 		z-index: 1;
 		pointer-events: none;
 	}
 
 	/* 定义闪烁动画 */
 	@keyframes blink {
-		0%,
-		100% {
+		0% {
+			opacity: 0;
+		}
+
+		20% {
 			opacity: 1;
 		}
-		50% {
+
+		60% {
+			opacity: 1;
+		}
+
+		100% {
 			opacity: 0;
 		}
 	}

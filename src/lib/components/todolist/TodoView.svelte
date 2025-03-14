@@ -36,7 +36,6 @@
 		index: number,
 		highlight: boolean = false,
 	) => {
-		paths.shift();
 		todoList.foucsIntoByLocation(paths, index, highlight);
 	};
 	setContext("focusByLocation", foucsByLocation);

@@ -24,6 +24,7 @@
     onclick={async () => {
         await db.clear();
         message2 = "已清空";
+        window.location.reload();
     }}
 >
     清空
@@ -38,6 +39,7 @@
                 message = "";
                 await db.import(JSON.parse(value));
                 message = "已导入";
+                window.location.reload();
             }}
         >
             导入

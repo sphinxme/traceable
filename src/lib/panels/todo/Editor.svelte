@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as Y from "yjs";
-	import { setContext } from "svelte";
+	import { onDestroy, setContext } from "svelte";
 	import { Skull, BatteryFull } from "lucide-svelte";
 	import TodoView from "$lib/components/todolist/TodoView.svelte";
 	import Navigator from "./Navigator.svelte";
@@ -22,19 +22,24 @@
 	const panelState = loadEditorPanelState(panelId, panelStateMap, rootTask);
 	let rootItemState = panelState.rootState$;
 	let currentTask = $derived($rootItemState.task);
+	$effect(() => {
+		const subscriber = highlightTaskSignal.subscribe(({ id, index }) => {
+			const todoStateList = registerMap.get(id);
+			if (!todoStateList || !todoStateList.length) {
+				return;
+			}
 
-	highlightTaskSignal.subscribe(({ id, index }) => {
-		const todoStateList = registerMap.get(id);
-		if (!todoStateList || !todoStateList.length) {
-			return;
-		}
-
-		index = index % todoStateList.length;
-		const paths = todoStateList?.at(index)?.absolutePaths;
-		console.log({ todoStateList, index, paths });
-		if (paths) {
-			todoView.foucsByLocation(paths, 0, true);
-		}
+			index = index % todoStateList.length;
+			const state = todoStateList?.at(index);
+			const paths = state?.relativePath;
+			console.log({ todoStateList, state, index, paths });
+			if (paths) {
+				todoView.foucsByLocation([...paths], 0, true);
+			}
+		});
+		return () => {
+			subscriber.unsubscribe();
+		};
 	});
 </script>
 

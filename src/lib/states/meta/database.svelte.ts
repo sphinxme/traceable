@@ -18,7 +18,7 @@ export class Database {
         this.repository = new Repository(doc);
 
         this.taskProxyManaager = new TaskProxyManager(this.repository, this.repository);
-        this.eventProxyManager = new EventProxyManager(this.repository.events, this.repository, this.repository, this.taskProxyManaager);
+        this.eventProxyManager = new EventProxyManager(this.repository.events, this.repository, this.taskProxyManaager);
         this.taskProxyManaager.eventproxyManager = this.eventProxyManager;
         this.journalProxyManager = new JournalProxyManager(this.repository.journals, this.taskProxyManaager);
         this.userManager = new UserManager(this.repository.user, this.taskProxyManaager);
@@ -59,7 +59,7 @@ export class Database {
             Object.entries(data.journals).forEach(([id, journal]) => {
                 repository.journals.set(id, new Y.Map(Object.entries(journal)));
             });
-            repository.user.set("user", data.user);
+            repository.user.set("rootTaskId", data.user.rootTaskId);
         });
     }
 
@@ -76,7 +76,6 @@ export class Database {
         const texts = this.repository.texts.toJSON() as Record<string, string>;
         const events = this.repository.events.toJSON() as Record<string, {
             id: string;
-            textId: string;
             taskId: string;
             start: number;
             end: number;

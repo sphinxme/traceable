@@ -27,8 +27,5 @@ export function loadFromLiveBlocks(doc: Y.Doc) {
             console.log("loaded from liveblocks")
             resolve();
         });
-        p.on("synced", () => {
-            console.log("synced")
-        })
     });
 }

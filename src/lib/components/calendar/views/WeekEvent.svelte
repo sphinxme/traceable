@@ -238,7 +238,11 @@
 								/><ObservableText text={parentTask.text$} />
 							</p>
 						{/each}
-						<div class="line-clamp-3 py-2 text-wrap">{$text}</div>
+						<div
+							class="py-2 break-words text-wrap text-ellipsis overflow-clip"
+						>
+							{$text}
+						</div>
 					</ContextMenu.Trigger>
 					<ContextMenu.Content>
 						<ContextMenu.Item onclick={() => event.destory()}>

@@ -120,8 +120,8 @@
 	</div>
 	<!-- 横条下面的东西 -->
 
-	<div class="flex h-2 flex-row">
-		<div class="h-1 w-6"></div>
+	<div class="flex h-2 flex-row pt-1">
+		<div class="h-1" style:width="18px"></div>
 		{#each $events as event (event.id)}
 			<EventIndicator data={event} isCompleted={$isCompleted} />
 		{/each}
@@ -131,7 +131,10 @@
 		<Popover.Trigger>
 			<div
 				style:padding-left="18px"
-				class=" line-clamp-3 text-nowrap whitespace-pre-line text-ellipsis text-start text-zinc-500 w-full"
+				style:transition-property="margin"
+				class=" {$events.isEmpty()
+					? '-mt-1'
+					: ''}  line-clamp-3 text-nowrap whitespace-pre-line text-ellipsis text-start text-zinc-500 w-full transition"
 			>
 				{$note}
 			</div>
@@ -168,7 +171,15 @@
 		padding-right: 15px;
 		width: 100%;
 		flex-grow: 1;
+		text-wrap: nowrap;
 		/* padding-bottom: 2px; */
+
+		-ms-overflow-style: none; /* 针对 IE 和 Edge 隐藏滚动条 */
+		scrollbar-width: none; /* 针对 Firefox 隐藏滚动条 */
+	}
+
+	:global(.todoitem .ql-editor)::-webkit-scrollbar {
+		display: none; /* 针对 WebKit 浏览器（如 Chrome、Safari）隐藏滚动条 */
 	}
 
 	:global(.todoitem .ql-container) {

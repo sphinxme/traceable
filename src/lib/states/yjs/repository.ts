@@ -68,12 +68,11 @@ export class Repository {
         return this.events.get(id);
 
     }
-    newYEvent(taskId: string, textId: string, start: number, end: number): string { // 返回id
+    newYEvent(taskId: string, start: number, end: number): string { // 返回id
         const eventId = id()
         const event = new Y.Map()
         event.set("id", eventId);
         event.set("taskId", taskId);
-        event.set("textId", textId);
         event.set("start", start);
         event.set("end", end);
         this.events.set(eventId, event);

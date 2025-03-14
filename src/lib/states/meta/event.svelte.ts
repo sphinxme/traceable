@@ -2,25 +2,18 @@ import * as Y from "yjs";
 import type { TaskProxy, TaskProxyManager } from "./task.svelte";
 import { distinctUntilChanged, Observable } from "rxjs";
 import { YIterable } from "./array";
-import type { Dayjs } from "dayjs";
 
 interface YEventRepository {
     getYEvent(id: string): Y.Map<any>;
-    newYEvent(taskId: string, textId: string, start: number, end: number): string; // 返回id
+    newYEvent(taskId: string, start: number, end: number): string; // 返回id
     deleteYEvent(id: string): void
 }
 
-interface YTextRepository {
-    getYText(textId: string): Y.Text;
-    newYText(text?: string): string; // 返回id
-    deleteYText(textId: string): void
-}
 
 export class EventProxyManager implements Iterable<EventProxy> {
     public constructor(
         private yMap: Y.Map<Y.Map<any>>,
         public readonly repository: YEventRepository,
-        public readonly textRepository: YTextRepository,
         public readonly taskFactory: TaskProxyManager
     ) { }
 
@@ -99,8 +92,7 @@ export class EventProxyManager implements Iterable<EventProxy> {
     }
 
     public createEvent(task: TaskProxy, start: number, end: number) {
-        const textId = this.textRepository.newYText();
-        const id = this.repository.newYEvent(task.id, textId, start, end);
+        const id = this.repository.newYEvent(task.id, start, end);
         return this.build(id, task);
     }
 
@@ -111,7 +103,6 @@ export class EventProxyManager implements Iterable<EventProxy> {
 
 export class EventProxy {
     public readonly id: string;
-    private yText: Y.Text;
     public readonly task: TaskProxy;
 
 
@@ -123,20 +114,11 @@ export class EventProxy {
     ) {
         this.id = this.data.get("id");
         this.textId = this.data.get("textId");
-        this.yText = this.manager.textRepository.getYText(this.textId);
         if (!task) {
             const taskId = this.data.get("taskId");
             task = this.manager.taskFactory.build(taskId);
         }
         this.task = task;
-    }
-
-    public get text$(): Observable<string> {
-        return observeYText(this.yText);
-    }
-
-    public get text(): Y.Text {
-        return this.yText;
     }
 
     public get start$(): Observable<number> {

@@ -135,7 +135,7 @@
 	</div>
 	{#await finalLoad}
 		<div class=" flex-row items-center">
-			{#await loadFromIndexedDB}
+			{#await loadingFromIndexedDBPromise}
 				<div class=" h-full w-full text-center">
 					loading from indexDB...
 				</div>
@@ -146,7 +146,7 @@
 					indexDB error: {error.message}
 				</div>
 			{/await}
-			{#await loadFromLiveBlocks}
+			{#await loadingFromLiveBlocksPromise}
 				<div class=" h-full w-full text-center">
 					loading from liveblocks...
 				</div>

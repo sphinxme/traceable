@@ -53,7 +53,7 @@ export class EditorPanelState {
         }
         this.panelState = states.get(panelId);
 
-        this.paths = new BehaviorSubject(paths);
+        this.paths = new BehaviorSubject(paths); // writable
 
         if (!this.panelState.has("foldStates")) {
             this.panelState.set("foldStates", new Y.Map());
@@ -87,7 +87,7 @@ export class EditorPanelState {
                 tree.set(taskId, state);
             }
         }
-        return EditorItemState.buildFromEditor(currentRootTask, this, undefined, currentPaths, [], state);
+        return EditorItemState.buildFromEditor(currentRootTask, this, undefined, [...currentPaths], [], state);
     }
 
     public get path$() {
@@ -121,10 +121,17 @@ export class EditorItemState {
         currentTask: TaskProxy,
         panelState: EditorPanelState | undefined,
         parentState: EditorItemState | undefined,
+
+        /**
+         * 从root出发, 到当前zoom root的的路径, 包含root本身, 包含zoomroot
+         */
         currentParentPath: TaskProxy[],
 
         /**
-         * 从当前panel的path出发, 到当前Item的相对路径, 不包含当前item自身
+         * 从当前panel的zoom root出发(不包含zoom root), 到当前Item的相对路径; 
+         * 如果当前item就是zoom root, 则relativePath为空数组; 
+         * 如果当前item不是zoom root, 则relativePath会包含当前item.
+         * @see this.relativePath
          */
         relativePath: TaskProxy[],
         foldStatesTree: Y.Map<any>,
@@ -140,9 +147,11 @@ export class EditorItemState {
         private readonly currentParentPath: TaskProxy[],
 
         /**
-         * 从当前panel的path出发, 到当前Item的相对路径, 不包含当前item自身
+         * 从当前panel的zoom root出发(不包含zoom root), 到当前Item的相对路径; 
+         * 如果当前item就是zoom root, 则relativePath为空数组; 
+         * 如果当前item不是zoom root, 则relativePath会包含当前item.
          */
-        private readonly relativePath: TaskProxy[],
+        public readonly relativePath: TaskProxy[],
         private readonly foldStatesTree: Y.Map<any>,
 
         public readonly zoomable: boolean = true,
