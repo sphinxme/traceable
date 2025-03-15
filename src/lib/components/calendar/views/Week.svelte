@@ -23,6 +23,12 @@
 
 	let { dayNum = 10, manager }: Props = $props();
 	let offsetByHour = 6; // 每天从几点开始(当前每天从6点开始)
+	const notWorkHourRange = [
+		{ start: 6, end: 10 },
+		{ start: 12, end: 13.5 },
+		{ start: 18, end: 19.5 },
+		{ start: 22, end: 30 },
+	];
 	let today = dayjs().startOf("day").add(6, "hour");
 
 	// 以startDay为0
@@ -96,7 +102,11 @@
 </script>
 
 <!-- 可滚动区域 -->
-<ScrollArea class=" h-full w-full " orientation="both">
+<ScrollArea
+	class=" h-full w-full "
+	scrollbarYClasses="hidden"
+	orientation="both"
+>
 	<!-- 内部大区域 -->
 	<div
 		data-tauri-drag-region
@@ -230,6 +240,25 @@
 				{/each}
 				<div style:flex="1"></div>
 			</div>
+		</div>
+
+		<!-- 不可工作区域 -->
+		<!--  /* 定义48行，每行高度相等 */ -->
+		<div
+			style:grid-column="2 / -1"
+			style:grid-row="3 / 3"
+			class=" grid"
+			style:grid-template-rows="repeat(48, 1fr)"
+		>
+			{#each notWorkHourRange as range}
+				<div
+					style:grid-row="{(range.start - offsetByHour) * 2 + 1} / {(range.end -
+						offsetByHour) *
+						2 +
+						1}"
+					class="relative flex items-center justify-end text-xs bg-zinc-100"
+				></div>
+			{/each}
 		</div>
 
 		<!-- 日期格子 -->
