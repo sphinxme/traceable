@@ -36,6 +36,7 @@
 		newYDoc,
 	} from "$lib/states/yjs/load";
 	import { load } from "./state";
+	import Loading from "$lib/components/loading/Loading.svelte";
 
 	const appWindow = new Window("main");
 	let open = $state(false); // open dialog
@@ -110,59 +111,41 @@
 		</Command.Group>
 	</Command.List>
 </Command.Dialog>
+{#await finalLoad}
+	<Loading
+		items={{
+			indexedDB: loadingFromIndexedDBPromise,
+			liveblocks: loadingFromLiveBlocksPromise,
+		}}
+	/>
+{:then}
+	<div class=" flex h-full flex-row items-start overflow-hidden">
+		<div
+			data-tauri-drag-region
+			class="flex h-full flex-col bg-zinc-100 rounded-lg"
+		>
+			<nav class="flex flex-col h-full">
+				<SidebarItem path="/trace">
+					<SquareLibrary />
+				</SidebarItem>
+				<SidebarItem path="/organize">
+					<PanelsTopLeft />
+				</SidebarItem>
+				<SidebarItem path="/schedule">
+					<CalendarRange />
+				</SidebarItem>
+				<div class=" flex-grow"></div>
 
-<div class=" flex h-full flex-row items-start overflow-hidden">
-	<div
-		data-tauri-drag-region
-		class="flex h-full flex-col bg-zinc-100 rounded-lg"
-	>
-		<nav class="flex flex-col h-full">
-			<SidebarItem path="/trace">
-				<SquareLibrary />
-			</SidebarItem>
-			<SidebarItem path="/organize">
-				<PanelsTopLeft />
-			</SidebarItem>
-			<SidebarItem path="/schedule">
-				<CalendarRange />
-			</SidebarItem>
-			<div class=" flex-grow"></div>
-
-			<SidebarItem path="/settings">
-				<Settings />
-			</SidebarItem>
-		</nav>
-	</div>
-	{#await finalLoad}
-		<div class=" flex-row items-center">
-			{#await loadingFromIndexedDBPromise}
-				<div class=" h-full w-full text-center">
-					loading from indexDB...
-				</div>
-			{:then}
-				<div class=" h-full w-full text-center">indexDB loaded</div>
-			{:catch error}
-				<div class=" h-full w-full text-center">
-					indexDB error: {error.message}
-				</div>
-			{/await}
-			{#await loadingFromLiveBlocksPromise}
-				<div class=" h-full w-full text-center">
-					loading from liveblocks...
-				</div>
-			{:then}
-				<div class=" h-full w-full text-center">liveblocks loaded</div>
-			{:catch error}
-				<div class=" h-full w-full text-center">
-					liveblocks error:{error.message}
-				</div>
-			{/await}
+				<SidebarItem path="/settings">
+					<Settings />
+				</SidebarItem>
+			</nav>
 		</div>
-	{:then}
+
 		<!-- <DefaultPage /> -->
 		<Router {routes} />
-	{/await}
-</div>
+	</div>
+{/await}
 
 <style>
 </style>

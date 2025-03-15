@@ -29,6 +29,7 @@
     "radash": "^12.1.0",
     "rxdb": "^15.37.0",
     "rxjs": "^7.8.1",
+    "svelte-loading-spinners": "^0.3.6",
     "svelte-sonner": "^0.3.28",
     "svelte-spa-router": "^4.0.1",
     "tailwind-merge": "^2.5.4",
