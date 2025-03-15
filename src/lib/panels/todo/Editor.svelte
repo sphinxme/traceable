@@ -22,6 +22,8 @@
 	const panelState = loadEditorPanelState(panelId, panelStateMap, rootTask);
 	let rootItemState = panelState.rootState$;
 	let currentTask = $derived($rootItemState.task);
+
+	// focus
 	$effect(() => {
 		const subscriber = highlightTaskSignal.subscribe(({ id, index }) => {
 			const todoStateList = registerMap.get(id);

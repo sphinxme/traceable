@@ -1,6 +1,6 @@
 import * as Y from "yjs";
 import type { TaskProxy, TaskProxyManager } from "./task.svelte";
-import { distinctUntilChanged, Observable } from "rxjs";
+import { distinctUntilChanged, Observable, share, shareReplay } from "rxjs";
 import { YIterable } from "./array";
 
 interface YEventRepository {
@@ -39,7 +39,7 @@ export class EventProxyManager implements Iterable<EventProxy> {
             return observe(this.yMap, () => {
                 subscriber.next(this);
             })
-        })
+        }).pipe(shareReplay({ bufferSize: 1, refCount: true }))
     }
 
     public queryByRange$(from: number, to: number): Observable<Iterable<EventProxy>> {
@@ -57,7 +57,7 @@ export class EventProxyManager implements Iterable<EventProxy> {
             }
             callback();
             return observe(this.yMap, callback)
-        })
+        }).pipe(shareReplay({ bufferSize: 1, refCount: true }))
     }
 
     [Symbol.iterator](): Iterator<EventProxy> {
@@ -194,7 +194,7 @@ function observeYAttr<T>(yMap: Y.Map<any>, key: string): Observable<T> {
         return observe(yMap, (event: Y.YMapEvent<any>, transaction: Y.Transaction) => {
             subscriber.next(yMap.get(key));
         })
-    }).pipe(distinctUntilChanged())
+    }).pipe(distinctUntilChanged(), shareReplay({ bufferSize: 1, refCount: true }))
 }
 
 function observeYText(yText: Y.Text): Observable<string> {
@@ -204,7 +204,7 @@ function observeYText(yText: Y.Text): Observable<string> {
         return observe(yText, (event: Y.YTextEvent, transaction: Y.Transaction) => {
             subscriber.next(yText.toJSON())
         })
-    })
+    }).pipe(shareReplay({ bufferSize: 1, refCount: true }))
 }
 
 function observe<T>(y: Y.AbstractType<T>, callback: (event: T, transaction: Y.Transaction) => void) {

@@ -1,6 +1,6 @@
 import * as Y from "yjs";
 import type { TaskProxy } from "../meta/task.svelte";
-import { BehaviorSubject, distinctUntilChanged, map, Observable, of } from "rxjs";
+import { BehaviorSubject, distinctUntilChanged, map, Observable, of, share, shareReplay, tap } from "rxjs";
 import { getContext, setContext } from "svelte";
 
 export type StateMap = Y.Map<boolean | StateMap>
@@ -62,9 +62,14 @@ export class EditorPanelState {
     }
 
     public get rootState$() {
-        return this.paths.pipe(map((currentPaths, index) => {
-            return this.loadRootState(currentPaths)
-        }))
+        return this.paths.pipe(
+            map((currentPaths, index) => {
+                console.log({ currentPaths })
+                return this.loadRootState(currentPaths)
+            }),
+            tap((rootState) => { console.log({ rootState, foldStatesTree: rootState.debugRootFoldState(), all: this.foldStatesTree.toJSON() }); }),
+            shareReplay({ bufferSize: 1, refCount: true }),
+        )
     }
 
     /**
@@ -76,12 +81,12 @@ export class EditorPanelState {
         if (!currentRootTask) {
             throw new Error("empty paths");
         }
-        let state; // TODO:测试一下
+        let state = tree;
 
         // 步进到当前树位置
         for (const path of currentPaths) {
             const taskId = path.id;
-            state = tree.get(taskId);
+            state = state.get(taskId);
             if (!state) {
                 state = new Y.Map();
                 tree.set(taskId, state);
@@ -108,6 +113,12 @@ export class EditorPanelState {
  * 
  */
 export class EditorItemState {
+    /**
+     * 
+     */
+    public debugRootFoldState() {
+        return this.foldStatesTree.toJSON()
+    }
 
     static buildFromJournal(
         task: TaskProxy,
@@ -225,7 +236,7 @@ export class EditorItemState {
                     subscriber.next(this);
                 }
             });
-        });
+        }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
     }
 
     get folded() {

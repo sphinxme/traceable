@@ -1,5 +1,5 @@
 import * as Y from "yjs";
-import { distinctUntilChanged, map, Observable } from 'rxjs';
+import { distinctUntilChanged, map, Observable, share, shareReplay } from 'rxjs';
 import { EventProxyIterable, EventProxyManager } from "./event.svelte";
 import { YIterable } from "./array";
 
@@ -113,11 +113,11 @@ export class TaskProxy {
                 subscriber.next(this.status);
             })
         }).
-            pipe(distinctUntilChanged());
+            pipe(distinctUntilChanged(), shareReplay({ bufferSize: 1, refCount: true }));
     }
 
     public get isCompleted$(): Observable<boolean> {
-        return this.status$.pipe(map(status => status === "DONE"))
+        return this.status$.pipe(map(status => status === "DONE"), shareReplay({ bufferSize: 1, refCount: true }))
     }
 
     public hasChildren(): boolean {
@@ -206,7 +206,7 @@ function registerYText(yText: Y.Text): Observable<string> {
         return register(yText, (event: Y.YTextEvent, transaction: Y.Transaction) => {
             subscriber.next(yText.toJSON())
         })
-    })
+    }).pipe(shareReplay({ bufferSize: 1, refCount: true }))
 }
 
 function register<T>(y: Y.AbstractType<T>, callback: (event: T, transaction: Y.Transaction) => void) {

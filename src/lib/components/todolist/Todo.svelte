@@ -65,9 +65,9 @@
 
 	let parentState = getParentStateContext();
 	let itemState = $parentState.loadChild(task).$;
-	$inspect($itemState).with((type, value) => {
-		console.log({ type, value });
-	});
+	// $inspect($itemState).with((type, value) => {
+	// 	console.log({ type, value });
+	// });
 	setStateIntoContext(itemState);
 	let container: HTMLDivElement; // bind
 

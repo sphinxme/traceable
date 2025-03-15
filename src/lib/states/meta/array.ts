@@ -1,5 +1,5 @@
 import * as Y from "yjs";
-import { Observable } from 'rxjs';
+import { Observable, share, shareReplay } from 'rxjs';
 import { move } from "./array_utils";
 
 export class YIterable<T> implements Iterable<T> {
@@ -43,7 +43,7 @@ export class YIterable<T> implements Iterable<T> {
                 return YIterable.register(this.yArray, () => {
                     subscriber.next(this);
                 })
-            });
+            }).pipe(shareReplay({ bufferSize: 1, refCount: true }));
         }
 
         return this.observableCache;
