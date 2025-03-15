@@ -4,6 +4,8 @@ import interact from "interactjs";
 
 import { getDnDData } from "$lib/components/dnd/state";
 import type { TaskDnDData } from "$lib/components/todolist/dnd/state";
+import type { TaskProxy } from "$lib/states/meta/task.svelte";
+
 
 type ResizeActionParams = {
     onDropMove: (day: Dayjs, topPx: number) => void;
@@ -37,9 +39,9 @@ export const dayDropZone: Action<HTMLDivElement> = (node) => {
 };
 
 type DayExternalDropZoneParams = {
-    onDragOver: (taskId: string, topPx: number) => void;
+    onDragOver: (task: TaskProxy, topPx: number) => void;
     onDragEnd: () => void;
-    onDrop: (taskId: string, topPx: number) => void;
+    onDrop: (task: TaskProxy, topPx: number) => void;
 };
 
 export const dayExternalDropZone: Action<
@@ -49,7 +51,7 @@ export const dayExternalDropZone: Action<
     node.ondragover = (event) => {
         event.preventDefault();
         const data: TaskDnDData = getDnDData("tasks");
-        onDragOver(data.draggingTaskId, event.offsetY);
+        onDragOver(data.draggingTask, event.offsetY);
     };
     node.ondragend = (event) => {
         event.preventDefault();
@@ -57,9 +59,8 @@ export const dayExternalDropZone: Action<
     };
     node.ondrop = (event) => {
         event.preventDefault();
-        console.log(event);
         const data: TaskDnDData = getDnDData("tasks");
-        onDrop(data.draggingTaskId, event.offsetY);
+        onDrop(data.draggingTask, event.offsetY);
     };
 };
 
@@ -104,7 +105,6 @@ const interactAction: Action<HTMLDivElement, ResizeActionParams> = (
                 start(event) {
                 },
                 move(event) {
-                    console.log({ event });
                     const top = getComputedStyleTop(node) + event.dy;
                     // node.style.top = top +'px' // 手感更好
 
@@ -115,7 +115,6 @@ const interactAction: Action<HTMLDivElement, ResizeActionParams> = (
                 },
                 end(event) {
                     onDropEnd();
-                    console.log({ end: event });
                 },
             },
         });

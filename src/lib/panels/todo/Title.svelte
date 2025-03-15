@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { type TaskProxy } from "$lib/states/rxdb";
 	import { quill } from "$lib/components/quill/quill";
 	import type { QuillOptions } from "quill";
 	import type Quill from "quill/core/quill";
@@ -7,13 +6,14 @@
 		warpKeyHandler,
 		type KeyboardHandler,
 	} from "$lib/components/quill/model";
-	import type { Observable } from "rxjs";
+	import type { TaskProxy } from "$lib/states/meta/task.svelte";
 
 	interface Props {
-		task: Observable<TaskProxy>;
+		task: TaskProxy;
 		enterHandle?: KeyboardHandler;
 		arrowUpHandle?: KeyboardHandler;
 		arrowDownHandle?: KeyboardHandler;
+		highlightTitle?: boolean;
 	}
 
 	let {
@@ -21,6 +21,7 @@
 		enterHandle = () => true,
 		arrowUpHandle = () => true,
 		arrowDownHandle = () => true,
+		highlightTitle,
 	}: Props = $props();
 	export const focus = (index: number = 0) => {
 		qEditor.setSelection({ index, length: 0 });
@@ -30,15 +31,7 @@
 		// openNoteEdit = true;
 		return false;
 	};
-	let text = $state($task.yText());
-	// svelte-ignore state_referenced_locally
-	if (!text) {
-		throw new Error(`invalid taskId: ${$task.textId}`);
-	}
-
-	$effect(() => {
-		text = $task.yText();
-	});
+	let text = $derived(task.text);
 
 	const configs: QuillOptions = {
 		modules: {
@@ -74,17 +67,36 @@
 
 <!-- svelte-ignore a11y_missing_content -->
 <h1
-	class="traceable-quill-title scroll-m-20 py-4 text-3xl font-bold tracking-tight transition-colors first:mt-0"
+	class="traceable-quill-title scroll-m-20 group py-4 text-3xl font-bold tracking-tight relative transition-colors first:mt-0"
 >
+	{#if highlightTitle}
+		<div
+			class=" absolute h-full bg-zinc-300 group-hover:bg-zinc-500 transition duration-500 rounded-full"
+			style:width="2px"
+		></div>
+	{/if}
 	<div use:quill={{ text, configs, init }}></div>
 </h1>
 
 <style>
 	:global(.traceable-quill-title .ql-container) {
 		font-size: xx-large;
+		padding-top: 0px;
+		padding-bottom: 0px;
+
 		/* display: flex; */
 
 		/* flex-grow: 1; */
+		/* padding
+		
+		-bottom: 2px; */
+	}
+	:global(.traceable-quill-title .ql-editor) {
+		padding-top: 0px;
+		padding-bottom: 0px;
+		/* padding-top: 12px; */
+		width: 100%;
+		flex-grow: 1;
 		/* padding-bottom: 2px; */
 	}
 </style>

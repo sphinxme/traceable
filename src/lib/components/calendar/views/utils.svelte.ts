@@ -21,6 +21,8 @@ export function range(start: number, stop: number, step: number = 1) {
     );
 }
 
+export const hours = [6, 7, 8, 9, 10, 11, 12, 1,]
+
 /**
  * 将给定的时间四舍五入到最近的15分钟倍数。
  * @param {dayjs.Dayjs} time - 需要进行四舍五入的时间。

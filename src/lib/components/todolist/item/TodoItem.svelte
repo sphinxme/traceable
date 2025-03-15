@@ -6,24 +6,22 @@
 	import * as Popover from "$lib/components/ui/popover";
 
 	import { warpKeyHandler, type KeyboardHandler } from "../../quill/model";
-	import { type Database, type TaskProxy } from "$lib/states/rxdb";
 	import EventIndicator from "./event/EventIndicator.svelte";
 	import NoteEditor from "./note/NoteEditor.svelte";
 	import Overlay from "./overlay/Overlay.svelte";
-	import { firstValueFrom, type Observable } from "rxjs";
-	import { yStore } from "$lib/states/rxdb/utils.svelte";
+	import type { TaskProxy } from "$lib/states/meta/task.svelte";
 
 	interface Props {
-		task: Observable<TaskProxy>;
+		task: TaskProxy;
 		arrowUpHandle?: KeyboardHandler;
 		arrowDownHandle?: KeyboardHandler;
 		enterHandle?: KeyboardHandler;
 		tabHandle?: any;
 		untabHandle?: any;
-		isLastOneEmpty?: boolean;
 		overlay?: import("svelte").Snippet;
 		handle?: import("svelte").Snippet;
 		drag?: import("svelte").Snippet;
+		hasNote: boolean;
 	}
 
 	let {
@@ -36,44 +34,27 @@
 		overlay,
 		handle,
 		drag,
-		isLastOneEmpty = $bindable(),
+		hasNote = $bindable(),
 	}: Props = $props();
 	let container: HTMLDivElement;
 	let editor: Quill;
+	let noteEditor: NoteEditor;
 
-	let db: Database = getContext("db");
-
-	const events = db.events
-		.find()
-		.where({ task: $task.id })
-		.sort({ start: "asc" }).$;
-	const loadingEvents = firstValueFrom(events);
-	loadingEvents.then((e) => {
-		if (e.length) {
-			console.log({ e });
-		}
+	const events = task.events.$;
+	const text = task.text;
+	let note = task.note$;
+	let isCompleted = task.isCompleted$;
+	$effect(() => {
+		hasNote = $note?.length > 0;
 	});
 
-	const text = $task.yText();
-	if (!text) {
-		throw new Error(`unknown textId:${$task.textId}`);
-	}
-
-	let rawNote = $task.yNote();
-	if (!rawNote) {
-		throw new Error("empty note id!");
-	}
-	let note = yStore(rawNote);
-
 	let shiftEnterHandle: KeyboardHandler = () => {
-		// 弹出
-		openNoteEdit = true;
-
+		isNoteEditOpen = true;
 		return false;
 	};
 
 	export const focus = (index: number) => editor.setSelection(index);
-	let openNoteEdit = $state(false);
+	let isNoteEditOpen = $state(false);
 
 	onMount(() => {
 		editor = new Quill(container, {
@@ -113,14 +94,7 @@
 		});
 
 		const binding = new QuillBinding(text, editor /*, provider.awareness*/);
-
-		const onTextChange = () => {
-			isLastOneEmpty = text.length === 0;
-		};
-		onTextChange();
-		text.observe(onTextChange);
 		return () => {
-			text.unobserve(onTextChange);
 			binding.destroy();
 		};
 	});
@@ -134,11 +108,10 @@
 			<div class="flex w-full flex-row items-center">
 				{@render handle?.()}
 				<div
+					class="todoitem w-full"
 					style:font-size="large"
-					style:text-decoration={$task.isCompleted
-						? "line-through"
-						: ""}
-					style:opacity={$task.isCompleted ? 0.5 : 1}
+					style:text-decoration={$isCompleted ? "line-through" : ""}
+					style:opacity={$isCompleted ? 0.5 : 1}
 					bind:this={container}
 				></div>
 			</div>
@@ -147,45 +120,69 @@
 	</div>
 	<!-- 横条下面的东西 -->
 
-	<div class="flex h-2 flex-row">
-		<div class="h-1 w-6"></div>
-		{#await loadingEvents}
-			loading
-		{:then}
-			{#each $events as event (event.id)}
-				<EventIndicator data={event} isCompleted={$task.isCompleted} />
-			{/each}
-		{/await}
+	<div class="flex h-2 flex-row pt-1">
+		<div class="h-1" style:width="18px"></div>
+		{#each $events as event (event.id)}
+			<EventIndicator data={event} isCompleted={$isCompleted} />
+		{/each}
 	</div>
 
-	<Popover.Root
-		bind:open={openNoteEdit}
-		onOpenChange={(e) => {
-			console.log({ e });
-		}}
-	>
+	<Popover.Root bind:open={isNoteEditOpen}>
 		<Popover.Trigger>
-			<div class=" text-start text-slate-500">{$note}</div>
+			<div
+				style:padding-left="18px"
+				style:transition-property="margin"
+				class=" {$events.isEmpty()
+					? '-mt-1'
+					: ''}  line-clamp-3 text-nowrap whitespace-pre-line text-ellipsis text-start text-zinc-500 w-full transition"
+			>
+				{$note}
+			</div>
 		</Popover.Trigger>
-		<Popover.Content align="start">
-			<NoteEditor text={rawNote} />
+		<Popover.Content
+			onOpenAutoFocus={(e) => {
+				e.preventDefault();
+				noteEditor.focus();
+			}}
+			onCloseAutoFocus={(e) => {
+				e.preventDefault();
+				editor.focus();
+			}}
+			align="start"
+		>
+			<NoteEditor
+				bind:this={noteEditor}
+				onClose={() => {
+					isNoteEditOpen = false;
+					return false;
+				}}
+				text={task.note}
+			/>
 		</Popover.Content>
 	</Popover.Root>
 </div>
 
 <style>
-	:global(.ql-editor) {
+	:global(.todoitem .ql-editor) {
 		padding-top: 0px;
 		padding-bottom: 0px;
 		/* padding-top: 12px; */
-		padding-left: 15px;
+		padding-left: 10px;
 		padding-right: 15px;
 		width: 100%;
 		flex-grow: 1;
+		text-wrap: nowrap;
 		/* padding-bottom: 2px; */
+
+		-ms-overflow-style: none; /* 针对 IE 和 Edge 隐藏滚动条 */
+		scrollbar-width: none; /* 针对 Firefox 隐藏滚动条 */
 	}
 
-	:global(.ql-container) {
+	:global(.todoitem .ql-editor)::-webkit-scrollbar {
+		display: none; /* 针对 WebKit 浏览器（如 Chrome、Safari）隐藏滚动条 */
+	}
+
+	:global(.todoitem .ql-container) {
 		display: flex;
 		flex-grow: 1;
 		/* padding-bottom: 2px; */

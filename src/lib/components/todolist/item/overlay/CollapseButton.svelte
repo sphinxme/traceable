@@ -7,6 +7,13 @@
 	}
 
 	let { folded = $bindable(false), onfolded, onunfolded }: Props = $props();
+
+	const displayClass = (folded: boolean) => {
+		if (folded) {
+			return "opacity-100";
+		}
+		return "group-hover:opacity-50 opacity-0";
+	};
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -20,7 +27,7 @@
 			onunfolded();
 		}
 	}}
-	class={`${folded ? "opacity-100" : "opacity-50"} transition-opacity duration-300 ease-out hover:opacity-100 ${folded ? "-rotate-90" : ""}`}
+	class={`${displayClass(folded)} bg-white cursor-pointer transition-all duration-300 ease-out ${folded ? "-rotate-90" : ""}`}
 >
 	<ChevronDown size={16} strokeWidth={3} />
 </div>

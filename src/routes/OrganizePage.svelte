@@ -2,22 +2,20 @@
 	import { PaneGroup, Pane, PaneResizer } from "$lib/components/ui/resizable";
 	import Editor from "$lib/panels/todo/Editor.svelte";
 	import Schedule from "$lib/panels/schedule/Schedule.svelte";
-	import type { Database } from "$lib/states/rxdb";
-	import { getContext } from "svelte";
-
+	import { db } from "@/state";
 	let props = $props();
 
-	const db = getContext<Database>("db");
+	let rootTask = db.userManager.rootTask;
+	let panelStateMap = db.doc.getMap("panelStates");
+	let journalProxyManager = db.journalProxyManager;
 </script>
 
 <PaneGroup direction="horizontal" class="rounded-lg">
 	<Pane>
-		<Schedule />
+		<Schedule {journalProxyManager} {panelStateMap} />
 	</Pane>
 	<PaneResizer />
 	<Pane>
-		{#await db.getAndInitRootId() then rootTask}
-			<Editor rootTask={rootTask.$} />
-		{/await}
+		<Editor {rootTask} {panelStateMap} />
 	</Pane>
 </PaneGroup>

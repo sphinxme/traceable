@@ -13,6 +13,8 @@
     "paths": {
       "$lib": ["./src/lib"],
       "$lib/*": ["./src/lib/*"]
-    }
+    },
+    "allowImportingTsExtensions": true,
+    "moduleResolution": "bundler"
   }
 }
