@@ -223,7 +223,7 @@
 			<Tooltip.Trigger class="h-full w-full">
 				<ContextMenu.Root>
 					<ContextMenu.Trigger
-						class="flex h-full w-full flex-col text-left p-2"
+						class="flex h-full w-full flex-col text-left p-2 overflow-clip select-text"
 					>
 						<div class=" text-xs font-extralight">
 							{dayjs(previewStart).format("HH:mm")}-{dayjs(
@@ -251,8 +251,22 @@
 					</ContextMenu.Content>
 				</ContextMenu.Root>
 			</Tooltip.Trigger>
-			<Tooltip.Content>
-				<p class=" text-wrap">{$note}</p>
+			<Tooltip.Content
+				class="select-text"
+				onclick={(e) => {
+					e.stopPropagation();
+				}}
+				onmousedown={(e) => {
+					e.stopPropagation();
+				}}
+				onmouseup={(e) => {
+					e.stopPropagation();
+				}}
+			>
+				<div class="break-words font-semibold">
+					{$text}
+				</div>
+				<p class=" text-nowrap whitespace-pre-line">{$note}</p>
 			</Tooltip.Content>
 		</Tooltip.Root>
 	</Tooltip.Provider>

@@ -38,8 +38,10 @@
             onclick={async () => {
                 message = "";
                 await db.import(JSON.parse(value));
-                message = "已导入";
-                window.location.reload();
+                message = "已导入, 三秒后重启";
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
             }}
         >
             导入
