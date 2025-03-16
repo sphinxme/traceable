@@ -16,6 +16,7 @@
 	import ObservableText from "$lib/components/ObservableText.svelte";
 	import { CornerLeftUp, Redo2 } from "lucide-svelte";
 	import { highlightTaskSignal } from "$lib/states/signals.svelte";
+	import { fade } from "svelte/transition";
 
 	interface Props {
 		dayHeight: number;
@@ -243,31 +244,52 @@
 			<Tooltip.Trigger class="h-full w-full">
 				<ContextMenu.Root>
 					<ContextMenu.Trigger
-						class="flex h-full w-full flex-col text-left p-1 overflow-clip select-text"
+						class="flex h-full w-full relative flex-col text-left p-1 overflow-clip select-text"
 					>
 						{#if isResizing}
-							<div class=" text-sm text-center">
-								{dayjs(previewStart).format("HH:mm")}
-								-
-								{dayjs(previewEnd).format("HH:mm")}
-							</div>
-							<div class="text-center">
-								{formatDuration(previewEnd - previewStart)}
+							<!-- 垂直居中 -->
+							<div
+								transition:fade={{ duration: 300 }}
+								class=" pb-2 absolute flex-col flex items-start justify-between h-full text-xs font-light"
+							>
+								<div>
+									{dayjs(previewStart).format("HH:mm")}
+								</div>
+								<div>
+									{formatDuration(previewEnd - previewStart)}
+								</div>
+								<div>
+									{dayjs(previewEnd).format("HH:mm")}
+								</div>
 							</div>
 						{:else}
 							<div
-								class="break-words pb-2 text-wrap text-ellipsis"
+								class=" absolute h-full"
+								transition:fade={{ duration: 300 }}
 							>
-								{$text}
+								<div
+									class="break-words pb-1 text-wrap text-ellipsis"
+								>
+									{$text}
+								</div>
+								<div class=" text-xs pb-3 font-extralight">
+									{dayjs(previewStart).format("HH:mm")}
+									-
+									{dayjs(previewEnd).format("HH:mm")}
+								</div>
+								{#each $parentTasks as parentTask}
+									<p
+										class=" text-xs whitespace-nowrap overflow-hidden text-ellipsis font-extralight inline w-full"
+									>
+										<Redo2
+											class="inline"
+											size="10"
+										/><ObservableText
+											text={parentTask.text$}
+										/>
+									</p>
+								{/each}
 							</div>
-							{#each $parentTasks as parentTask}
-								<p class=" text-xs font-extralight inline">
-									<Redo2
-										class="inline"
-										size="10"
-									/><ObservableText text={parentTask.text$} />
-								</p>
-							{/each}
 						{/if}
 					</ContextMenu.Trigger>
 					<ContextMenu.Content>
@@ -278,7 +300,13 @@
 				</ContextMenu.Root>
 			</Tooltip.Trigger>
 			<Tooltip.Content class="select-text">
-				<div class=" text-xs font-bold">
+				{#each $parentTasks as parentTask}
+					<p class="text-xs inline font-bold">
+						<Redo2 class="inline" size="10" />
+						<ObservableText text={parentTask.text$} />
+					</p>
+				{/each}
+				<div class=" pt-2 text-xs font-bold">
 					{dayjs(previewStart).format("HH:mm")}
 					-
 					{dayjs(previewEnd).format("HH:mm")}
@@ -286,16 +314,26 @@
 				<div class="break-words font-semibold">
 					{$text}
 				</div>
-				{#each $parentTasks as parentTask}
-					<p class=" text-xs inline font-bold">
-						<Redo2 class="inline" size="10" /><ObservableText
-							text={parentTask.text$}
-						/>
-					</p>
-				{/each}
 
-				<p class=" text-nowrap whitespace-pre-line">{$note}</p>
+				<p class=" pt-2 text-nowrap text-zinc-500 whitespace-pre-line">
+					{$note}
+				</p>
 			</Tooltip.Content>
 		</Tooltip.Root>
 	</Tooltip.Provider>
 </div>
+
+<style>
+	@keyframes fadeIn {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+	.resize {
+		opacity: 0; /* 初始状态为透明 */
+		animation: fadeIn 300ms ease-out forwards; /* 动画持续300毫秒，并保持最终状态 */
+	}
+</style>
