@@ -322,18 +322,3 @@
 		</Tooltip.Root>
 	</Tooltip.Provider>
 </div>
-
-<style>
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-		}
-		to {
-			opacity: 1;
-		}
-	}
-	.resize {
-		opacity: 0; /* 初始状态为透明 */
-		animation: fadeIn 300ms ease-out forwards; /* 动画持续300毫秒，并保持最终状态 */
-	}
-</style>
