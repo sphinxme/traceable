@@ -85,6 +85,7 @@
 	let previewStart = $state($reactiveStart);
 	let previewEnd = $state($reactiveEnd);
 	let clickCount = $state(0);
+	let isResizing = $state(false);
 
 	$effect(() => {
 		topOffset = calculateTopOffset2($reactiveStart, dayHeight);
@@ -97,6 +98,23 @@
 		previewStart = $reactiveStart;
 		previewEnd = $reactiveEnd;
 	});
+
+	function formatDuration(duration: number): string {
+		const hours = Math.floor(duration / (60 * 60 * 1000));
+		const minutes = Math.floor((duration % (60 * 60 * 1000)) / (60 * 1000));
+
+		if (hours === 0) {
+			return `${minutes}分钟`;
+		}
+		if (minutes === 0) {
+			return `${hours}小时`;
+		}
+		if (minutes === 30) {
+			return `${hours}.5小时`;
+		}
+
+		return `${hours}小时${minutes}分钟`;
+	}
 
 	function roundToNearest15Minutes(
 		snapsOffset: number[],
@@ -137,6 +155,7 @@
 				},
 				listeners: {
 					start(dragEvent) {
+						isResizing = true;
 						// 初始化中间变量, 用于显示
 						refesh();
 						container.style.opacity = "50%";
@@ -150,6 +169,7 @@
 						// TODO:吸附
 					},
 					end(dragEvent) {
+						isResizing = false;
 						container.style.opacity = "75%";
 						const duration =
 							(24 * 60 * 60 * 1000 * eventHeight) / dayHeight;
@@ -223,26 +243,32 @@
 			<Tooltip.Trigger class="h-full w-full">
 				<ContextMenu.Root>
 					<ContextMenu.Trigger
-						class="flex h-full w-full flex-col text-left p-2 overflow-clip select-text"
+						class="flex h-full w-full flex-col text-left p-1 overflow-clip select-text"
 					>
-						<div class=" text-xs font-extralight">
-							{dayjs(previewStart).format("HH:mm")}-{dayjs(
-								previewEnd,
-							).format("HH:mm")}
-						</div>
-						{#each $parentTasks as parentTask}
-							<p class=" text-xs font-extralight inline">
-								<Redo2
-									class="inline"
-									size="10"
-								/><ObservableText text={parentTask.text$} />
-							</p>
-						{/each}
-						<div
-							class="py-2 break-words text-wrap text-ellipsis overflow-clip"
-						>
-							{$text}
-						</div>
+						{#if isResizing}
+							<div class=" text-sm text-center">
+								{dayjs(previewStart).format("HH:mm")}
+								-
+								{dayjs(previewEnd).format("HH:mm")}
+							</div>
+							<div class="text-center">
+								{formatDuration(previewEnd - previewStart)}
+							</div>
+						{:else}
+							<div
+								class="break-words pb-2 text-wrap text-ellipsis"
+							>
+								{$text}
+							</div>
+							{#each $parentTasks as parentTask}
+								<p class=" text-xs font-extralight inline">
+									<Redo2
+										class="inline"
+										size="10"
+									/><ObservableText text={parentTask.text$} />
+								</p>
+							{/each}
+						{/if}
 					</ContextMenu.Trigger>
 					<ContextMenu.Content>
 						<ContextMenu.Item onclick={() => event.destory()}>
@@ -251,21 +277,23 @@
 					</ContextMenu.Content>
 				</ContextMenu.Root>
 			</Tooltip.Trigger>
-			<Tooltip.Content
-				class="select-text"
-				onclick={(e) => {
-					e.stopPropagation();
-				}}
-				onmousedown={(e) => {
-					e.stopPropagation();
-				}}
-				onmouseup={(e) => {
-					e.stopPropagation();
-				}}
-			>
+			<Tooltip.Content class="select-text">
+				<div class=" text-xs font-bold">
+					{dayjs(previewStart).format("HH:mm")}
+					-
+					{dayjs(previewEnd).format("HH:mm")}
+				</div>
 				<div class="break-words font-semibold">
 					{$text}
 				</div>
+				{#each $parentTasks as parentTask}
+					<p class=" text-xs inline font-bold">
+						<Redo2 class="inline" size="10" /><ObservableText
+							text={parentTask.text$}
+						/>
+					</p>
+				{/each}
+
 				<p class=" text-nowrap whitespace-pre-line">{$note}</p>
 			</Tooltip.Content>
 		</Tooltip.Root>
