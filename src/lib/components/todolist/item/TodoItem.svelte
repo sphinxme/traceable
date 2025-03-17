@@ -120,7 +120,7 @@
 	</div>
 	<!-- 横条下面的东西 -->
 
-	<div class="flex h-2 flex-row pt-1">
+	<div class="flex h-2 flex-row pt-1 items-center">
 		<div class="h-1" style:width="18px"></div>
 		{#each $events as event (event.id)}
 			<EventIndicator data={event} isCompleted={$isCompleted} />

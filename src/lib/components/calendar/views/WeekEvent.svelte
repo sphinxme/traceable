@@ -16,6 +16,7 @@
 	import ObservableText from "$lib/components/ObservableText.svelte";
 	import { CornerLeftUp, Redo2 } from "lucide-svelte";
 	import { highlightTaskSignal } from "$lib/states/signals.svelte";
+	import { fade } from "svelte/transition";
 
 	interface Props {
 		dayHeight: number;
@@ -85,6 +86,7 @@
 	let previewStart = $state($reactiveStart);
 	let previewEnd = $state($reactiveEnd);
 	let clickCount = $state(0);
+	let isResizing = $state(false);
 
 	$effect(() => {
 		topOffset = calculateTopOffset2($reactiveStart, dayHeight);
@@ -98,13 +100,30 @@
 		previewEnd = $reactiveEnd;
 	});
 
+	function formatDuration(duration: number): string {
+		const hours = Math.floor(duration / (60 * 60 * 1000));
+		const minutes = Math.floor((duration % (60 * 60 * 1000)) / (60 * 1000));
+
+		if (hours === 0) {
+			return `${minutes}分钟`;
+		}
+		if (minutes === 0) {
+			return `${hours}小时`;
+		}
+		if (minutes === 30) {
+			return `${hours}.5小时`;
+		}
+
+		return `${hours}小时${minutes}分钟`;
+	}
+
 	function roundToNearest15Minutes(
 		snapsOffset: number[],
 		offset: number,
 	): number {
 		for (const snap of snapsOffset) {
 			// 15px内自动吸附
-			if (Math.abs(offset - snap) < 5) {
+			if (Math.abs(offset - snap) < 6) {
 				return snap;
 			}
 		}
@@ -137,6 +156,7 @@
 				},
 				listeners: {
 					start(dragEvent) {
+						isResizing = true;
 						// 初始化中间变量, 用于显示
 						refesh();
 						container.style.opacity = "50%";
@@ -150,6 +170,7 @@
 						// TODO:吸附
 					},
 					end(dragEvent) {
+						isResizing = false;
 						container.style.opacity = "75%";
 						const duration =
 							(24 * 60 * 60 * 1000 * eventHeight) / dayHeight;
@@ -208,14 +229,13 @@
 <div
 	bind:this={container}
 	style:z-index="8"
-	class="absolute w-full grow-0 overflow-visible rounded-lg {$isCompleted
-		? 'bg-zinc-400'
-		: 'bg-zinc-600'} p-1 text-sm text-zinc-50 opacity-75 {highlight
-		? 'p-0 shadow-2xl shadow-zinc-700'
-		: 'shadow-lg'}"
+	style:padding="2px"
+	class="border-1 z-10 absolute w-full ease-out grow-0 hover:opacity-90 overflow-visible text-sm text-zinc-50 opacity-75"
 	style:grid-row="3"
+	style:transition-property="transform, opacity"
+	style:transition-duration="150ms"
 	style:grid-column="{columnIndex + 2} / {columnIndex + 2}"
-	style:transform="translateY({topOffset}px)"
+	style:transform="translateY({topOffset}px) {highlight ? 'scale(1.20)' : ''}"
 	style:height="{eventHeight}px"
 >
 	<Tooltip.Provider>
@@ -223,26 +243,57 @@
 			<Tooltip.Trigger class="h-full w-full">
 				<ContextMenu.Root>
 					<ContextMenu.Trigger
-						class="flex h-full w-full flex-col text-left p-2 overflow-clip select-text"
+						class="flex h-full p-2  rounded-lg w-full relative flex-col text-left overflow-clip {$isCompleted
+							? 'bg-zinc-400'
+							: 'bg-zinc-600'} {highlight
+							? ' shadow-2xl shadow-zinc-700'
+							: ''}"
 					>
-						<div class=" text-xs font-extralight">
-							{dayjs(previewStart).format("HH:mm")}-{dayjs(
-								previewEnd,
-							).format("HH:mm")}
-						</div>
-						{#each $parentTasks as parentTask}
-							<p class=" text-xs font-extralight inline">
-								<Redo2
-									class="inline"
-									size="10"
-								/><ObservableText text={parentTask.text$} />
-							</p>
-						{/each}
-						<div
-							class="py-2 break-words text-wrap text-ellipsis overflow-clip"
-						>
-							{$text}
-						</div>
+						{#if isResizing}
+							<!-- 垂直居中 -->
+							<div
+								transition:fade={{ duration: 300 }}
+								class=" pb-2 absolute flex-col flex items-start justify-between h-full text-xs font-light"
+							>
+								<div>
+									{dayjs(previewStart).format("HH:mm")}
+								</div>
+								<div>
+									{formatDuration(previewEnd - previewStart)}
+								</div>
+								<div>
+									{dayjs(previewEnd).format("HH:mm")}
+								</div>
+							</div>
+						{:else}
+							<div
+								class=" absolute h-full"
+								transition:fade={{ duration: 300 }}
+							>
+								<div
+									class="break-words pb-1 text-wrap text-ellipsis"
+								>
+									{$text}
+								</div>
+								<div class=" text-xs pb-3 font-extralight">
+									{dayjs(previewStart).format("HH:mm")}
+									-
+									{dayjs(previewEnd).format("HH:mm")}
+								</div>
+								{#each $parentTasks as parentTask}
+									<p
+										class=" text-xs whitespace-nowrap overflow-hidden text-ellipsis font-extralight inline w-full"
+									>
+										<Redo2
+											class="inline"
+											size="10"
+										/><ObservableText
+											text={parentTask.text$}
+										/>
+									</p>
+								{/each}
+							</div>
+						{/if}
 					</ContextMenu.Trigger>
 					<ContextMenu.Content>
 						<ContextMenu.Item onclick={() => event.destory()}>
@@ -251,22 +302,29 @@
 					</ContextMenu.Content>
 				</ContextMenu.Root>
 			</Tooltip.Trigger>
-			<Tooltip.Content
-				class="select-text"
-				onclick={(e) => {
-					e.stopPropagation();
-				}}
-				onmousedown={(e) => {
-					e.stopPropagation();
-				}}
-				onmouseup={(e) => {
-					e.stopPropagation();
-				}}
-			>
+			<Tooltip.Content class="p-2 z-20 max-w-60 " sideOffset={8}>
+				{#each $parentTasks as parentTask}
+					<p class="text-xs inline">
+						<Redo2 class="inline" size="10" />
+						<ObservableText text={parentTask.text$} />
+					</p>
+				{/each}
+
 				<div class="break-words font-semibold">
 					{$text}
 				</div>
-				<p class=" text-nowrap whitespace-pre-line">{$note}</p>
+
+				<p
+					class=" pt-2 text-nowrap text-zinc-500 whitespace-pre-line overflow-hidden overflow-ellipsis"
+				>
+					{$note}
+				</p>
+
+				<div class=" pt-2 text-xs font-extralight">
+					{dayjs(previewStart).format("HH:mm")}
+					-
+					{dayjs(previewEnd).format("HH:mm")}
+				</div>
 			</Tooltip.Content>
 		</Tooltip.Root>
 	</Tooltip.Provider>
