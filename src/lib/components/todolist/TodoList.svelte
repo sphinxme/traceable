@@ -213,18 +213,3 @@
 		/>
 	</div>
 </div>
-
-<style>
-	@keyframes fade {
-		0% {
-			opacity: 0;
-		}
-
-		100% {
-			opacity: 100;
-		}
-	}
-	.into {
-		animation: fade 700ms 0s 1 normal forwards;
-	}
-</style>
