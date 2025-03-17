@@ -230,7 +230,7 @@
 	bind:this={container}
 	style:z-index="8"
 	style:padding="2px"
-	class="border-1 absolute w-full ease-out grow-0 hover:opacity-90 overflow-visible text-sm text-zinc-50 opacity-75"
+	class="border-1 z-10 absolute w-full ease-out grow-0 hover:opacity-90 overflow-visible text-sm text-zinc-50 opacity-75"
 	style:grid-row="3"
 	style:transition-property="transform, opacity"
 	style:transition-duration="150ms"
@@ -243,7 +243,7 @@
 			<Tooltip.Trigger class="h-full w-full">
 				<ContextMenu.Root>
 					<ContextMenu.Trigger
-						class="flex h-full p-2 rounded-lg w-full relative flex-col text-left overflow-clip select-text {$isCompleted
+						class="flex h-full p-2  rounded-lg w-full relative flex-col text-left overflow-clip {$isCompleted
 							? 'bg-zinc-400'
 							: 'bg-zinc-600'} {highlight
 							? ' shadow-2xl shadow-zinc-700'
@@ -302,7 +302,7 @@
 					</ContextMenu.Content>
 				</ContextMenu.Root>
 			</Tooltip.Trigger>
-			<Tooltip.Content class="select-text p-2" sideOffset={15}>
+			<Tooltip.Content class="p-2 z-20 max-w-60 " sideOffset={8}>
 				{#each $parentTasks as parentTask}
 					<p class="text-xs inline">
 						<Redo2 class="inline" size="10" />
@@ -314,7 +314,9 @@
 					{$text}
 				</div>
 
-				<p class=" pt-2 text-nowrap text-zinc-500 whitespace-pre-line">
+				<p
+					class=" pt-2 text-nowrap text-zinc-500 whitespace-pre-line overflow-hidden overflow-ellipsis"
+				>
 					{$note}
 				</p>
 
