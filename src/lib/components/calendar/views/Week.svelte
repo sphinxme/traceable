@@ -197,8 +197,9 @@
 			style:grid-template-columns="subgrid"
 			style:grid-template-rows="subgrid"
 			class="sticky left-0"
+			style:z-index="2"
 		>
-			<!-- 时钟格子 -->
+			<!-- 横线格子 -->
 			<div class=" flex flex-col" style:grid-area="3 / 1 ">
 				<!-- 上方下方各垫一个1单位高的格子, 然后中间23个2单位高的格子, 第i个格子的中间就是i+offsetAM/PM -->
 				<div style:flex="1"></div>
@@ -208,7 +209,7 @@
 						class="relative flex items-center justify-end text-xs"
 					>
 						<div
-							style:z-index="1"
+							style:z-index="2"
 							class=" absolute left-full top-1/2 h-0 w-dvw -translate-y-1/2 border-b border-slate-300"
 						></div>
 					</div>
@@ -277,6 +278,7 @@
 			style:grid-column="2 / -1"
 			style:grid-row="3 / 3"
 			class=" grid"
+			style:z-index="1"
 			style:grid-template-rows="repeat(48, 1fr)"
 		>
 			{#each notWorkHourRange as range}

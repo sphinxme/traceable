@@ -123,7 +123,7 @@
 	): number {
 		for (const snap of snapsOffset) {
 			// 15px内自动吸附
-			if (Math.abs(offset - snap) < 5) {
+			if (Math.abs(offset - snap) < 6) {
 				return snap;
 			}
 		}
@@ -229,11 +229,8 @@
 <div
 	bind:this={container}
 	style:z-index="8"
-	class="border-1 absolute w-full ease-out grow-0 hover:opacity-90 overflow-visible rounded-lg {$isCompleted
-		? 'bg-zinc-400'
-		: 'bg-zinc-600'} p-1 text-sm text-zinc-50 opacity-75 {highlight
-		? 'p-0 shadow-2xl shadow-zinc-700'
-		: 'shadow-lg'}"
+	style:padding="2px"
+	class="border-1 absolute w-full ease-out grow-0 hover:opacity-90 overflow-visible text-sm text-zinc-50 opacity-75"
 	style:grid-row="3"
 	style:transition-property="transform, opacity"
 	style:transition-duration="150ms"
@@ -246,7 +243,11 @@
 			<Tooltip.Trigger class="h-full w-full">
 				<ContextMenu.Root>
 					<ContextMenu.Trigger
-						class="flex h-full w-full relative flex-col text-left p-1 overflow-clip select-text"
+						class="flex h-full p-2 rounded-lg w-full relative flex-col text-left overflow-clip select-text {$isCompleted
+							? 'bg-zinc-400'
+							: 'bg-zinc-600'} {highlight
+							? ' shadow-2xl shadow-zinc-700'
+							: ''}"
 					>
 						{#if isResizing}
 							<!-- 垂直居中 -->
