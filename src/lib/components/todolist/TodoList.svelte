@@ -11,6 +11,8 @@
 		EditorItemState,
 		getParentStateContext,
 	} from "$lib/states/states/panel_states";
+	import { fly, slide } from "svelte/transition";
+	import { bounceInOut, expoOut } from "svelte/easing";
 
 	interface Props {
 		parent: TaskProxy;
@@ -36,6 +38,7 @@
 
 	let parentState = getParentStateContext();
 	let depth = $derived($parentState.depth);
+	let container: HTMLDivElement;
 
 	const focusByLocationFromTop: (
 		paths: TaskProxy[],
@@ -118,12 +121,23 @@
 	// $effect(() => {});
 </script>
 
-<div class="flex w-full flex-row" style:display={display ? "" : "none"}>
+<div
+	bind:this={container}
+	class="flex w-full flex-row"
+	style:display={display ? "" : "none"}
+>
 	{@render side?.()}
 
 	<div class="relative w-full" role="list">
 		{#each $children as child, i (child.id)}
-			<div>
+			<div
+				in:fly={{ easing: expoOut, x: -10, duration: 700 }}
+				out:slide={{
+					easing: expoOut,
+					axis: "y",
+					duration: 700,
+				}}
+			>
 				<TaskDropable
 					{parent}
 					index={i}
@@ -199,3 +213,18 @@
 		/>
 	</div>
 </div>
+
+<style>
+	@keyframes fade {
+		0% {
+			opacity: 0;
+		}
+
+		100% {
+			opacity: 100;
+		}
+	}
+	.into {
+		animation: fade 700ms 0s 1 normal forwards;
+	}
+</style>

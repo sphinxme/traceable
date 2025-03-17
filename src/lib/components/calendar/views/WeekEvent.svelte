@@ -229,14 +229,16 @@
 <div
 	bind:this={container}
 	style:z-index="8"
-	class="absolute w-full grow-0 overflow-visible rounded-lg {$isCompleted
+	class="border-1 absolute w-full ease-out grow-0 hover:opacity-90 overflow-visible rounded-lg {$isCompleted
 		? 'bg-zinc-400'
 		: 'bg-zinc-600'} p-1 text-sm text-zinc-50 opacity-75 {highlight
 		? 'p-0 shadow-2xl shadow-zinc-700'
 		: 'shadow-lg'}"
 	style:grid-row="3"
+	style:transition-property="transform, opacity"
+	style:transition-duration="150ms"
 	style:grid-column="{columnIndex + 2} / {columnIndex + 2}"
-	style:transform="translateY({topOffset}px)"
+	style:transform="translateY({topOffset}px) {highlight ? 'scale(1.20)' : ''}"
 	style:height="{eventHeight}px"
 >
 	<Tooltip.Provider>
@@ -299,18 +301,14 @@
 					</ContextMenu.Content>
 				</ContextMenu.Root>
 			</Tooltip.Trigger>
-			<Tooltip.Content class="select-text">
+			<Tooltip.Content class="select-text p-2" sideOffset={15}>
 				{#each $parentTasks as parentTask}
-					<p class="text-xs inline font-bold">
+					<p class="text-xs inline">
 						<Redo2 class="inline" size="10" />
 						<ObservableText text={parentTask.text$} />
 					</p>
 				{/each}
-				<div class=" pt-2 text-xs font-bold">
-					{dayjs(previewStart).format("HH:mm")}
-					-
-					{dayjs(previewEnd).format("HH:mm")}
-				</div>
+
 				<div class="break-words font-semibold">
 					{$text}
 				</div>
@@ -318,6 +316,12 @@
 				<p class=" pt-2 text-nowrap text-zinc-500 whitespace-pre-line">
 					{$note}
 				</p>
+
+				<div class=" pt-2 text-xs font-extralight">
+					{dayjs(previewStart).format("HH:mm")}
+					-
+					{dayjs(previewEnd).format("HH:mm")}
+				</div>
 			</Tooltip.Content>
 		</Tooltip.Root>
 	</Tooltip.Provider>

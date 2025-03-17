@@ -189,6 +189,34 @@
 			{/each}
 		</div>
 
+		<div
+			data-tauri-drag-region
+			style:display="grid"
+			style:grid-column="1 / 1"
+			style:grid-row="1 / -1"
+			style:grid-template-columns="subgrid"
+			style:grid-template-rows="subgrid"
+			class="sticky left-0"
+		>
+			<!-- 时钟格子 -->
+			<div class=" flex flex-col" style:grid-area="3 / 1 ">
+				<!-- 上方下方各垫一个1单位高的格子, 然后中间23个2单位高的格子, 第i个格子的中间就是i+offsetAM/PM -->
+				<div style:flex="1"></div>
+				{#each range(1, 23)}
+					<div
+						style:flex="2"
+						class="relative flex items-center justify-end text-xs"
+					>
+						<div
+							style:z-index="1"
+							class=" absolute left-full top-1/2 h-0 w-dvw -translate-y-1/2 border-b border-slate-300"
+						></div>
+					</div>
+				{/each}
+				<div style:flex="1"></div>
+			</div>
+		</div>
+
 		<!-- 左侧竖栏 -->
 		<div
 			data-tauri-drag-region
@@ -197,11 +225,11 @@
 			style:grid-row="1 / -1"
 			style:grid-template-columns="subgrid"
 			style:grid-template-rows="subgrid"
-			class="sticky left-0 z-10 bg-background shadow-xl"
+			class="sticky z-10 left-0 bg-background shadow-xl"
 		>
 			<!-- all-day -->
 			<div
-				class=" relative flex items-center justify-end text-xs font-extralight text-zinc-500"
+				class="z-10 relative flex items-center justify-end text-xs font-extralight text-zinc-500"
 				style:grid-area="2 / 1 "
 			>
 				<div
@@ -217,7 +245,7 @@
 
 			<!-- 时钟格子 -->
 			<div
-				class=" flex flex-col font-extralight text-zinc-400"
+				class=" z-10 flex flex-col font-extralight text-zinc-400"
 				style:grid-area="3 / 1 "
 			>
 				<!-- 上方下方各垫一个1单位高的格子, 然后中间23个2单位高的格子, 第i个格子的中间就是i+offsetAM/PM -->
@@ -233,9 +261,10 @@
 						</p>
 						<!-- 横线 -->
 
-						<div
+						<!-- <div
+							style:z-index="1"
 							class=" absolute left-full top-1/2 h-0 w-dvw -translate-y-1/2 border-b border-slate-300"
-						></div>
+						></div> -->
 					</div>
 				{/each}
 				<div style:flex="1"></div>

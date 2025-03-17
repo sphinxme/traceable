@@ -21,8 +21,8 @@
 
 <div
 	style:width={length + "px"}
-	class=" z-40 mr-1 transition"
-	style:transition-property="width"
+	class="parent z-40 mr-1 transition"
+	style:transition-property="width, margin"
 >
 	<HoverCard.Root
 		openDelay={100}
@@ -40,7 +40,7 @@
 			}}
 		>
 			<div
-				class=" h-1 w-full cursor-pointer rounded-full bg-zinc-600 transition-all duration-100 hover:h-2"
+				class=" opacity-70 indicator h-1 w-full cursor-pointer rounded-full bg-zinc-600 transition-all duration-100"
 			></div>
 		</HoverCard.Trigger>
 		<HoverCard.Content side="top" sideOffset={24}>
@@ -51,3 +51,13 @@
 		</HoverCard.Content>
 	</HoverCard.Root>
 </div>
+
+<style>
+	.parent:hover .indicator {
+		height: 6px;
+		opacity: 80%;
+	}
+	.parent:hover {
+		margin-right: 6px;
+	}
+</style>
