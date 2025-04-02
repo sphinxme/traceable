@@ -22,6 +22,7 @@
 		handle?: import("svelte").Snippet;
 		drag?: import("svelte").Snippet;
 		hasNote: boolean;
+		titleViewTransitionName: string;
 	}
 
 	let {
@@ -35,12 +36,14 @@
 		handle,
 		drag,
 		hasNote = $bindable(),
+		titleViewTransitionName,
 	}: Props = $props();
 	let container: HTMLDivElement;
 	let editor: Quill;
 	let noteEditor: NoteEditor;
 
 	const events = task.events.$;
+	let sortedEvents = $derived([...$events].sort((a, b) => a.start - b.start));
 	const text = task.text;
 	let note = task.note$;
 	let isCompleted = task.isCompleted$;
@@ -98,6 +101,10 @@
 			binding.destroy();
 		};
 	});
+
+	export const setTitleViewTransitionName = (name: string) => {
+		titleViewTransitionName = name;
+	};
 </script>
 
 <div class="group flex flex-col">
@@ -109,6 +116,7 @@
 				{@render handle?.()}
 				<div
 					class="todoitem w-full"
+					style:view-transition-name={titleViewTransitionName}
 					style:font-size="large"
 					style:text-decoration={$isCompleted ? "line-through" : ""}
 					style:opacity={$isCompleted ? 0.5 : 1}
@@ -122,7 +130,7 @@
 
 	<div class="flex h-2 flex-row pt-1 items-center">
 		<div class="h-1" style:width="18px"></div>
-		{#each $events as event (event.id)}
+		{#each sortedEvents as event (event.id)}
 			<EventIndicator data={event} isCompleted={$isCompleted} />
 		{/each}
 	</div>

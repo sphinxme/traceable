@@ -47,21 +47,23 @@
 
 <div
 	data-tauri-drag-region
-	class="flex h-full grow flex-col overflow-auto rounded bg-background py-4 pt-0 shadow-xl pl-0.5"
+	class="flex h-full grow flex-col overflow-auto rounded bg-background py-4 pt-3 shadow-xl pl-0.5"
 >
 	<!-- header -->
 	<div data-tauri-drag-region class="flex flex-row px-1">
-		<Navigator {panelState} />
-		<div
-			data-tauri-drag-region
-			class="flex flex-grow items-center justify-center"
-		>
-			---
-		</div>
-		<div data-tauri-drag-region class="flex flex-row">
-			<BatteryFull />
-			<Skull />
-		</div>
+		<Navigator
+			{panelState}
+			onPopPaths={() => {
+				todoView.setRootTodoListViewTransitionName(
+					"pre-root-todo-list",
+				);
+				todoView.setTitleViewTransitionName("pre-title");
+				return () => {
+					todoView.setRootTodoListViewTransitionName("");
+					todoView.setTitleViewTransitionName("");
+				};
+			}}
+		/>
 	</div>
 	<div class="px-3">
 		<TodoView

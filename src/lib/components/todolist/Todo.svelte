@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick } from "svelte";
+	import { getContext, onMount, tick } from "svelte";
 
 	import type { KeyboardHandler } from "../quill/model";
 	import CollapseIcon from "./item/overlay/CollapseButton.svelte";
@@ -18,6 +18,7 @@
 		setStateIntoContext,
 	} from "$lib/states/states/panel_states";
 	import { getRegisterFromContext } from "$lib/panels/todo/context.svelte";
+	import { checkTransitioningPaths } from "$lib/states/stores.svelte";
 
 	// svelte-ignore non_reactive_update
 	let todoList: TodoList;
@@ -104,6 +105,7 @@
 		}
 	};
 
+	let isCompleted = task.isCompleted$;
 	let hasNote: boolean = $state(false);
 	let meDragging: boolean = $derived($draggingTaskId == task.id);
 
@@ -165,6 +167,32 @@
 	onMount(() => {
 		return register($itemState);
 	});
+
+	// 设置主标题的name
+	const setPanelTitleViewTransitionName = getContext(
+		"setTitleViewTransitionName",
+	) as (name: string) => void;
+
+	const setRootTodoListViewTransitionName = getContext(
+		"setRootTodoListViewTransitionName",
+	) as (name: string) => void;
+
+	let todoListViewTransitionName = $state("");
+	let todoItemViewTransitionName = $state("");
+
+	const isZoomingFromMe = $derived(
+		$itemState.zoomable
+			? checkTransitioningPaths($itemState.absolutePaths)
+			: false,
+	);
+
+	$effect(() => {
+		todoListViewTransitionName = isZoomingFromMe
+			? "pre-root-todo-list"
+			: "";
+
+		todoItemViewTransitionName = isZoomingFromMe ? "pre-title" : "";
+	});
 </script>
 
 <div
@@ -185,6 +213,7 @@
 		untabHandle={(range: { index: number }) => {
 			untabHandle(task, $itemState, range.index);
 		}}
+		titleViewTransitionName={todoItemViewTransitionName}
 	>
 		{#snippet handle()}
 			<ContextMenu.Root>
@@ -192,13 +221,44 @@
 					<TaskDraggable {parent} {task}>
 						<Handle
 							taskId={task.id}
-							onclick={() => $itemState.zoomIn()}
+							onclick={() => {
+								todoItemViewTransitionName = "title";
+								todoListViewTransitionName = "root-todo-list";
+								tick().then(() => {
+									document
+										.startViewTransition(() => {
+											$itemState.zoomIn();
+											todoItemViewTransitionName = ""; // 把当前的quill改成空
+											todoListViewTransitionName = "";
+											setPanelTitleViewTransitionName(
+												"title",
+											); // 把父标题的改成title
+											setRootTodoListViewTransitionName(
+												"root-todo-list",
+											);
+											return tick();
+										})
+										.finished.then(() => {
+											setPanelTitleViewTransitionName("");
+											setRootTodoListViewTransitionName(
+												"",
+											);
+										});
+								});
+							}}
 						/>
 					</TaskDraggable>
 				</ContextMenu.Trigger>
 				<ContextMenu.Content>
 					<ContextMenu.Item
 						class="z-50"
+						inset
+						onclick={() => task.toggleStatus()}
+					>
+						{$isCompleted ? "待办" : "完成"}
+					</ContextMenu.Item>
+					<ContextMenu.Item
+						class="z-50 text-red-500"
 						inset
 						onclick={() => parent.deleteChild(task)}
 					>
@@ -229,6 +289,7 @@
 		{arrowDownHandle}
 		parent={task}
 		moveUp={movedUp}
+		viewTransitionName={todoListViewTransitionName}
 	>
 		{#snippet side()}
 			<div

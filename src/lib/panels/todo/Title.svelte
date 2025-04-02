@@ -14,6 +14,7 @@
 		arrowUpHandle?: KeyboardHandler;
 		arrowDownHandle?: KeyboardHandler;
 		highlightTitle?: boolean;
+		viewTransitionName?: string;
 	}
 
 	let {
@@ -22,6 +23,7 @@
 		arrowUpHandle = () => true,
 		arrowDownHandle = () => true,
 		highlightTitle,
+		viewTransitionName,
 	}: Props = $props();
 	export const focus = (index: number = 0) => {
 		qEditor.setSelection({ index, length: 0 });
@@ -68,6 +70,7 @@
 <!-- svelte-ignore a11y_missing_content -->
 <h1
 	class="traceable-quill-title scroll-m-20 group py-4 text-3xl font-bold tracking-tight relative transition-colors first:mt-0"
+	style:view-transition-name={viewTransitionName}
 >
 	{#if highlightTitle}
 		<div

@@ -148,7 +148,7 @@
 			style:grid-row="1 / 1"
 			style:grid-template-columns="subgrid"
 			style:grid-template-rows="subgrid"
-			class=" header-shadow sticky top-0 bg-background pb-4 pt-0 text-center text-zinc-700"
+			class=" header-shadow sticky top-0 bg-background py-3 text-center text-zinc-700"
 			style:z-index="11"
 		>
 			{#each displayDays as day, i (day)}
@@ -181,7 +181,7 @@
 
 					<div
 						style:font-size="0.7rem"
-						class="text-xs font-extralight text-zinc-400"
+						class=" pt-1 text-xs font-extralight text-zinc-400"
 					>
 						{day.format("MM-DD")}
 					</div>

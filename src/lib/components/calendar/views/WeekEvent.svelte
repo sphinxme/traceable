@@ -235,7 +235,7 @@
 	style:transition-property="transform, opacity"
 	style:transition-duration="150ms"
 	style:grid-column="{columnIndex + 2} / {columnIndex + 2}"
-	style:transform="translateY({topOffset}px) {highlight ? 'scale(1.20)' : ''}"
+	style:transform="translateY({topOffset}px) {highlight ? 'scale(1.10)' : ''}"
 	style:height="{eventHeight}px"
 >
 	<Tooltip.Provider>
@@ -284,10 +284,8 @@
 									<p
 										class=" text-xs whitespace-nowrap overflow-hidden text-ellipsis font-extralight inline w-full"
 									>
-										<Redo2
-											class="inline"
-											size="10"
-										/><ObservableText
+										<Redo2 class="inline" size="10" />
+										<ObservableText
 											text={parentTask.text$}
 										/>
 									</p>

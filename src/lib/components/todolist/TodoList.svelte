@@ -25,6 +25,7 @@
 		) => boolean;
 		side?: Snippet;
 		display: boolean;
+		viewTransitionName?: string;
 	}
 
 	let {
@@ -34,6 +35,7 @@
 		moveUp = () => true,
 		side,
 		display,
+		viewTransitionName,
 	}: Props = $props();
 
 	let parentState = getParentStateContext();
@@ -123,93 +125,100 @@
 
 <div
 	bind:this={container}
+	style:view-transition-name={viewTransitionName}
 	class="flex w-full flex-row"
 	style:display={display ? "" : "none"}
 >
 	{@render side?.()}
 
-	<div class="relative w-full" role="list">
-		{#each $children as child, i (child.id)}
-			<div
-				in:fly={{ easing: expoOut, x: -10, duration: 700 }}
-				out:slide={{
-					easing: expoOut,
-					axis: "y",
-					duration: 700,
-				}}
-			>
-				<TaskDropable
-					{parent}
-					index={i}
-					topTaskId={child.id}
-					bottomTaskId={$children.get(i - 1)?.id}
-					{depth}
-				/>
+	{#key $children}
+		<div class="relative w-full" role="list">
+			{#each $children as child, i (child.id)}
+				<div
+					in:fly={{ easing: expoOut, x: -10, duration: 700 }}
+					out:slide={{
+						easing: expoOut,
+						axis: "y",
+						duration: 700,
+					}}
+				>
+					<TaskDropable
+						{parent}
+						index={i}
+						topTaskId={child.id}
+						bottomTaskId={$children.get(i - 1)?.id}
+						{depth}
+					/>
 
-				<Todo
-					bind:this={itemRefs[i]}
-					arrowUpHandle={(range, context, quill) => {
-						let preIndex = i - 1;
-						if (preIndex < 0) {
-							return arrowUpHandle(range, context, quill); // 到头了
-						}
-						getIndexedItem(preIndex)?.focusBottom(range.index);
-						return false;
-					}}
-					arrowDownHandle={(range, context, quill) => {
-						let nextIndex = i + 1;
-						if (nextIndex >= $children.size) {
-							return arrowDownHandle(range, context, quill); // 到头了
-						}
+					<Todo
+						bind:this={itemRefs[i]}
+						arrowUpHandle={(range, context, quill) => {
+							let preIndex = i - 1;
+							if (preIndex < 0) {
+								return arrowUpHandle(range, context, quill); // 到头了
+							}
+							getIndexedItem(preIndex)?.focusBottom(range.index);
+							return false;
+						}}
+						arrowDownHandle={(range, context, quill) => {
+							let nextIndex = i + 1;
+							if (nextIndex >= $children.size) {
+								return arrowDownHandle(range, context, quill); // 到头了
+							}
 
-						getIndexedItem(nextIndex)?.focus(range.index);
-						return false;
-					}}
-					insertAfterMyself={(text) => {
-						insertItem(i + 1, text, true);
-						return false;
-					}}
-					insertBeforeMyself={(text) => {
-						insertItem(i, text);
-						return false;
-					}}
-					tabHandle={(child, childState, cursorIndex) => {
-						if (i === 0) {
+							getIndexedItem(nextIndex)?.focus(range.index);
 							return false;
-						}
-						parent.detachChild(child);
-						getIndexedItem(i - 1)?.moveInto(
-							Number.MAX_SAFE_INTEGER,
-							child,
-							childState,
-							cursorIndex,
-						);
-						return false;
-					}}
-					untabHandle={(child, childState, cursorIndex) => {
-						if (depth === 0) {
+						}}
+						insertAfterMyself={(text) => {
+							insertItem(i + 1, text, true);
 							return false;
-						}
-						const upMoved = !moveUp(child, childState, cursorIndex);
-						if (upMoved) {
+						}}
+						insertBeforeMyself={(text) => {
+							insertItem(i, text);
+							return false;
+						}}
+						tabHandle={(child, childState, cursorIndex) => {
+							if (i === 0) {
+								return false;
+							}
 							parent.detachChild(child);
+							getIndexedItem(i - 1)?.moveInto(
+								Number.MAX_SAFE_INTEGER,
+								child,
+								childState,
+								cursorIndex,
+							);
 							return false;
-						}
-						return true;
-					}}
-					movedUp={(child, childState, cursorIndex) =>
-						moveInto(child, i + 1, childState, cursorIndex)}
-					task={child}
-					{parent}
-				/>
-			</div>
-		{/each}
+						}}
+						untabHandle={(child, childState, cursorIndex) => {
+							if (depth === 0) {
+								return false;
+							}
+							const upMoved = !moveUp(
+								child,
+								childState,
+								cursorIndex,
+							);
+							if (upMoved) {
+								parent.detachChild(child);
+								return false;
+							}
+							return true;
+						}}
+						movedUp={(child, childState, cursorIndex) =>
+							moveInto(child, i + 1, childState, cursorIndex)}
+						task={child}
+						{parent}
+					/>
+				</div>
+			{/each}
 
-		<TaskDropable
-			{parent}
-			index={$children.size}
-			topTaskId={$children.getId($children.size - 1)}
-			{depth}
-		/>
-	</div>
+			<TaskDropable
+				{parent}
+				index={$children.size}
+				topTaskId={$children.getId($children.size - 1)}
+				{depth}
+			/>
+		</div>
+	{/key}
 </div>
