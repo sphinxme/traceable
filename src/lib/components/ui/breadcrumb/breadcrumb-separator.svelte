@@ -8,8 +8,9 @@
 		ref = $bindable(null),
 		class: className,
 		children,
+		index,
 		...restProps
-	}: WithElementRef<HTMLLiAttributes> = $props();
+	}: WithElementRef<HTMLLiAttributes> & { index?: number } = $props();
 </script>
 
 <li

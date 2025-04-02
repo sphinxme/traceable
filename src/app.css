@@ -91,3 +91,21 @@ html, body, #app {
   flex-grow: 1;
   /* padding-bottom: 2px; */
 }
+
+/* ::view-transition-group(title) {
+  animation-duration: 5s;
+} */
+
+/* ::view-transition-old(title) { 
+  animation-timing-function: ease-in;
+  animation-duration: 300ms;
+} */
+
+/* ::view-transition-old(root-todo-list){
+  animation-timing-function: ease-in-out;
+  animation-duration: 300ms;
+}
+::view-transition-new(root-todo-list){
+  animation-timing-function: ease-in-out;
+  animation-duration: 300ms;
+} */

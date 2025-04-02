@@ -99,9 +99,16 @@ export class TaskProxy {
         return this.yNote;
     }
 
-    // TODO:删掉
     private get status(): 'DONE' | 'TODO' | 'BLOCKED' {
         return this.yMap.get('status')
+    }
+
+    public done() {
+        this.yMap.set('status', 'DONE')
+    }
+
+    public toggleStatus() {
+        this.yMap.set('status', this.status === 'DONE' ? 'TODO' : 'DONE')
     }
 
     public get status$(): Observable<'DONE' | 'TODO' | 'BLOCKED'> {

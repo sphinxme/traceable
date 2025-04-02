@@ -122,7 +122,7 @@
 	<div class=" flex h-full flex-row items-start overflow-hidden">
 		<div
 			data-tauri-drag-region
-			class="flex h-full flex-col bg-zinc-100 rounded-lg"
+			class="pt-7 flex h-full flex-col bg-zinc-100"
 		>
 			<nav class="flex flex-col h-full">
 				<SidebarItem path="/trace">

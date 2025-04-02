@@ -9,6 +9,11 @@
 	import { CirclePlus, SquarePlus } from "lucide-svelte";
 	import type { Observable } from "rxjs";
 	import { setContext } from "svelte";
+	import { crossfade } from "svelte/transition";
+	const [send, receive] = crossfade({});
+
+	setContext("receive", receive);
+	setContext("send", send);
 
 	let todoList: TodoList;
 	// svelte-ignore non_reactive_update
@@ -39,6 +44,20 @@
 		todoList.foucsIntoByLocation(paths, index, highlight);
 	};
 	setContext("focusByLocation", foucsByLocation);
+
+	let titleViewTransitionName = $state("");
+	export const setTitleViewTransitionName = (name: string) => {
+		titleViewTransitionName = name;
+	};
+	setContext("setTitleViewTransitionName", setTitleViewTransitionName);
+	let rootTodoListViewTransitionName = $state("");
+	export const setRootTodoListViewTransitionName = (name: string) => {
+		rootTodoListViewTransitionName = name;
+	};
+	setContext(
+		"setRootTodoListViewTransitionName",
+		setRootTodoListViewTransitionName,
+	);
 </script>
 
 <div class="flex grow flex-col">
@@ -56,11 +75,15 @@
 				todoList.focusTop(range.index);
 				return false;
 			}}
+			viewTransitionName={titleViewTransitionName}
 		/>
 	{/if}
 
 	<!-- list -->
-	<div class="pl-4">
+	<div
+		class="pl-4"
+		style:view-transition-name={rootTodoListViewTransitionName}
+	>
 		<TodoList
 			display
 			bind:this={todoList}

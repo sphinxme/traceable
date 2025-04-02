@@ -1,7 +1,24 @@
 import type Todo from "$lib/components/todolist/Todo.svelte";
+import type { TaskProxy } from "./meta/task.svelte";
 
 export const highlightFEventIds: Record<string, boolean> = $state({});
 export const foucsingEventIds: Record<string, boolean> = $state({});
+
+let transitioningPaths: TaskProxy[] = $state([]);
+export const setTransitioningPaths = (paths: TaskProxy[]) => {
+    transitioningPaths = [...paths];
+}
+export const checkTransitioningPaths = (absolutePaths: TaskProxy[]) => {
+    if (absolutePaths.length !== transitioningPaths.length) {
+        return false;
+    }
+
+    const result = absolutePaths.every(({ id }, index) => {
+        return id === transitioningPaths.at(index)?.id;
+    })
+
+    return result;
+}
 
 export const taskTodoItems: Record<string, Todo[]> = $state({});
 let highlightTaskId = "";

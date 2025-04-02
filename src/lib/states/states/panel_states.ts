@@ -64,10 +64,8 @@ export class EditorPanelState {
     public get rootState$() {
         return this.paths.pipe(
             map((currentPaths, index) => {
-                console.log({ currentPaths })
                 return this.loadRootState(currentPaths)
             }),
-            tap((rootState) => { console.log({ rootState, foldStatesTree: rootState.debugRootFoldState(), all: this.foldStatesTree.toJSON() }); }),
             shareReplay({ bufferSize: 1, refCount: true }),
         )
     }
