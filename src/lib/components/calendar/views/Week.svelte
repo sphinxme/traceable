@@ -103,14 +103,14 @@
 
 <!-- 可滚动区域 -->
 <ScrollArea
-	class=" h-full w-full "
+	class=" h-full w-full rounded-lg"
 	scrollbarYClasses="hidden"
 	orientation="both"
 >
 	<!-- 内部大区域 -->
 	<div
 		data-tauri-drag-region
-		class=" calendar relative grid"
+		class=" calendar relative grid rounded-lg"
 		style:height="1800px"
 		style:grid-template-columns="{sideWidth}rem repeat({displayDayNum}, 1fr)"
 		style:grid-template-rows="auto auto 1fr"
@@ -158,7 +158,7 @@
 					style:grid-area="1 / {i + 1} / 1 / {i + 1}"
 				>
 					<div
-						class="text-base font-light"
+						class="text-base font-medium"
 						class:font-light={!day.isSame(
 							dayjs().add(-offsetByHour, "hour"),
 							"day",
@@ -181,7 +181,7 @@
 
 					<div
 						style:font-size="0.7rem"
-						class=" pt-1 text-xs font-extralight text-zinc-400"
+						class=" text-xs font-extralight text-zinc-400"
 					>
 						{day.format("MM-DD")}
 					</div>
@@ -196,7 +196,7 @@
 			style:grid-row="1 / -1"
 			style:grid-template-columns="subgrid"
 			style:grid-template-rows="subgrid"
-			class="sticky left-0"
+			class="sticky left-0 rounded-lg"
 			style:z-index="2"
 		>
 			<!-- 横线格子 -->
@@ -210,7 +210,7 @@
 					>
 						<div
 							style:z-index="2"
-							class=" absolute left-full top-1/2 h-0 w-dvw -translate-y-1/2 border-b border-slate-300"
+							class=" absolute left-full top-1/2 h-0 w-dvw -translate-y-1/2 border-b border-zinc-300"
 						></div>
 					</div>
 				{/each}
@@ -226,7 +226,7 @@
 			style:grid-row="1 / -1"
 			style:grid-template-columns="subgrid"
 			style:grid-template-rows="subgrid"
-			class="sticky z-10 left-0 bg-background shadow-xl"
+			class="sticky z-10 left-0 bg-background shadow-xl rounded-tl-lg"
 		>
 			<!-- all-day -->
 			<div
@@ -366,15 +366,13 @@
 		{#if draggingTaskEvent}
 			<div
 				style:pointer-events="none"
-				style:z-index="8"
-				class=" relative bg-slate-300"
+				style:z-index="12"
+				style:box-shadow="0px 0px 16px 0px rgb(212,212,216,0.8) inset"
+				class=" relative text-zinc-700 rounded-lg shadow-inner text-center font-extralight"
 				style:grid-row="3"
 				style:grid-column={getColumnIndex(draggingTaskEvent.start) + 2}
 				style:top="{calculateTopOffset(draggingTaskEvent.start)}px"
-				style:height="{calculateEventHeight(
-					draggingTaskEvent.start,
-					dayHeight,
-				)}px"
+				style:height="{Math.floor((30 / (24 * 60)) * dayHeight)}px"
 			>
 				{dayjs(draggingTaskEvent.start).format("HH:mm")}-{dayjs(
 					draggingTaskEvent.end,

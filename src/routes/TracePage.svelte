@@ -9,12 +9,18 @@
 	let eventProxyManager = db.eventProxyManager;
 </script>
 
-<PaneGroup direction="horizontal">
-	<Pane>
+<PaneGroup direction="horizontal" class=" gap-1.5 p-3">
+	<Pane
+		style="transition-property: box-shadow, border;"
+		class="rounded-lg shadow-lg transition-shadow duration-700 focus-within:shadow-2xl"
+	>
 		<Calendar {eventProxyManager} />
 	</Pane>
 	<PaneResizer />
-	<Pane>
+	<Pane
+		style="transition-property: box-shadow, border;"
+		class="rounded-lg shadow-lg transition-shadow duration-300 focus-within:shadow-2xl focus-within:ring-indigo-500"
+	>
 		<Editor {rootTask} {panelStateMap} />
 	</Pane>
 </PaneGroup>

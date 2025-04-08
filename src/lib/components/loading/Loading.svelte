@@ -9,7 +9,7 @@
     let { items }: Props = $props();
 </script>
 
-<div class="flex flex-col h-full justify-center">
+<div data-tauri-drag-region class="flex flex-col h-full justify-center">
     {#each Object.entries(items) as [name, promise]}
         {#await promise}
             <div

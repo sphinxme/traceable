@@ -47,10 +47,10 @@
 
 <div
 	data-tauri-drag-region
-	class="flex h-full grow flex-col overflow-auto rounded bg-background py-4 pt-3 shadow-xl pl-0.5"
+	class="flex h-full grow flex-col overflow-auto rounded-lg bg-background py-4 pt-2 pl-4"
 >
 	<!-- header -->
-	<div data-tauri-drag-region class="flex flex-row px-1">
+	<div data-tauri-drag-region class="flex flex-row px-0.5 py-2">
 		<Navigator
 			{panelState}
 			onPopPaths={() => {

@@ -10,12 +10,18 @@
 	let journalProxyManager = db.journalProxyManager;
 </script>
 
-<PaneGroup direction="horizontal" class="rounded-lg">
-	<Pane>
+<PaneGroup direction="horizontal" class=" gap-1.5 p-3">
+	<Pane
+		style="transition-property: box-shadow, border;"
+		class="rounded-lg shadow-lg transition-shadow duration-700 focus-within:shadow-2xl"
+	>
 		<Schedule {journalProxyManager} {panelStateMap} />
 	</Pane>
 	<PaneResizer />
-	<Pane>
+	<Pane
+		style="transition-property: box-shadow, border;"
+		class="rounded-lg shadow-lg transition-shadow duration-700 focus-within:shadow-2xl"
+	>
 		<Editor {rootTask} {panelStateMap} />
 	</Pane>
 </PaneGroup>
