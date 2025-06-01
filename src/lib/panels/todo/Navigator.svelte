@@ -47,7 +47,7 @@
 					<Link href="lang">
 						{#snippet child(attrs)}
 							<button {...attrs} onclick={() => pop(i)}>
-								<House class="my-1" size={16} />
+								<House class="my-1" size={18} />
 							</button>
 						{/snippet}
 					</Link>

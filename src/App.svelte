@@ -119,12 +119,13 @@
 		}}
 	/>
 {:then}
-	<div class=" flex h-full flex-row items-start overflow-hidden">
+	<div class=" flex h-full flex-col items-start overflow-hidden bg-zinc-100">
 		<div
 			data-tauri-drag-region
-			class="pt-7 flex h-full flex-col bg-zinc-100"
+			style="transition-property: margin-bottom"
+			class=" justify-center ease-in-out duration-300 transition -mb-8 hover:mb-0 w-full flex flex-row bg-zinc-100"
 		>
-			<nav class="flex flex-col h-full">
+			<nav class="flex flex-row">
 				<SidebarItem path="/trace">
 					<SquareLibrary />
 				</SidebarItem>
@@ -134,7 +135,6 @@
 				<SidebarItem path="/schedule">
 					<CalendarRange />
 				</SidebarItem>
-				<div class=" flex-grow"></div>
 
 				<SidebarItem path="/settings">
 					<Settings />
