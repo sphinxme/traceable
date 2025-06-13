@@ -32,7 +32,7 @@ export class JournalPanelState {
             subState = new Y.Map();
             this.foldStatesTree.set(task.id, subState)
         }
-        return of(EditorItemState.buildFromJournal(subState, [], this.foldStatesTree))
+        return of(EditorItemState.buildFromJournal(this.id, subState, [], this.foldStatesTree))
     }
 }
 
@@ -90,7 +90,7 @@ export class EditorPanelState {
                 tree.set(taskId, state);
             }
         }
-        return EditorItemState.buildFromEditor(currentRootTask, this, undefined, [...currentPaths], [], state);
+        return EditorItemState.buildFromEditor(this.id, currentRootTask, this, undefined, [...currentPaths], [], state);
     }
 
     public get path$() {
@@ -119,14 +119,16 @@ export class EditorItemState {
     }
 
     static buildFromJournal(
+        panelId: string,
         task: TaskProxy,
         relativePath: TaskProxy[],
         foldStatesTree: Y.Map<any>
     ) {
-        return new EditorItemState(task, undefined, undefined, [], [], foldStatesTree, false);
+        return new EditorItemState(panelId, task, undefined, undefined, [], [], foldStatesTree, false);
     }
 
     static buildFromEditor(
+        panelId: string,
         currentTask: TaskProxy,
         panelState: EditorPanelState | undefined,
         parentState: EditorItemState | undefined,
@@ -145,11 +147,12 @@ export class EditorItemState {
         relativePath: TaskProxy[],
         foldStatesTree: Y.Map<any>,
     ): EditorItemState {
-        return new EditorItemState(currentTask, panelState, parentState, currentParentPath, relativePath, foldStatesTree, true)
+        return new EditorItemState(panelId, currentTask, panelState, parentState, currentParentPath, relativePath, foldStatesTree, true)
     }
 
     // 从editor上创建
     constructor(
+        public readonly panelId: string,
         public readonly task: TaskProxy,
         private readonly panelState: EditorPanelState | undefined,
         private readonly parentState: EditorItemState | undefined,
@@ -174,9 +177,9 @@ export class EditorItemState {
             this.foldStatesTree.set(task.id, subState)
         }
         if (!this.zoomable) {
-            return EditorItemState.buildFromJournal(task, [...this.relativePath, this.task], subState)
+            return EditorItemState.buildFromJournal(this.panelId, task, [...this.relativePath, this.task], subState)
         } else {
-            return EditorItemState.buildFromEditor(task, this.panelState, this, this.currentParentPath, [...this.relativePath, task], subState)
+            return EditorItemState.buildFromEditor(this.panelId, task, this.panelState, this, this.currentParentPath, [...this.relativePath, task], subState)
         }
     }
 
