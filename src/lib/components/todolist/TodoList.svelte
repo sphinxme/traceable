@@ -13,6 +13,7 @@
 	} from "$lib/states/states/panel_states";
 	import { fly, slide } from "svelte/transition";
 	import { bounceInOut, expoOut } from "svelte/easing";
+	import { setFocusState } from "$lib/states/states/focus_states";
 
 	interface Props {
 		parent: TaskProxy;
@@ -41,11 +42,6 @@
 	let parentState = getParentStateContext();
 	let depth = $derived($parentState.depth);
 	let container: HTMLDivElement;
-
-	const focusByLocationFromTop: (
-		paths: TaskProxy[],
-		cursorIndex?: number,
-	) => void = getContext("focusByLocation");
 
 	let children = $derived(parent.children.$);
 	const getIndexedItem = (index: number) => {
@@ -105,12 +101,11 @@
 	) => {
 		$parentState.moveInto(childState);
 		parent.attachChild(child, index);
-		setTimeout(() => {
-			focusByLocationFromTop(
-				[...$parentState.absolutePaths, child],
-				cursorIndex,
-			);
-		}, 100);
+		setFocusState(
+			$parentState.panelId,
+			[...$parentState.absolutePaths, child],
+			cursorIndex || 0,
+		);
 		return false;
 	};
 

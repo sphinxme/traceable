@@ -19,6 +19,7 @@
 	} from "$lib/states/states/panel_states";
 	import { getRegisterFromContext } from "$lib/panels/todo/context.svelte";
 	import { checkTransitioningPaths } from "$lib/states/stores.svelte";
+	import { consumeFocusState } from "$lib/states/states/focus_states";
 
 	// svelte-ignore non_reactive_update
 	let todoList: TodoList;
@@ -193,6 +194,16 @@
 
 		todoItemViewTransitionName = isZoomingFromMe ? "pre-title" : "";
 	});
+
+	onMount(() => {
+		const index = consumeFocusState(
+			$itemState.panelId,
+			$itemState.absolutePaths,
+		);
+		if (index !== null) {
+			focus(index);
+		}
+	});
 </script>
 
 <div
@@ -222,6 +233,9 @@
 						<Handle
 							taskId={task.id}
 							onclick={() => {
+								if (!$itemState.zoomable) {
+									return;
+								}
 								todoItemViewTransitionName = "title";
 								todoListViewTransitionName = "root-todo-list";
 								tick().then(() => {
