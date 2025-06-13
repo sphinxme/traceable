@@ -54,6 +54,11 @@ export class TaskProxyManager {
         for (const child of task.children) {
             task.deleteChild(child);
         }
+        // FIXME: 这里费劲又生成了一遍EventProxy, 但是可以直接eventId的
+        for (const eventId of task.events) {
+            this.eventproxyManager.delete(eventId.id);
+        }
+
         this.textRepository.deleteYText(task.noteId);
         this.textRepository.deleteYText(task.textId);
         this.repository.deleteYTask(task.id);

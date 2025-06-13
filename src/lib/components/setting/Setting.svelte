@@ -5,9 +5,16 @@
     import { db } from "@/state";
 
     let open = $state(false);
+
     let value = $state("");
     let message = $state("");
     let message2 = $state("");
+
+    let deleteEventPanelOpen = $state(false);
+    let deleteEventId = $state("");
+
+    let deleteTaskPanelOpen = $state(false);
+    let deleteTaskId = $state("");
 </script>
 
 {message2}
@@ -19,6 +26,9 @@
 >
     导入/导出
 </Button>
+
+<Button onclick={() => (deleteEventPanelOpen = true)}>delete event</Button>
+<Button onclick={() => (deleteTaskPanelOpen = true)}>delete task</Button>
 
 <Button
     onclick={async () => {
@@ -45,6 +55,40 @@
             }}
         >
             导入
+        </Button>
+    </Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={deleteEventPanelOpen}>
+    <Dialog.Content>
+        <Textarea bind:value={deleteEventId} />
+        <Button
+            onclick={async () => {
+                await db.eventProxyManager.delete(deleteEventId);
+                message2 = "已删除";
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            }}
+        >
+            删除event
+        </Button>
+    </Dialog.Content>
+</Dialog.Root>
+
+<Dialog.Root bind:open={deleteTaskPanelOpen}>
+    <Dialog.Content>
+        <Textarea bind:value={deleteTaskId} />
+        <Button
+            onclick={async () => {
+                await db.eventProxyManager.delete(deleteTaskId);
+                message2 = "已删除";
+                setTimeout(() => {
+                    window.location.reload();
+                }, 3000);
+            }}
+        >
+            删除task
         </Button>
     </Dialog.Content>
 </Dialog.Root>
