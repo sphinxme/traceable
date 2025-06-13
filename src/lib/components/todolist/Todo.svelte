@@ -233,6 +233,9 @@
 						<Handle
 							taskId={task.id}
 							onclick={() => {
+								if (!$itemState.zoomable) {
+									return;
+								}
 								todoItemViewTransitionName = "title";
 								todoListViewTransitionName = "root-todo-list";
 								tick().then(() => {

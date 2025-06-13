@@ -199,10 +199,12 @@ export class EditorItemState {
     }
 
     public get absolutePaths() {
-        if (!this.zoomable || !this.panelState) {
-            throw new Error("not zoomable");
-        }
-        return [...this.panelState.paths.value, ...this.relativePath]
+        // if (!this.zoomable || !this.panelState) {
+        //     throw new Error("not zoomable");
+        // }
+
+        // FIXME:待重构, 需要把Journal的absolutePaths也加上
+        return [...this.panelState?.paths?.value || [], ...this.relativePath]
     }
 
     // get folded$() {

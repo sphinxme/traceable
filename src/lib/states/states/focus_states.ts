@@ -46,7 +46,7 @@ export function consumeFocusState(panelId: string, focusPath: TaskProxy[] | null
 
     // 检查两个数组是否为空
     if (!focusPath && !focusState.focusPath) {
-        return 0;
+        return null;
     }
     if (!focusPath || !focusState.focusPath) {
         return null;
