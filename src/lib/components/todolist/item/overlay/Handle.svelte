@@ -1,5 +1,5 @@
 <script lang="ts">
-	import * as ToggleGroup from "$lib/components/ui/toggle-group/index.js";
+	// import * as ToggleGroup from "$lib/components/ui/toggle-group/index.js";
 	import type { MouseEventHandler } from "svelte/elements";
 	import { colors } from "./colors";
 
@@ -7,9 +7,17 @@
 		taskId: string;
 		status?: "TODO" | "BLOCK" | "DONE";
 		onclick: MouseEventHandler<HTMLDivElement>;
+		ondragstart: MouseEventHandler<HTMLDivElement>;
+		ondragend: MouseEventHandler<HTMLDivElement>;
 	}
 
-	let { taskId, onclick, status = "TODO" }: Props = $props();
+	let {
+		taskId,
+		onclick,
+		status = "TODO",
+		ondragstart,
+		ondragend,
+	}: Props = $props();
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -18,6 +26,9 @@
 <div
 	role="button"
 	{onclick}
+	{ondragstart}
+	{ondragend}
+	draggable="true"
 	data-task-id={taskId}
 	class="handle relative flex items-center justify-center"
 >
@@ -35,11 +46,11 @@
 				class="toggle flex flex-grow justify-stretch items-stretch text-zinc-700 font-bold text-xs"
 				onclick={(e) => e.stopPropagation()}
 			>
-				<ToggleGroup.Root type="single">
+				<!-- <ToggleGroup.Root type="single">
 					<ToggleGroup.Item value="a">TODO</ToggleGroup.Item>
 					<ToggleGroup.Item value="b">DONE</ToggleGroup.Item>
 					<ToggleGroup.Item value="c">BLOCK</ToggleGroup.Item>
-				</ToggleGroup.Root>
+				</ToggleGroup.Root> -->
 
 				<!-- <div
 					class="my-1 px-1 rounded-full bg-zinc-500 text-white"

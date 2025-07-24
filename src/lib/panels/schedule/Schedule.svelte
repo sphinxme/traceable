@@ -16,5 +16,9 @@
 <div
 	class="flex h-full grow flex-col rounded bg-background pr-0 shadow-xl pl-1"
 >
-	<Weekly {journalProxyManager} panelStates={panelStateMap}></Weekly>
+	<Weekly
+		panelId="weekly"
+		{journalProxyManager}
+		allPanelStates={panelStateMap}
+	></Weekly>
 </div>

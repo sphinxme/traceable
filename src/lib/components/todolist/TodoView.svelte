@@ -1,98 +1,45 @@
 <script lang="ts">
 	import TodoList from "$lib/components/todolist/TodoList.svelte";
 	import Title from "$lib/panels/todo/Title.svelte";
-	import type { TaskProxy } from "$lib/states/meta/task.svelte";
-	import {
-		setStateIntoContext,
-		type EditorItemState,
-	} from "$lib/states/states/panel_states";
-	import { CirclePlus, SquarePlus } from "lucide-svelte";
-	import type { Observable } from "rxjs";
-	import { setContext } from "svelte";
+	import { CirclePlus } from "lucide-svelte";
+	import { onMount, setContext } from "svelte";
 	import { crossfade } from "svelte/transition";
+	import type { TodoController } from "./controller/TodoController.svelte";
+
 	const [send, receive] = crossfade({});
 
 	setContext("receive", receive);
 	setContext("send", send);
 
-	let todoList: TodoList;
-	// svelte-ignore non_reactive_update
-	let title: Title;
 	interface Props {
-		task: TaskProxy;
+		controller: TodoController;
 		showTitle?: boolean;
 		highlightTitle?: boolean;
-		rootItemState: Observable<EditorItemState>;
 	}
 
-	let {
-		task,
-		showTitle = true,
-		highlightTitle,
-		rootItemState,
-	}: Props = $props();
-	setStateIntoContext(rootItemState);
+	let { controller, showTitle = true, highlightTitle }: Props = $props();
+
+	// 不用onMount而是用effect是因为controller可能在运行中被替换
 	$effect(() => {
-		setStateIntoContext(rootItemState);
+		controller.onTodoReady();
+		return () => {
+			controller.destory();
+		};
 	});
-
-	export const foucsByLocation = (
-		paths: TaskProxy[],
-		index: number,
-		highlight: boolean = false,
-	) => {
-		todoList.foucsIntoByLocation(paths, index, highlight);
-	};
-	setContext("focusByLocation", foucsByLocation);
-
-	let titleViewTransitionName = $state("");
-	export const setTitleViewTransitionName = (name: string) => {
-		titleViewTransitionName = name;
-	};
-	setContext("setTitleViewTransitionName", setTitleViewTransitionName);
-	let rootTodoListViewTransitionName = $state("");
-	export const setRootTodoListViewTransitionName = (name: string) => {
-		rootTodoListViewTransitionName = name;
-	};
-	setContext(
-		"setRootTodoListViewTransitionName",
-		setRootTodoListViewTransitionName,
-	);
 </script>
 
-<div class="flex grow flex-col">
+<div
+	class="flex grow flex-col todoview"
+	style:view-transition-name={controller.transitionActions
+		.$todoViewTransitionName}
+>
 	{#if showTitle}
-		<Title
-			{highlightTitle}
-			bind:this={title}
-			{task}
-			enterHandle={(range, context, editor) => {
-				todoList.insertItem(0, context.suffix);
-				editor.editor.deleteText(range.index, Number.MAX_SAFE_INTEGER);
-				return false;
-			}}
-			arrowDownHandle={(range, context, editor) => {
-				todoList.focusTop(range.index);
-				return false;
-			}}
-			viewTransitionName={titleViewTransitionName}
-		/>
+		<Title {highlightTitle} {controller} />
 	{/if}
 
 	<!-- list -->
-	<div
-		class="pl-4"
-		style:view-transition-name={rootTodoListViewTransitionName}
-	>
-		<TodoList
-			display
-			bind:this={todoList}
-			parent={task}
-			arrowUpHandle={(range, context, editor) => {
-				title?.focus(range.index);
-				return false;
-			}}
-		/>
+	<div class="pl-4">
+		<TodoList alwaysDisplay {controller} />
 	</div>
 	<!-- svelte-ignore a11y_interactive_supports_focus -->
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -100,7 +47,7 @@
 		role="button"
 		class="pl-3 flex w-full flex-row rounded-lg p-1 opacity-20 transition-colors duration-300 hover:bg-zinc-300"
 		onclick={() => {
-			task.insertChild();
+			controller.task.insertChild();
 		}}
 	>
 		<CirclePlus size={16} />

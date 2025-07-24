@@ -1,280 +1,83 @@
 <script lang="ts">
-	import { getContext, onMount, tick } from "svelte";
-
-	import type { KeyboardHandler } from "../quill/model";
 	import CollapseIcon from "./item/overlay/CollapseButton.svelte";
 	import * as ContextMenu from "$lib/components/ui/context-menu";
-
-	import { draggingTaskId } from "./dnd/state";
-	import TaskDraggable from "./dnd/TaskDraggable.svelte";
 	import Handle from "./item/overlay/Handle.svelte";
 	import TodoItem from "./item/TodoItem.svelte";
 	import TodoList from "./TodoList.svelte";
+	import type { TodoController } from "./controller/TodoController.svelte";
 	import type { TaskProxy } from "$lib/states/meta/task.svelte";
-	import {
-		EditorItemState,
-		getParentStateContext,
-		loadStateFromContext,
-		setStateIntoContext,
-	} from "$lib/states/states/panel_states";
-	import { getRegisterFromContext } from "$lib/panels/todo/context.svelte";
-	import { checkTransitioningPaths } from "$lib/states/stores.svelte";
-	import { consumeFocusState } from "$lib/states/states/focus_states";
-
-	// svelte-ignore non_reactive_update
-	let todoList: TodoList;
-	let todoItem: TodoItem;
+	import { onMount } from "svelte";
 
 	interface Props {
-		parent: TaskProxy;
 		task: TaskProxy;
-
-		insertBeforeMyself: (text: string) => boolean;
-		insertAfterMyself: (text: string) => boolean;
-
-		arrowUpHandle: KeyboardHandler;
-		arrowDownHandle: KeyboardHandler;
-
-		tabHandle: (
-			child: TaskProxy,
-			itemState: EditorItemState,
-			cursorIndex: number,
-		) => boolean;
-		untabHandle: (
-			child: TaskProxy,
-			itemState: EditorItemState,
-			cursorIndex: number,
-		) => boolean;
-		movedUp: (
-			child: TaskProxy,
-			itemState: EditorItemState,
-			cursorIndex?: number,
-		) => boolean;
+		parentController: TodoController;
+		// controller: TodoController;
 	}
 
 	let {
-		parent,
 		task,
-		arrowUpHandle,
-		arrowDownHandle,
-		insertBeforeMyself,
-		insertAfterMyself,
-		tabHandle,
-		untabHandle,
-		movedUp,
+		parentController,
+		// controller
 	}: Props = $props();
-	export const id = task.id;
+	const controller = parentController.makeChild(task);
 
-	let parentState = getParentStateContext();
-	let itemState = $parentState.loadChild(task).$;
-	// $inspect($itemState).with((type, value) => {
-	// 	console.log({ type, value });
-	// });
-	setStateIntoContext(itemState);
-	let container: HTMLDivElement; // bind
+	let note = controller.task.note$;
+	let isCompleted = controller.task.isCompleted$;
+	let meDragging = $derived(controller.dragDropActions.$isMeDragging);
 
-	// const itemState = loadStateFromContext(task).$;
-
-	const hasChildren = () => !$itemState.folded && todoList.hasChildren();
-	const itemArrowDownHandle: KeyboardHandler = (range, context, quill) => {
-		if (!$itemState.folded && todoList.hasChildren()) {
-			todoList.focusTop(range.index);
-			return false;
-		}
-		return arrowDownHandle(range, context, quill);
-	};
-	const itemEnterHandler: KeyboardHandler = (range, context, quill) => {
-		// (后续todo, 模仿幕布行为: 如果是截断的, 那就把光标前面的插入为同级上面; 如果是没截断的, 就加入为孩子中的第一个 )
-		// const { index, length } = range;
-
-		if (context.suffix.length) {
-			// 如果是截断的: 让上级在前面加一个同级的兄弟, 内容为光标前面的内容
-			quill.setText(context.suffix);
-			const result = insertBeforeMyself(context.prefix);
-			// setTimeout(() => todoItem.focus(0), 100);
-			return result;
-		} else {
-			// 如果不是截断的 是在末尾的
-			if (hasChildren()) {
-				// 如果有孩子 在下层顶端插入一个空的孩子
-				todoList.insertItem(0, "");
-				return false;
-			} else {
-				// 如果没孩子 让上级在下面加一个空的兄弟
-				return insertAfterMyself("");
-			}
-		}
-	};
-
-	let isCompleted = task.isCompleted$;
-	let hasNote: boolean = $state(false);
-	let meDragging: boolean = $derived($draggingTaskId == task.id);
-
-	export const focus = (index: number) => todoItem.focus(index);
-	export const focusBottom = (index: number) => {
-		if (!$itemState.folded && todoList.hasChildren()) {
-			todoList.focusBottom(index);
-		} else {
-			todoItem.focus(index);
-		}
-	};
-	export const moveInto = (
-		seq: number,
-		child: TaskProxy,
-		childState?: EditorItemState | undefined,
-		cursorIndex?: number,
-	) => {
-		todoList.moveInto(child, seq, childState, cursorIndex);
-	};
+	// highlight
 	let highlighting = $state(false);
-	export const foucsIntoByLocation = (
-		paths: TaskProxy[],
-		index: number = 0,
-		highlight: boolean = false,
-	) => {
-		if (!paths.length) {
-			if (highlight) {
-				tick().then(() => {
-					setTimeout(() => {
-						container.scrollIntoView({
-							behavior: "smooth",
-							inline: "start",
-							block: "center",
-						});
-
-						highlighting = true;
-						setTimeout(() => {
-							highlighting = false;
-						}, 3000);
-					}, 300);
-				});
-			} else {
-				focus(index);
-			}
-			return;
-		}
-		if ($itemState.folded) {
-			$itemState.folded = false;
-			tick().then(() => {
-				todoList.foucsIntoByLocation(paths, index, highlight);
-			});
-		} else {
-			todoList.foucsIntoByLocation(paths, index, highlight);
-		}
+	controller.doHighlight = () => {
+		highlighting = true;
+		setTimeout(() => (highlighting = false), 3000);
 	};
 
-	// 方便highlight
-	const register = getRegisterFromContext();
 	onMount(() => {
-		return register($itemState);
-	});
-
-	// 设置主标题的name
-	const setPanelTitleViewTransitionName = getContext(
-		"setTitleViewTransitionName",
-	) as (name: string) => void;
-
-	const setRootTodoListViewTransitionName = getContext(
-		"setRootTodoListViewTransitionName",
-	) as (name: string) => void;
-
-	let todoListViewTransitionName = $state("");
-	let todoItemViewTransitionName = $state("");
-
-	const isZoomingFromMe = $derived(
-		$itemState.zoomable
-			? checkTransitioningPaths($itemState.absolutePaths)
-			: false,
-	);
-
-	$effect(() => {
-		todoListViewTransitionName = isZoomingFromMe
-			? "pre-root-todo-list"
-			: "";
-
-		todoItemViewTransitionName = isZoomingFromMe ? "pre-title" : "";
-	});
-
-	onMount(() => {
-		const index = consumeFocusState(
-			$itemState.panelId,
-			$itemState.absolutePaths,
-		);
-		if (index !== null) {
-			focus(index);
-		}
+		controller.onTodoReady();
+		return () => {
+			controller.destory();
+		};
 	});
 </script>
 
 <div
-	bind:this={container}
 	class:highlight-box={highlighting}
+	style:view-transition-name={controller.transitionActions
+		.$todoViewTransitionName}
 	class="relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}"
 >
-	<TodoItem
-		bind:this={todoItem}
-		bind:hasNote
-		arrowDownHandle={itemArrowDownHandle}
-		{arrowUpHandle}
-		enterHandle={itemEnterHandler}
-		{task}
-		tabHandle={(range: { index: number }) => {
-			tabHandle(task, $itemState, range.index);
-		}}
-		untabHandle={(range: { index: number }) => {
-			untabHandle(task, $itemState, range.index);
-		}}
-		titleViewTransitionName={todoItemViewTransitionName}
-	>
+	<TodoItem {controller} note={$note}>
 		{#snippet handle()}
 			<ContextMenu.Root>
 				<ContextMenu.Trigger>
-					<TaskDraggable {parent} {task}>
-						<Handle
-							taskId={task.id}
-							onclick={() => {
-								if (!$itemState.zoomable) {
-									return;
-								}
-								todoItemViewTransitionName = "title";
-								todoListViewTransitionName = "root-todo-list";
-								tick().then(() => {
-									document
-										.startViewTransition(() => {
-											$itemState.zoomIn();
-											todoItemViewTransitionName = ""; // 把当前的quill改成空
-											todoListViewTransitionName = "";
-											setPanelTitleViewTransitionName(
-												"title",
-											); // 把父标题的改成title
-											setRootTodoListViewTransitionName(
-												"root-todo-list",
-											);
-											return tick();
-										})
-										.finished.then(() => {
-											setPanelTitleViewTransitionName("");
-											setRootTodoListViewTransitionName(
-												"",
-											);
-										});
-								});
-							}}
-						/>
-					</TaskDraggable>
+					<Handle
+						ondragstart={(event) => {
+							// event.preventDefault();
+							console.log("drag start");
+							// event.dataTransfer.effectAllowed = "move";
+							controller.dragDropActions.startDrag();
+						}}
+						ondragend={(event) => {
+							event.preventDefault();
+							console.log("drag end");
+							controller.dragDropActions.endDrag();
+						}}
+						taskId={controller.task.id}
+						onclick={() => controller.zoomInto()}
+					/>
 				</ContextMenu.Trigger>
 				<ContextMenu.Content>
 					<ContextMenu.Item
 						class="z-50"
 						inset
-						onclick={() => task.toggleStatus()}
+						onclick={() => controller.task.toggleStatus()}
 					>
 						{$isCompleted ? "待办" : "完成"}
 					</ContextMenu.Item>
 					<ContextMenu.Item
 						class="z-50 text-red-500"
 						inset
-						onclick={() => parent.deleteChild(task)}
+						onclick={() => controller.deleteMyself()}
 					>
 						删除
 					</ContextMenu.Item>
@@ -285,7 +88,7 @@
 		{#snippet overlay()}
 			{#if !meDragging}
 				<CollapseIcon
-					bind:folded={$itemState.folded}
+					bind:folded={controller.statesTree.$folded}
 					onfolded={() => console.log("folded")}
 					onunfolded={() => console.log("unfolded")}
 				/>
@@ -293,21 +96,10 @@
 		{/snippet}
 	</TodoItem>
 
-	<TodoList
-		display={!$itemState.folded}
-		bind:this={todoList}
-		arrowUpHandle={(range, context) => {
-			todoItem.focus(range.index);
-			return false;
-		}}
-		{arrowDownHandle}
-		parent={task}
-		moveUp={movedUp}
-		viewTransitionName={todoListViewTransitionName}
-	>
+	<TodoList {controller}>
 		{#snippet side()}
 			<div
-				class=" {hasNote
+				class=" {$note.length > 0
 					? ' -mt-8'
 					: ''} group flex w-5 flex-shrink-0 flex-row items-start pb-0 pl-1"
 			>

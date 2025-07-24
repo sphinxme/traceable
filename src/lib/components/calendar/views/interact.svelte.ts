@@ -2,8 +2,6 @@ import type { Action } from "svelte/action";
 import dayjs, { Dayjs } from "dayjs";
 import interact from "interactjs";
 
-import { getDnDData } from "$lib/components/dnd/state";
-import type { TaskDnDData } from "$lib/components/todolist/dnd/state";
 import type { TaskProxy } from "$lib/states/meta/task.svelte";
 
 
@@ -50,8 +48,9 @@ export const dayExternalDropZone: Action<
 > = (node, { onDragOver, onDragEnd, onDrop }) => {
     node.ondragover = (event) => {
         event.preventDefault();
-        const data: TaskDnDData = getDnDData("tasks");
-        onDragOver(data.draggingTask, event.offsetY);
+        // const data: TaskDnDData = getDnDData("tasks");
+
+        onDragOver(null, event.offsetY);
     };
     node.ondragend = (event) => {
         event.preventDefault();
@@ -59,8 +58,8 @@ export const dayExternalDropZone: Action<
     };
     node.ondrop = (event) => {
         event.preventDefault();
-        const data: TaskDnDData = getDnDData("tasks");
-        onDrop(data.draggingTask, event.offsetY);
+        // const data: TaskDnDData = getDnDData("tasks");
+        onDrop(null, event.offsetY);
     };
 };
 

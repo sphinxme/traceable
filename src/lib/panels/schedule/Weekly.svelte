@@ -3,56 +3,48 @@
 	import * as Y from "yjs";
 	import TodoView from "$lib/components/todolist/TodoView.svelte";
 	import dayjs, { Dayjs } from "dayjs";
-	import { getContext, setContext } from "svelte";
-	import { range } from "radash";
 	import Focusable from "$lib/components/ui/focusable/Focusable.svelte";
-	import type { JournalProxyManager } from "$lib/states/meta/journal.svelte";
-	import { loadJournalPanelState } from "../todo/state.svelte";
+	import { JournalProxyManager } from "$lib/states/meta/journal.svelte";
 	import type { StateMap } from "$lib/states/states/panel_states";
+	import { PanelStateStore } from "$lib/states/states/StatesTree.svelte";
+	import { JournalPanelController } from "$lib/components/todolist/controller/PanelController.svelte";
 
-	let {
-		journalProxyManager,
-		panelStates,
-	}: {
+	interface Props {
 		journalProxyManager: JournalProxyManager;
-		panelStates: Y.Map<StateMap>;
-	} = $props();
+		allPanelStates: Y.Map<StateMap>;
+		panelId: string;
+	}
 
-	const panelId = "weekly-"; /* + userId */
-	setContext("panelId", panelId);
-	const panelState = loadJournalPanelState(panelId, panelStates);
+	let { journalProxyManager, allPanelStates, panelId }: Props = $props();
+	const rootTaskId = "none";
+
+	const panelState = PanelStateStore.getOrCreateFromParentYMap(
+		allPanelStates,
+		panelId,
+		rootTaskId,
+	);
+
+	const controller = new JournalPanelController(
+		panelId,
+		panelState,
+		rootTaskId,
+		journalProxyManager,
+	);
 
 	function isCurrentWeek(t: Dayjs) {
 		return t.startOf("week").isSame(dayjs().startOf("week"));
 	}
-
-	function genTimes() {
-		const start = dayjs().startOf("week").add(7, "day");
-		return [...range(-7, 7)].map((offset) =>
-			start.subtract(offset, "week"),
-		);
-	}
-
-	const journalPromiseList = genTimes().map((time) => {
-		return journalProxyManager.getOrCreateJournal(
-			time,
-			"WEEK",
-			time.format("MM/DD"),
-			`${time.format("YYYY-MM-DD")} - ${time.add(1, "week").format("YYYY-MM-DD")}`,
-		);
-	});
-	const weekEls: Record<string, HTMLDivElement> = $state({});
+	// TODO:focus改成使用mitt + viewId触发
 </script>
 
 <div class="pl-2 h-full overflow-y-auto">
-	{#each journalPromiseList as weekDoc}
-		<div bind:this={weekEls[weekDoc.task.id]}>
+	{#each controller.getJournalList() as weekDoc}
+		<div>
 			<Focusable focus={isCurrentWeek(weekDoc.time)} inline="start" />
 			<TodoView
-				highlightTitle={isCurrentWeek(weekDoc.time)}
 				showTitle
-				task={weekDoc.task}
-				rootItemState={panelState.loadChild(weekDoc.task)}
+				highlightTitle={isCurrentWeek(weekDoc.time)}
+				controller={controller.getTodoController(weekDoc)}
 			/>
 		</div>
 	{/each}

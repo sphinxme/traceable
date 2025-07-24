@@ -153,6 +153,7 @@ export class TaskProxy {
     public insertChild(index?: number, text: string = "", note: string = "") {
         const child = this.manager.newTask(text, note)
         this.attachChild(child, index);
+        return child;
     }
 
     public detachChild(child: TaskProxy) {
@@ -206,6 +207,22 @@ class TaskProxyIterable extends YIterable<TaskProxy> {
         factory: (id: string) => TaskProxy,
     ) {
         super(yArray, factory);
+    }
+
+    public findIndex(id: string) {
+        for (let i = 0; i < this.yArray.length; i++) {
+            if (this.yArray.get(i) === id) {
+                return i;
+            }
+        }
+    }
+
+    public getById(id: string) {
+        const index = this.findIndex(id);
+        if (index === undefined) {
+            return undefined;
+        }
+        return this.get(index);
     }
 }
 

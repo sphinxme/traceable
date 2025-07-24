@@ -1,87 +1,45 @@
 <script lang="ts">
-	import { getContext } from "svelte";
-	import {
-		droppable,
-		type DroppableActionParams,
-	} from "$lib/components/dnd/droppable";
-	import type { TaskDnDData } from "./state";
-	import { dragging } from "$lib/components/dnd/state";
-	import type { TaskProxy } from "$lib/states/meta/task.svelte";
+	import { dragging } from "../controller/DragDropActions.svelte";
+	import type { TodoController } from "../controller/TodoController.svelte";
 
 	interface Props {
-		parent: TaskProxy;
+		controller: TodoController;
 		index: number;
 		topTaskId?: string | undefined;
 		bottomTaskId?: string | undefined;
-		depth?: number;
-		panelId?: any;
-		hovering?: boolean;
 	}
 
-	let {
-		parent,
-		index,
-		topTaskId = undefined,
-		bottomTaskId = undefined,
-		depth = 1,
-		panelId = getContext("panelId"),
-		hovering = $bindable(false),
-	}: Props = $props();
+	let { controller, index }: Props = $props();
 
-	const droppableOptions: DroppableActionParams<TaskDnDData> = {
-		channel: "tasks",
-		onMove({ draggingTask, originParentTask }) {
-			if (index < 0) {
-				throw new Error(`invalid index:${index}`);
-			}
-
-			// 在同一个parent内move, 仅调换位置
-			if (parent.id === originParentTask.id) {
-				parent.children.move(draggingTask.id, index);
-			} else {
-				originParentTask.detachChild(draggingTask);
-				parent.attachChild(draggingTask, index);
-			}
-		},
-		onLink({ draggingTask }) {
-			parent.attachChild(draggingTask, index);
-		},
-		droppable(hotKey, { draggingTask, originPanelId, originParentTask }) {
-			// 1. 如果是上一个或者下一个的同一个task, 就不能走
-			if (
-				draggingTask.id == topTaskId ||
-				draggingTask.id == bottomTaskId // FIMXE:只有一个方向的不能放?
-			) {
-				return;
-			}
-
-			// 2. 如果是同panel 就move, 如果是不同panel, 就link
-			const isSamePanel = originPanelId == panelId;
-			let shouldMove = isSamePanel;
-			if (hotKey) {
-				shouldMove = !shouldMove;
-			}
-			return shouldMove ? "move" : "link";
-		},
-
-		setHoverStatus: (status) => (hovering = status),
-		getHoverStatus: () => hovering,
-	};
+	let hovering = $state(false);
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class=" relative {hovering
+	class=" relative transition-height w-full duration-300 {hovering
 		? 'h-2'
-		: 'h-0'} transition-height w-full duration-300"
+		: 'h-0'}"
 >
 	<!-- 拖拽检测区域(超出上方的relative范围) -->
-	{#if true || $dragging}
+	{#if $dragging}
 		<div
 			class:hovering
 			class=" absolute -bottom-1.5 -top-3 flex w-full flex-col items-center justify-center"
-			use:droppable={droppableOptions}
-			style:z-index={depth}
+			ondragover={(event) => {
+				event.preventDefault();
+
+				if (event.dataTransfer) {
+					event.dataTransfer.dropEffect =
+						controller.dragDropActions.dragOverMe(event.metaKey);
+				}
+			}}
+			ondrop={(event) => {
+				event.preventDefault();
+				controller.dragDropActions.dropIntoMe(false, index);
+			}}
+			ondragenter={() => (hovering = true)}
+			ondragleave={() => (hovering = false)}
+			style:z-index={controller.depth}
 		></div>
 	{/if}
 </div>
