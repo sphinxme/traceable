@@ -39,13 +39,10 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
         this.$currentPaths = $state(initialPaths);
 
         this.$isRootHome = $derived(this.$currentPaths.length === 1);
-        console.log("init $currentHomeController")
         this.$currentHomeController = $state(null as unknown as TodoController); // 下面保证$effect.pre时一定会写入
         $effect.pre(() => {
-            console.log("refresh $currentHomeController")
             this.$currentHomeController = TodoController.createRoot(this, this.$currentPaths[this.$currentPaths.length - 1], panelStateStore.createHomeByPaths(this.$currentPaths));
             return () => {
-                console.log("destory $currentHomeController")
                 this.$currentHomeController.destory();
             }
         })
@@ -85,7 +82,7 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
     }
 
     // TODO:放到触发侧(breadcrumb/NavigatorController)
-    private async withZoomoutTransition(index: number, action: () => void) {
+    private async withZoomoutTransition(index: number, doZoomout: () => void) {
         // 计算当前home在zoomout结束后的viewId
         const restPathIds = this.$currentPaths.slice(index).map(x => x.id);
         const homeNextViewId = makeViewIdByPaths(this.id, restPathIds);
@@ -95,8 +92,9 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
 
         eventbus.emit('zoomout:beforeStart', { homeNextViewId });
         await tick();
-        const transition = document.startViewTransition();
-        action();
+        const transition = document.startViewTransition(() => {
+            doZoomout();
+        });
         await transition.finished;
         eventbus.emit('zoomout:afterTransitioned', { homeNextViewId });
     }

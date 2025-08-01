@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { dragging } from "../controller/DragDropActions.svelte";
 	import type { TodoController } from "../controller/TodoController.svelte";
+	import { eventbus } from "../controller/eventbus";
 
 	interface Props {
 		controller: TodoController;
@@ -12,6 +13,15 @@
 	let { controller, index }: Props = $props();
 
 	let hovering = $state(false);
+	$effect(() => {
+		const setHoverFalse = () => {
+			hovering = false;
+		};
+		eventbus.on("drag:end", setHoverFalse);
+		return () => {
+			eventbus.off("drag:end", setHoverFalse);
+		};
+	});
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->

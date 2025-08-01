@@ -20,3 +20,12 @@ export type Events = {
 };
 
 export const eventbus: Emitter<Events> = mitt<Events>();
+
+export function eventbus$listen<K extends keyof Events>(event: K, handler: (payload: Events[K]) => void) {
+    $effect(() => {
+        eventbus.on(event, handler);
+        return () => {
+            eventbus.off(event, handler);
+        }
+    })
+}

@@ -29,6 +29,7 @@ export class PanelStateStore {
     private static generateStateYMap(rootTaskId: string) {
         const m = new Y.Map();
         m.set("__paths__", [rootTaskId]);
+        return m;
     }
 
     public getPaths(): string[] {

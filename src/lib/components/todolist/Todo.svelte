@@ -6,7 +6,6 @@
 	import TodoList from "./TodoList.svelte";
 	import type { TodoController } from "./controller/TodoController.svelte";
 	import type { TaskProxy } from "$lib/states/meta/task.svelte";
-	import { onMount } from "svelte";
 
 	interface Props {
 		task: TaskProxy;
@@ -31,8 +30,10 @@
 		highlighting = true;
 		setTimeout(() => (highlighting = false), 3000);
 	};
+	const children = controller.task.children.$;
+	const hasChildren = $derived($children.size > 0);
 
-	onMount(() => {
+	$effect(() => {
 		controller.onTodoReady();
 		return () => {
 			controller.destory();
@@ -48,45 +49,30 @@
 >
 	<TodoItem {controller} note={$note}>
 		{#snippet handle()}
-			<ContextMenu.Root>
-				<ContextMenu.Trigger>
-					<Handle
-						ondragstart={(event) => {
-							// event.preventDefault();
-							console.log("drag start");
-							// event.dataTransfer.effectAllowed = "move";
-							controller.dragDropActions.startDrag();
-						}}
-						ondragend={(event) => {
-							event.preventDefault();
-							console.log("drag end");
-							controller.dragDropActions.endDrag();
-						}}
-						taskId={controller.task.id}
-						onclick={() => controller.zoomInto()}
-					/>
-				</ContextMenu.Trigger>
-				<ContextMenu.Content>
-					<ContextMenu.Item
-						class="z-50"
-						inset
-						onclick={() => controller.task.toggleStatus()}
-					>
-						{$isCompleted ? "待办" : "完成"}
-					</ContextMenu.Item>
-					<ContextMenu.Item
-						class="z-50 text-red-500"
-						inset
-						onclick={() => controller.deleteMyself()}
-					>
-						删除
-					</ContextMenu.Item>
-				</ContextMenu.Content>
-			</ContextMenu.Root>
+			<Handle
+				onmousedown={(event) => {
+					if (event.button === 0) {
+						controller.dragDropActions.$isMeDragging = true;
+					}
+				}}
+				ondragstart={(event) => {
+					// event.preventDefault();
+					console.log("drag start");
+					// event.dataTransfer.effectAllowed = "move";
+					controller.dragDropActions.startDrag();
+				}}
+				ondragend={(event) => {
+					event.preventDefault();
+					console.log("drag end");
+					controller.dragDropActions.endDrag();
+				}}
+				taskId={controller.task.id}
+				onclick={() => controller.zoomInto()}
+			/>
 		{/snippet}
 
 		{#snippet overlay()}
-			{#if !meDragging}
+			{#if !meDragging && hasChildren}
 				<CollapseIcon
 					bind:folded={controller.statesTree.$folded}
 					onfolded={() => console.log("folded")}
@@ -114,6 +100,7 @@
 	{#if meDragging}
 		<!-- dragging mask -->
 		<div
+			style:pointer-events="none"
 			class=" dragging absolute -ml-2 z-50 h-full w-full rounded-md bg-zinc-500 opacity-0 transition duration-100"
 		></div>
 	{/if}

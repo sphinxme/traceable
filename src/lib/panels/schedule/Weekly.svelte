@@ -16,7 +16,7 @@
 	}
 
 	let { journalProxyManager, allPanelStates, panelId }: Props = $props();
-	const rootTaskId = "none";
+	const rootTaskId = "weekly";
 
 	const panelState = PanelStateStore.getOrCreateFromParentYMap(
 		allPanelStates,

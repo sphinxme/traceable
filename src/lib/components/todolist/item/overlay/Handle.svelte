@@ -9,6 +9,7 @@
 		onclick: MouseEventHandler<HTMLDivElement>;
 		ondragstart: MouseEventHandler<HTMLDivElement>;
 		ondragend: MouseEventHandler<HTMLDivElement>;
+		onmousedown: MouseEventHandler<HTMLDivElement>;
 	}
 
 	let {
@@ -17,6 +18,7 @@
 		status = "TODO",
 		ondragstart,
 		ondragend,
+		onmousedown,
 	}: Props = $props();
 </script>
 
@@ -28,6 +30,7 @@
 	{onclick}
 	{ondragstart}
 	{ondragend}
+	{onmousedown}
 	draggable="true"
 	data-task-id={taskId}
 	class="handle relative flex items-center justify-center"

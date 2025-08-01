@@ -22,6 +22,10 @@
 		style="transition-property: box-shadow, border;"
 		class="rounded-lg shadow-lg transition-shadow duration-700 focus-within:shadow-2xl"
 	>
-		<Editor {rootTask} {panelStateMap} />
+		<Editor
+			panelId="root"
+			rootTaskId={rootTask.id}
+			allPanelStateMap={panelStateMap}
+		/>
 	</Pane>
 </PaneGroup>
