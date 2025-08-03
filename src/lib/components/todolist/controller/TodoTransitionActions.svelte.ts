@@ -22,7 +22,7 @@ eventbus.on("tab:afterTransitioned", (event) => {
 function isMeTabTransitioning(viewId: string): boolean {
     return tabingTodoViewId === viewId;
 }
-
+ 
 // 正在zoom out的, zoom out之前的home task, 那个task在zoom out之后的viewId. 当加载发现自己是的时候, 要把自己的title和todoList ViewTransitionName设上
 let zoomingViewId = "";
 eventbus.on("zoominto:beforeStart", (event) => {
@@ -194,5 +194,10 @@ export class TodoTransitionActions implements TodoLifeCycle {
             eventbus.emit('tab:afterTransitioned', { originViewId, nextViewId, cursorIndex })
         )
 
+    }
+
+    public withAllTodoListTransition(action: () => void) {
+        
+        action();
     }
 }

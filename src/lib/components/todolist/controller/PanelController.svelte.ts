@@ -2,7 +2,7 @@ import type { TaskProxy, TaskProxyManager } from "$lib/states/meta/task.svelte";
 import { TodoController } from "./TodoController.svelte";
 import { makeViewIdByPaths } from "./utils";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
-import { PanelStateStore, StateStore } from "$lib/states/states/StatesTree.svelte";
+import { PanelStateStore } from "$lib/states/states/StatesTree.svelte";
 import { eventbus } from "./eventbus";
 import { tick } from "svelte";
 import type { JournalProxy, JournalProxyManager } from "$lib/states/meta/journal.svelte";

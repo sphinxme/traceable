@@ -3,16 +3,17 @@ import { writable } from "svelte/store";
 import { eventbus } from "./eventbus";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import type { TodoController } from "./TodoController.svelte";
+import type { StateStore } from "$lib/states/states/StatesTree.svelte";
 
 interface DraggingTaskData {
     originPanelId: string,
     originViewId: string,
     originParent: TaskProxy,
     task: TaskProxy,
-
+    states: StateStore,
 }
 
-let draggingTaskData: DraggingTaskData | undefined;
+export let draggingTaskData: DraggingTaskData | undefined;
 export function setDraggingTaskData(data: DraggingTaskData) {
     draggingTaskData = data;
 }
@@ -48,6 +49,7 @@ export class DragDropActions implements TodoLifeCycle {
             originViewId: this.host.viewId,
             originParent: this.host.parentController?.task,
             task: this.host.task,
+            states: this.host.statesTree,
         }
         setDraggingTaskData(data);
         this.$isMeDragging = true;
@@ -85,12 +87,27 @@ export class DragDropActions implements TodoLifeCycle {
             case "move":
                 // 如果是在同一个list中, 仅调换位置, 就直接move
                 if (this.host.task.id === draggingTaskData.originParent.id) {
-                    return this.host.task.children.move(draggingTaskData.task.id, targetIndex);
+                    console.log("move into same list");
+                    console.log({
+                        originParentId: draggingTaskData.originParent.id,
+                        originTaskId: draggingTaskData.task.id,
+                        targetIndex,
+                    });
+
+                    const currentIndex = this.host.childrenActions.getChildIndex(draggingTaskData.task.id)
+                    if (currentIndex === targetIndex) {
+                        return;
+                    } else if (currentIndex < targetIndex) {
+                        targetIndex--;
+                    }
+
+                    return this.host.task.children.move(draggingTaskData.task.id, targetIndex); // FIXME:targetIndex其实是有问题的
                 }
 
                 // 先attach再detach
                 // 1. attach
                 this.host.task.attachChild(draggingTaskData.task, targetIndex);
+                this.host.statesTree.moveInto(draggingTaskData.states);
                 // 2. detach from origin
                 draggingTaskData.originParent.deleteChild(draggingTaskData.task);
                 return;

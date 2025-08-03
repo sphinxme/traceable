@@ -5,6 +5,7 @@
 	import TaskDropable from "./dnd/TaskDropable.svelte";
 
 	import type { TodoController } from "./controller/TodoController.svelte";
+	import { slide } from "svelte/transition";
 
 	interface Props {
 		controller: TodoController;
@@ -20,6 +21,7 @@
 
 {#if display}
 	<div
+		transition:slide
 		style:view-transition-name={controller.transitionActions
 			.$todoListViewTransitionName}
 		class="flex w-full flex-row"

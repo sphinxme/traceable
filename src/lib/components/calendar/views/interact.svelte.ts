@@ -3,6 +3,7 @@ import dayjs, { Dayjs } from "dayjs";
 import interact from "interactjs";
 
 import type { TaskProxy } from "$lib/states/meta/task.svelte";
+import { draggingTaskData } from "$lib/components/todolist/controller/DragDropActions.svelte";
 
 
 type ResizeActionParams = {
@@ -48,9 +49,10 @@ export const dayExternalDropZone: Action<
 > = (node, { onDragOver, onDragEnd, onDrop }) => {
     node.ondragover = (event) => {
         event.preventDefault();
-        // const data: TaskDnDData = getDnDData("tasks");
-
-        onDragOver(null, event.offsetY);
+        if (!draggingTaskData) {
+            return;
+        }
+        onDragOver(draggingTaskData.task, event.offsetY);
     };
     node.ondragend = (event) => {
         event.preventDefault();
@@ -58,8 +60,11 @@ export const dayExternalDropZone: Action<
     };
     node.ondrop = (event) => {
         event.preventDefault();
+        if (!draggingTaskData) {
+            return;
+        }
         // const data: TaskDnDData = getDnDData("tasks");
-        onDrop(null, event.offsetY);
+        onDrop(draggingTaskData.task, event.offsetY);
     };
 };
 

@@ -49,26 +49,38 @@
 >
 	<TodoItem {controller} note={$note}>
 		{#snippet handle()}
-			<Handle
-				onmousedown={(event) => {
-					if (event.button === 0) {
-						controller.dragDropActions.$isMeDragging = true;
-					}
-				}}
-				ondragstart={(event) => {
-					// event.preventDefault();
-					console.log("drag start");
-					// event.dataTransfer.effectAllowed = "move";
-					controller.dragDropActions.startDrag();
-				}}
-				ondragend={(event) => {
-					event.preventDefault();
-					console.log("drag end");
-					controller.dragDropActions.endDrag();
-				}}
-				taskId={controller.task.id}
-				onclick={() => controller.zoomInto()}
-			/>
+			<ContextMenu.Root>
+				<ContextMenu.Trigger>
+					<Handle
+						onmousedown={(event) => {
+							if (event.button === 0) {
+								controller.dragDropActions.$isMeDragging = true;
+							}
+						}}
+						ondragstart={(event) => {
+							// event.preventDefault();
+							console.log("drag start");
+							// event.dataTransfer.effectAllowed = "move";
+							controller.dragDropActions.startDrag();
+						}}
+						ondragend={(event) => {
+							event.preventDefault();
+							console.log("drag end");
+							controller.dragDropActions.endDrag();
+						}}
+						taskId={controller.task.id}
+						onclick={() => controller.zoomInto()}
+					/>
+				</ContextMenu.Trigger>
+				<ContextMenu.Content>
+					<ContextMenu.Item
+						class="text-red-500"
+						onclick={() => controller.deleteMyself()}
+					>
+						删除
+					</ContextMenu.Item>
+				</ContextMenu.Content>
+			</ContextMenu.Root>
 		{/snippet}
 
 		{#snippet overlay()}
