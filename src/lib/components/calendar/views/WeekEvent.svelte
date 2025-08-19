@@ -14,7 +14,7 @@
 	import type { EventProxy } from "$lib/states/meta/event.svelte";
 	import type { TaskProxy } from "$lib/states/meta/task.svelte";
 	import ObservableText from "$lib/components/ObservableText.svelte";
-	import { CornerLeftUp, Redo2 } from "lucide-svelte";
+	import { CornerLeftUp, Redo2 } from "@lucide/svelte";
 	import { highlightTaskSignal } from "$lib/states/signals.svelte";
 	import { fade } from "svelte/transition";
 

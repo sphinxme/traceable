@@ -1,7 +1,7 @@
 <script lang="ts">
 	import TodoList from "$lib/components/todolist/TodoList.svelte";
 	import Title from "$lib/panels/todo/Title.svelte";
-	import { CirclePlus } from "lucide-svelte";
+	import { CirclePlus } from "@lucide/svelte";
 	import { onMount, setContext } from "svelte";
 	import { crossfade } from "svelte/transition";
 	import type { TodoController } from "./controller/TodoController.svelte";

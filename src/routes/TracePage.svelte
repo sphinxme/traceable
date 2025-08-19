@@ -9,7 +9,7 @@
 	let eventProxyManager = db.eventProxyManager;
 </script>
 
-<PaneGroup direction="horizontal" class=" gap-1.5 p-3">
+<PaneGroup direction="horizontal" class=" gap-1.5 p-3 pt-0">
 	<Pane
 		style="transition-property: box-shadow, border;"
 		class="rounded-lg shadow-lg transition-shadow duration-700 focus-within:shadow-2xl"

@@ -7,8 +7,8 @@ import { TodoChildrenActions } from "./TodoChildrenActions.svelte";
 import { StateStore } from "$lib/states/states/StatesTree.svelte";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import { makeViewId } from "./utils";
-import { type PanelController } from "./PanelController.svelte";
 import { DragDropActions } from "./DragDropActions.svelte";
+import type { PanelController } from "./IPanelController.svelte";
 
 
 /**

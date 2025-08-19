@@ -8,8 +8,8 @@
 		Link,
 	} from "$lib/components/ui/breadcrumb";
 	import Text from "../../components/ObservableText.svelte";
-	import { House } from "lucide-svelte";
-	import type { EditorPanelController } from "$lib/components/todolist/controller/PanelController.svelte";
+	import { House } from "@lucide/svelte";
+	import type { EditorPanelController } from "$lib/panels/PanelController.svelte";
 
 	interface Props {
 		controller: EditorPanelController;

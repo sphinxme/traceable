@@ -4,7 +4,7 @@
 	import Navigator from "./Navigator.svelte";
 
 	import { db } from "@/state";
-	import { EditorPanelController } from "$lib/components/todolist/controller/PanelController.svelte";
+	import { EditorPanelController } from "$lib/panels/PanelController.svelte";
 	import { PanelStateStore } from "$lib/states/states/StatesTree.svelte";
 
 	interface Props {

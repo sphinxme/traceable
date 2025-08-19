@@ -7,7 +7,7 @@
 	import { JournalProxyManager } from "$lib/states/meta/journal.svelte";
 	import type { StateMap } from "$lib/states/states/panel_states";
 	import { PanelStateStore } from "$lib/states/states/StatesTree.svelte";
-	import { JournalPanelController } from "$lib/components/todolist/controller/PanelController.svelte";
+	import { WeeklyJournalPanelController } from "./JournalPanelController.svelte";
 
 	interface Props {
 		journalProxyManager: JournalProxyManager;
@@ -24,7 +24,7 @@
 		rootTaskId,
 	);
 
-	const controller = new JournalPanelController(
+	const controller = new WeeklyJournalPanelController(
 		panelId,
 		panelState,
 		rootTaskId,
@@ -37,15 +37,19 @@
 	// TODO:focus改成使用mitt + viewId触发
 </script>
 
-<div class="pl-2 h-full overflow-y-auto">
-	{#each controller.getJournalList() as weekDoc}
-		<div>
-			<Focusable focus={isCurrentWeek(weekDoc.time)} inline="start" />
-			<TodoView
-				showTitle
-				highlightTitle={isCurrentWeek(weekDoc.time)}
-				controller={controller.getTodoController(weekDoc)}
-			/>
-		</div>
-	{/each}
+<div
+	class="flex h-full grow flex-col rounded bg-background pr-0 shadow-xl pl-1"
+>
+	<div class="pl-2 h-full overflow-y-auto">
+		{#each controller.getJournalList() as weekDoc}
+			<div>
+				<Focusable focus={isCurrentWeek(weekDoc.time)} inline="start" />
+				<TodoView
+					showTitle
+					highlightTitle={isCurrentWeek(weekDoc.time)}
+					controller={controller.getTodoController(weekDoc)}
+				/>
+			</div>
+		{/each}
+	</div>
 </div>

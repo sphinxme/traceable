@@ -2,7 +2,7 @@ import dayjs, { Dayjs } from "dayjs";
 import * as Y from "yjs"
 import { TaskProxy, TaskProxyManager } from "./task.svelte";
 
-export type JournalType = "WEEK"
+export type JournalType = "WEEK" | "DAY"
 
 export class JournalProxyManager
 // implements Iterable<JournalProxy> 

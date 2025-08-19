@@ -9,6 +9,13 @@
     "beforeDevCommand": "deno task dev",
     "beforeBuildCommand": "deno task build"
   },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["traceable"]
+      }
+    }
+  },
   "app": {
     "windows": [
     ],

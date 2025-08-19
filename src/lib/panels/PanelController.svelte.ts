@@ -1,20 +1,11 @@
 import type { TaskProxy, TaskProxyManager } from "$lib/states/meta/task.svelte";
-import { TodoController } from "./TodoController.svelte";
-import { makeViewIdByPaths } from "./utils";
-import type { TodoLifeCycle } from "./ILifeCycle.svelte";
+import { TodoController } from "../components/todolist/controller/TodoController.svelte";
+import { makeViewIdByPaths } from "../components/todolist/controller/utils";
+import type { TodoLifeCycle } from "../components/todolist/controller/ILifeCycle.svelte";
 import { PanelStateStore } from "$lib/states/states/StatesTree.svelte";
-import { eventbus } from "./eventbus";
+import { eventbus } from "../components/todolist/controller/eventbus";
 import { tick } from "svelte";
-import type { JournalProxy, JournalProxyManager } from "$lib/states/meta/journal.svelte";
-import dayjs from "dayjs";
-import { range } from "radash";
-
-
-export interface PanelController {
-    readonly id: string;
-    zoomable(): boolean;
-    pushPaths(childPaths: TaskProxy[]): void;
-}
+import type { PanelController } from "../components/todolist/controller/IPanelController.svelte";
 
 // 
 export class EditorPanelController implements TodoLifeCycle, PanelController {
@@ -43,7 +34,9 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
         $effect.pre(() => {
             this.$currentHomeController = TodoController.createRoot(this, this.$currentPaths[this.$currentPaths.length - 1], panelStateStore.createHomeByPaths(this.$currentPaths));
             return () => {
-                this.$currentHomeController.destory();
+                if (this.$currentHomeController) {
+                    this.$currentHomeController.destory();
+                }
             }
         })
     }
@@ -110,49 +103,3 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
 
 }
 
-export class JournalPanelController implements TodoLifeCycle, PanelController {
-
-    public constructor(
-        public readonly id: string,
-        public readonly panelStateStore: PanelStateStore,
-        public readonly rootTaskId: string,
-        public readonly db: JournalProxyManager,
-    ) { }
-
-    public onTodoReady() { }
-    public destory() { }
-
-    pushPaths(childPaths: TaskProxy[]): void {
-        throw new Error("Method not implemented.");
-    }
-
-    zoomable() {
-        return false;
-    }
-
-    public getJournalList(): JournalProxy[] {
-        return this.genTimes().map((time) => {
-            return this.db.getOrCreateJournal(
-                time,
-                "WEEK",
-                time.format("MM/DD"),
-                `${time.format("YYYY-MM-DD")} - ${time.add(1, "week").format("YYYY-MM-DD")}`,
-            );
-        });
-    }
-
-    public getTodoController(journal: JournalProxy): TodoController {
-        const homeStateTree = this.panelStateStore.createHomeByPaths([journal.task]);
-        return TodoController.createRoot(this, journal.task, homeStateTree);
-    }
-
-
-
-    private genTimes() {
-        const start = dayjs().startOf("week").add(7, "day");
-        return [...range(-7, 7)].map((offset) =>
-            start.subtract(offset, "week"),
-        );
-    }
-
-}
