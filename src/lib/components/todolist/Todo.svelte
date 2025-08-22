@@ -45,7 +45,7 @@
 	class:highlight-box={highlighting}
 	style:view-transition-name={controller.transitionActions
 		.$todoViewTransitionName}
-	class="relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}"
+	class=" relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}"
 >
 	<TodoItem {controller} note={$note}>
 		{#snippet handle()}
@@ -111,6 +111,7 @@
 
 	{#if meDragging}
 		<!-- dragging mask -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
 			style:pointer-events="none"
 			class=" dragging absolute -ml-2 z-50 h-full w-full rounded-md bg-zinc-500 opacity-0 transition duration-100"

@@ -4,6 +4,7 @@ import { eventbus } from "./eventbus";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import type { TodoController } from "./TodoController.svelte";
 import type { StateStore } from "$lib/states/states/StatesTree.svelte";
+import hotkeys from "hotkeys-js";
 
 interface DraggingTaskData {
     originPanelId: string,
@@ -80,11 +81,14 @@ export class DragDropActions implements TodoLifeCycle {
                 return;
             case 'copy':
                 // TODO: 先不支持
+                console.log('copy')
                 return;
             case 'link':
+                console.log('link')
                 this.host.task.attachChild(draggingTaskData.task, targetIndex);
                 return;
             case "move":
+                console.log('move')
                 // 如果是在同一个list中, 仅调换位置, 就直接move
                 if (this.host.task.id === draggingTaskData.originParent.id) {
                     console.log("move into same list");
@@ -118,7 +122,9 @@ export class DragDropActions implements TodoLifeCycle {
         if (targetIndex === undefined) {
             targetIndex = this.host.task.children.size - 1;
         }
-        return this.shouldMove(metaKeyPressed, targetIndex);
+
+        const result = this.shouldMove(metaKeyPressed, targetIndex);
+        return result;
     }
 
 
@@ -132,6 +138,15 @@ export class DragDropActions implements TodoLifeCycle {
         if (!draggingTaskData) {
             console.warn("dragging数据为空")
             return 'none';
+        }
+
+        // 不让放到自己或者自己的子节点上
+        let currentTodo: TodoController | undefined = this.host;
+        while (currentTodo) {
+            if (currentTodo.task.id == draggingTaskData.task.id) {
+                return 'none';
+            }
+            currentTodo = currentTodo.parentController;
         }
 
         if (draggingTaskData.originParent.id === this.host.task.id) {
@@ -153,6 +168,7 @@ export class DragDropActions implements TodoLifeCycle {
         const samePanel = this.host.panel.id === draggingTaskData.originPanelId;
 
         if (metaKeyPressed) {
+            console.log('metaKeyPressed')
             if (samePanel) {
                 return 'link';
             } else {

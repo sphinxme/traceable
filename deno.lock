@@ -9,11 +9,11 @@
     "npm:@tailwindcss/container-queries@~0.1.1": "0.1.1_tailwindcss@3.4.17__postcss@8.5.6",
     "npm:@tailwindcss/forms@~0.5.9": "0.5.10_tailwindcss@3.4.17__postcss@8.5.6",
     "npm:@tailwindcss/typography@~0.5.15": "0.5.16_tailwindcss@3.4.17__postcss@8.5.6",
-    "npm:@tauri-apps/api@^2.2.0": "2.6.0",
+    "npm:@tauri-apps/api@^2.8.0": "2.8.0",
     "npm:@tauri-apps/plugin-deep-link@^2.4.1": "2.4.1",
-    "npm:@tauri-apps/plugin-dialog@2.2": "2.2.2",
-    "npm:@tauri-apps/plugin-fs@2.2": "2.2.1",
-    "npm:@tauri-apps/plugin-http@2": "2.5.0",
+    "npm:@tauri-apps/plugin-dialog@~2.3.3": "2.3.3",
+    "npm:@tauri-apps/plugin-fs@~2.4.2": "2.4.2",
+    "npm:@tauri-apps/plugin-http@2": "2.5.2",
     "npm:@tsconfig/svelte@^5.0.4": "5.0.4",
     "npm:autoprefixer@^10.4.20": "10.4.21_postcss@8.5.6",
     "npm:bits-ui@^1.0.0-next.46": "1.8.0_svelte@5.36.13__acorn@8.15.0",
@@ -22,6 +22,7 @@
     "npm:dayjs@^1.11.13": "1.11.13",
     "npm:hotkeys-js@^3.13.9": "3.13.15",
     "npm:interactjs@^1.10.27": "1.10.27",
+    "npm:mitt@^3.0.1": "3.0.1",
     "npm:mode-watcher@~0.5.1": "0.5.1_svelte@5.36.13__acorn@8.15.0",
     "npm:paneforge@^1.0.0-next.1": "1.0.0_svelte@5.36.13__acorn@8.15.0",
     "npm:quill-cursors@^4.0.3": "4.0.4",
@@ -1168,9 +1169,9 @@
       ],
       "tarball": "https://registry.npmmirror.com/@tailwindcss/typography/-/typography-0.5.16.tgz"
     },
-    "@tauri-apps/api@2.6.0": {
-      "integrity": "sha512-hRNcdercfgpzgFrMXWwNDBN0B7vNzOzRepy6ZAmhxi5mDLVPNrTpo9MGg2tN/F7JRugj4d2aF7E1rtPXAHaetg==",
-      "tarball": "https://registry.npmmirror.com/@tauri-apps/api/-/api-2.6.0.tgz"
+    "@tauri-apps/api@2.8.0": {
+      "integrity": "sha512-ga7zdhbS2GXOMTIZRT0mYjKJtR9fivsXzsyq5U3vjDL0s6DTMwYRm0UHNjzTY5dh4+LSC68Sm/7WEiimbQNYlw==",
+      "tarball": "https://registry.npmmirror.com/@tauri-apps/api/-/api-2.8.0.tgz"
     },
     "@tauri-apps/plugin-deep-link@2.4.1": {
       "integrity": "sha512-I8Bo+spcAKGhIIJ1qN/gapp/Ot3mosQL98znxr975Zn2ODAkUZ++BQ9FnTpR7PDwfIl5ANSGdIW/YU01zVTcJw==",
@@ -1179,26 +1180,26 @@
       ],
       "tarball": "https://registry.npmmirror.com/@tauri-apps/plugin-deep-link/-/plugin-deep-link-2.4.1.tgz"
     },
-    "@tauri-apps/plugin-dialog@2.2.2": {
-      "integrity": "sha512-Pm9qnXQq8ZVhAMFSEPwxvh+nWb2mk7LASVlNEHYaksHvcz8P6+ElR5U5dNL9Ofrm+uwhh1/gYKWswK8JJJAh6A==",
+    "@tauri-apps/plugin-dialog@2.3.3": {
+      "integrity": "sha512-cWXB9QJDbLIA0v7I5QY183awazBEQNPhp19iPvrMZoJRX8SbFkhWFx1/q7zy7xGpXXzxz29qtq6z21Ho7W5Iew==",
       "dependencies": [
         "@tauri-apps/api"
       ],
-      "tarball": "https://registry.npmmirror.com/@tauri-apps/plugin-dialog/-/plugin-dialog-2.2.2.tgz"
+      "tarball": "https://registry.npmmirror.com/@tauri-apps/plugin-dialog/-/plugin-dialog-2.3.3.tgz"
     },
-    "@tauri-apps/plugin-fs@2.2.1": {
-      "integrity": "sha512-KdGzvvA4Eg0Dhw55MwczFbjxLxsTx0FvwwC/0StXlr6IxwPUxh5ziZQoaugkBFs8t+wfebdQrjBEzd8NmmDXNw==",
+    "@tauri-apps/plugin-fs@2.4.2": {
+      "integrity": "sha512-YGhmYuTgXGsi6AjoV+5mh2NvicgWBfVJHHheuck6oHD+HC9bVWPaHvCP0/Aw4pHDejwrvT8hE3+zZAaWf+hrig==",
       "dependencies": [
         "@tauri-apps/api"
       ],
-      "tarball": "https://registry.npmmirror.com/@tauri-apps/plugin-fs/-/plugin-fs-2.2.1.tgz"
+      "tarball": "https://registry.npmmirror.com/@tauri-apps/plugin-fs/-/plugin-fs-2.4.2.tgz"
     },
-    "@tauri-apps/plugin-http@2.5.0": {
-      "integrity": "sha512-l4M2DUIsOBIMrbj4dJZwrB4mJiB7OA/2Tj3gEbX2fjq5MOpETklJPKfDvzUTDwuq4lIKCKKykz8E8tpOgvi0EQ==",
+    "@tauri-apps/plugin-http@2.5.2": {
+      "integrity": "sha512-x1mQKHSLDk4mS2S938OTeyk8L7QyLpCrKZCZcjkljGsvTvRMojCvI9SeJ1kaxc7t8xSilkC7WdId8xER9TIGLg==",
       "dependencies": [
         "@tauri-apps/api"
       ],
-      "tarball": "https://registry.npmmirror.com/@tauri-apps/plugin-http/-/plugin-http-2.5.0.tgz"
+      "tarball": "https://registry.npmmirror.com/@tauri-apps/plugin-http/-/plugin-http-2.5.2.tgz"
     },
     "@tsconfig/svelte@5.0.4": {
       "integrity": "sha512-BV9NplVgLmSi4mwKzD8BD/NQ8erOY/nUE/GpgWe2ckx+wIQF5RyRirn/QsSSCPeulVpc3RA/iJt6DpfTIZps0Q==",
@@ -2301,6 +2302,10 @@
       "integrity": "sha512-qOOzS1cBTWYF4BH8fVePDBOO9iptMnGUEZwNc/cMWnTV2nVLZ7VoNWEPHkYczZA0pdoA7dl6e7FL659nX9S2aw==",
       "tarball": "https://registry.npmmirror.com/minipass/-/minipass-7.1.2.tgz"
     },
+    "mitt@3.0.1": {
+      "integrity": "sha512-vKivATfr97l2/QBCYAkXYDbrIWPM2IIKEl7YPhjCvKlG3kE2gm+uBo6nEXK3M5/Ffh/FLpKExzOQ3JJoJGFKBw==",
+      "tarball": "https://registry.npmmirror.com/mitt/-/mitt-3.0.1.tgz"
+    },
     "mode-watcher@0.5.1_svelte@5.36.13__acorn@8.15.0": {
       "integrity": "sha512-adEC6T7TMX/kzQlaO/MtiQOSFekZfQu4MC+lXyoceQG+U5sKpJWZ4yKXqw846ExIuWJgedkOIPqAYYRk/xHm+w==",
       "dependencies": [
@@ -3297,10 +3302,10 @@
         "npm:@tailwindcss/container-queries@~0.1.1",
         "npm:@tailwindcss/forms@~0.5.9",
         "npm:@tailwindcss/typography@~0.5.15",
-        "npm:@tauri-apps/api@^2.2.0",
+        "npm:@tauri-apps/api@^2.8.0",
         "npm:@tauri-apps/plugin-deep-link@^2.4.1",
-        "npm:@tauri-apps/plugin-dialog@2.2",
-        "npm:@tauri-apps/plugin-fs@2.2",
+        "npm:@tauri-apps/plugin-dialog@~2.3.3",
+        "npm:@tauri-apps/plugin-fs@~2.4.2",
         "npm:@tauri-apps/plugin-http@2",
         "npm:@tsconfig/svelte@^5.0.4",
         "npm:autoprefixer@^10.4.20",
@@ -3310,6 +3315,7 @@
         "npm:dayjs@^1.11.13",
         "npm:hotkeys-js@^3.13.9",
         "npm:interactjs@^1.10.27",
+        "npm:mitt@^3.0.1",
         "npm:mode-watcher@~0.5.1",
         "npm:paneforge@^1.0.0-next.1",
         "npm:quill-cursors@^4.0.3",

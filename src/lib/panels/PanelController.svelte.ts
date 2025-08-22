@@ -17,6 +17,7 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
     public $currentHomeController: TodoController;
     public readonly $isRootHome: boolean;
 
+    private static readonly panelScrollState: Record<string, { top: number, left: number }> = {}
 
     constructor(
         public readonly id: string,
@@ -41,7 +42,10 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
         })
     }
     public onTodoReady() {
-
+        const preScrollState = EditorPanelController.panelScrollState[this.panelStateStore.panelId + this.$currentHomeController.viewId];
+        if (preScrollState) {
+            this.scrollTo?.(preScrollState.top, preScrollState.left);
+        }
     }
 
     public destory() {
@@ -101,5 +105,10 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
         this.savePaths();
     }
 
+    public scrollTo: ((top: number, left: number) => void) | undefined;
+
+    public onScroll(top: number, left: number) {
+        EditorPanelController.panelScrollState[this.panelStateStore.panelId + this.$currentHomeController.viewId] = { top, left };
+    }
 }
 

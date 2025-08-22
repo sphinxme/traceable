@@ -18,6 +18,17 @@
   },
   "app": {
     "windows": [
+      {
+        "hiddenTitle": true,
+        "titleBarStyle": "Overlay",
+        "decorations": true,
+        "trafficLightPosition": {
+          "x": 12,
+          "y": 16
+        },
+        
+        "dragDropEnabled": false
+      }
     ],
     "security": {
       "csp": null

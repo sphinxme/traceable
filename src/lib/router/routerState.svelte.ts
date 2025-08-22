@@ -1,5 +1,3 @@
-import { onDestroy } from 'svelte';
-
 class Router {
 
     public path = $derived(window.location.pathname);

@@ -1,7 +1,9 @@
 <script lang="ts">
+	import hotkeys from "hotkeys-js";
 	import { dragging } from "../controller/DragDropActions.svelte";
 	import type { TodoController } from "../controller/TodoController.svelte";
 	import { eventbus } from "../controller/eventbus";
+	import { isMetaKeyPressed } from "$lib/components/utils/key-state.svelte";
 
 	interface Props {
 		controller: TodoController;
@@ -40,12 +42,16 @@
 
 				if (event.dataTransfer) {
 					event.dataTransfer.dropEffect =
-						controller.dragDropActions.dragOverMe(event.metaKey);
+						controller.dragDropActions.dragOverMe(isMetaKeyPressed);
+					if (event.dataTransfer.dropEffect === "none") {
+						hovering = false;
+					}
 				}
 			}}
 			ondrop={(event) => {
 				event.preventDefault();
-				controller.dragDropActions.dropIntoMe(false, index);
+				console.log({ m: hotkeys.modifier });
+				controller.dragDropActions.dropIntoMe(isMetaKeyPressed, index);
 			}}
 			ondragenter={() => (hovering = true)}
 			ondragleave={() => (hovering = false)}

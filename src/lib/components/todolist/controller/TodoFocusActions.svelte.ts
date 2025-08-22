@@ -18,8 +18,6 @@ export class TodoFoucsActions implements TodoLifeCycle {
         public readonly host: TodoController
     ) { }
 
-
-
     public onTodoReady() {
         if (this.host.viewId === focusOnInsertReadyViewId) {
             this.onfocus(focusOnInsertReadyCursorIndex);

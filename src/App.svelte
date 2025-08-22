@@ -130,10 +130,13 @@
 		}}
 	/> -->
 {:then}
-	<div class=" flex h-full flex-col items-start overflow-hidden bg-zinc-100">
+	<div
+		data-tauri-drag-region
+		class=" flex h-full flex-col items-start overflow-hidden bg-zinc-100"
+	>
 		<div
 			data-tauri-drag-region
-			class=" h-7 justify-center items-center ease-in-out duration-300 w-full flex flex-row gap-2 px-1.5"
+			class=" h-9 justify-center items-center ease-in-out duration-300 w-full flex flex-row gap-2 px-1.5"
 		>
 			<div data-tauri-drag-region class="flex-1"></div>
 			<NavBarItem></NavBarItem>

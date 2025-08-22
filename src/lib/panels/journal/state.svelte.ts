@@ -1,0 +1,1 @@
+export const journalScrollStates: Record<string, { scrollTop: number, scrollLeft: number }> = {};

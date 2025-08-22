@@ -122,11 +122,12 @@ export class TodoKeyboardActions implements TodoLifeCycle {
     public enter(range: Range, curContext: Context, quill: Quill): boolean {
         const cursorIndex = range.index;
 
+
         // case 1: 当前为空, 且不是顶层, 且自己是当前列表的最后一个
         // 行为: untab
         // console.log(`[enter]`, { quill, length: quill.getLength(), s: quill.getContents(), isSub: this.host.isSubItem(), isLastOne: this.host.parentController.childrenActions.isChildLastOne(this.host.task.id) })
         if (
-            quill.getLength() === 0 &&
+            quill.getText().trim().length === 0 &&
             this.host.isSubItem() &&
             this.host.parentController.childrenActions.isChildLastOne(this.host.task.id)
         ) {
@@ -135,7 +136,7 @@ export class TodoKeyboardActions implements TodoLifeCycle {
 
         // case 2: cursorIndex在末尾(suffix为空) (或内容为空的情况)
         if (curContext.suffix.length === 0 || this.host.isRoot()) {
-            if (this.host.isRoot() || !this.host.statesTree.isCurrentFolded()) {
+            if (this.host.isRoot() || (!this.host.statesTree.isCurrentFolded() && this.host.task.children.size)) {
                 // case 2.1: 当前已经展开
                 // 行为: 在自己下级孩子list里的首部 增加一个空的item, 光标跳转在新增的item上
                 const newChildTaskProxy = this.host.task.insertChild(0);
@@ -154,6 +155,7 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         // case 3: 光标在首部, prefix为空, 此时内容一定不为空
         // 行为: 在自己上面新增一个item, 然后光标跳转在新增的item上
         if (curContext.prefix.length === 0) {
+            console.log(123)
             const newViewId = this.insertBeforeMyself();
             eventbus.emit('enter:taskNextFoucs', { newViewId, cursorIndex: 0 });
             return true;
@@ -171,19 +173,19 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         assertNotEmpty(this.host.parentController, "根节点无法创建前序节点");
 
         const myIndex = this.host.parentController.childrenActions.getChildIndex(this.host.task.id);
-        const newChildTask = this.host.parentController.task.insertChild(myIndex + 1, text, note);
+        const newChildTask = this.host.parentController.task.insertChild(myIndex, text, note);
 
         const newViewId = this.host.calculateChildViewId(newChildTask.id);
         return newViewId;
     }
 
     private insertAfterMyself(text?: string, note?: string) {
-        assertNotEmpty(this.host.parentController, "根节点无法创建前序节点");
+        assertNotEmpty(this.host.parentController, "根节点无法创建后序节点");
 
         const myIndex = this.host.parentController.childrenActions.getChildIndex(this.host.task.id);
         const newChildTask = this.host.parentController.task.insertChild(myIndex + 1, text, note);
 
-        const newViewId = this.host.calculateChildViewId(newChildTask.id);
+        const newViewId = this.host.parentController.calculateChildViewId(newChildTask.id);
         return newViewId;
     }
 
