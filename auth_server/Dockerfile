@@ -15,4 +15,4 @@ RUN deno install --entrypoint main.ts
 ENV LIVEBLOCKS_KEY ""
 
 # 4. 运行应用（允许网络访问）
-CMD ["deno", "run", "--allow-net", "main.ts"]
+CMD ["deno", "run", "--allow-net", "--allow-env", "main.ts"]
