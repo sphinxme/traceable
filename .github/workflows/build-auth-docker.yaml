@@ -3,10 +3,11 @@ name: Build and Push Auth Server Image
 on:
   push:
     tags:
-      - 'auth-server-v*.*.*'  # 匹配 auth-server-v1.2.3
+      - 'auth-server-v*.*.*'
 
 jobs:
   build-push:
+    name: Push Docker image to Tencent Docker Registry
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,7 +31,6 @@ jobs:
           # 提取纯净语义版本 (e.g. v1.2.3)
           VERSION="${GITHUB_REF#refs/tags/auth-server-}"
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
-
       - name: Build and Push
         uses: docker/build-push-action@v4
         with:
@@ -38,7 +38,5 @@ jobs:
           push: true
           tags: |
             ccr.ccs.tencentyun.com/sphinx/traceable-auth-server:${{ steps.version.outputs.version }}
-            # 可选: 谨慎使用 latest
-            # ccr.ccs.tencentyun.com/sphinx/traceable-auth-server:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
