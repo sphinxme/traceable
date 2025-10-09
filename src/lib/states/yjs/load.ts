@@ -19,13 +19,18 @@ export function loadFromIndexedDB(doc: Y.Doc) {
 
 export function loadFromLiveBlocks(doc: Y.Doc) {
     return new Promise<void>((resolve, reject) => {
-        const client = createClient({ authEndpoint: import.meta.env.VITE_LIVEBLOCKS_AUTH_ENDPOINT });
-        const { room, leave } = client.enterRoom("traceable-yjs"); // leave
-        window.addEventListener("beforeunload", leave);
-        const p = new LiveblocksYjsProvider(room, doc);
-        p.once("synced", () => {
-            console.log("loaded from liveblocks")
-            resolve();
-        });
+
+        try {
+            const client = createClient({ authEndpoint: import.meta.env.VITE_LIVEBLOCKS_AUTH_ENDPOINT });
+            const { room, leave } = client.enterRoom("traceable-yjs"); // leave
+            window.addEventListener("beforeunload", leave);
+            const p = new LiveblocksYjsProvider(room, doc);
+            p.once("synced", () => {
+                console.log("loaded from liveblocks")
+                resolve();
+            });
+        } catch (e) {
+            console.log('load from liveblocks error', e);
+        }
     });
 }

@@ -44,16 +44,13 @@
 	import Router from "$lib/router/Router.svelte";
 	import { Button } from "$lib/components/ui/button";
 	import NavBarItem from "$lib/components/navbar/NavBarItem.svelte";
-	// import Loading from "$lib/components/loading/Loading.svelte";
+	import Loading from "$lib/components/loading/Loading.svelte";
 
 	// const appWindow = new Window("main");
 	let open = $state(false); // open dialog
 	const doc = newYDoc();
 	const loadingFromIndexedDBPromise = loadFromIndexedDB(doc);
-	// const loadingFromLiveBlocksPromise = loadFromLiveBlocks(doc);
-	const loadingFromLiveBlocksPromise = new Promise<void>((resolve) =>
-		resolve(),
-	);
+	const loadingFromLiveBlocksPromise = loadFromLiveBlocks(doc);
 	const loadPromise = Promise.all([
 		loadingFromIndexedDBPromise,
 		loadingFromLiveBlocksPromise,
@@ -123,12 +120,12 @@
 	</Command.List>
 </Command.Dialog> -->
 {#await finalLoad}
-	<!-- <Loading
+	<Loading
 		items={{
 			indexedDB: loadingFromIndexedDBPromise,
 			liveblocks: loadingFromLiveBlocksPromise,
 		}}
-	/> -->
+	/>
 {:then}
 	<div
 		data-tauri-drag-region
@@ -174,6 +171,3 @@
 		<!-- <Router {routes} /> -->
 	</div>
 {/await}
-
-<style>
-</style>

@@ -9,6 +9,7 @@ import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import { makeViewId } from "./utils";
 import { DragDropActions } from "./DragDropActions.svelte";
 import type { PanelController } from "./IPanelController.svelte";
+import { eventbus, type Events } from "./eventbus";
 
 
 /**
@@ -17,9 +18,6 @@ import type { PanelController } from "./IPanelController.svelte";
  * - 与TodoView.svelte/Title.svelte/TodoList.svelte实例一一对应
  */
 export class TodoController implements TodoLifeCycle {
-
-    // TODO:
-    // 4. drag & drop
 
     // focus注册&触发
     public readonly focusActions: TodoFoucsActions;
@@ -95,8 +93,6 @@ export class TodoController implements TodoLifeCycle {
     // children Controller
     public readonly childrenControllers: Map<string, TodoController> = new Map();
 
-    // hooks: 由UI注入到这里, 当外部变动时, 调用这些函数来触发UI操作
-    public doHighlight: () => void = () => { };
 
     public async zoomInto() {
         if (!this.panel.zoomable()) {

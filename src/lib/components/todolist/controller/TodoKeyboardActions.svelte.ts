@@ -6,6 +6,7 @@ import { assertNotEmpty } from "./utils";
 import { Range } from "quill";
 import type { Context } from "quill/modules/keyboard";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
+import { willCreateCycle } from "$lib/components/graph/graph";
 
 export class TodoKeyboardActions implements TodoLifeCycle {
     constructor(
@@ -71,6 +72,9 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         // case 2: 上面有同级可以缩进
         const originViewId = this.host.viewId;
         const nextViewId = preSilbingController.calculateChildViewId(this.host.task.id);
+        if (willCreateCycle(preSilbingController.task, this.host.task)) {
+            alert("会成环!")
+        }
 
         eventbus.emit('tab:beforeStart', { originViewId, nextViewId, cursorIndex })
         console.log('tab:beforeStart', { originViewId, nextViewId, cursorIndex })

@@ -17,6 +17,7 @@
 	import { CornerLeftUp, Redo2 } from "@lucide/svelte";
 	import { highlightTaskSignal } from "$lib/states/signals.svelte";
 	import { fade } from "svelte/transition";
+	import { eventbus } from "$lib/components/todolist/controller/eventbus";
 
 	interface Props {
 		dayHeight: number;
@@ -218,10 +219,7 @@
 			})
 			.on("tap", (e) => {
 				clickCount++;
-				highlightTaskSignal.next({
-					id: task.id,
-					index: clickCount,
-				});
+				eventbus.emit("clickOnWeekEvent", { event, task, clickCount });
 			});
 	});
 </script>

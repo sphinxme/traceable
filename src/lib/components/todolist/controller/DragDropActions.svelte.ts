@@ -5,6 +5,7 @@ import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import type { TodoController } from "./TodoController.svelte";
 import type { StateStore } from "$lib/states/states/StatesTree.svelte";
 import hotkeys from "hotkeys-js";
+import { willCreateCycle } from "$lib/components/graph/graph";
 
 interface DraggingTaskData {
     originPanelId: string,
@@ -61,6 +62,7 @@ export class DragDropActions implements TodoLifeCycle {
         eventbus.emit('drag:end', {
             originPanelId: this.host.panel.id,
             originViewId: this.host.viewId,
+            task: this.host.task,
         })
         this.$isMeDragging = false;
         clearDraggingTaskData();
@@ -85,12 +87,16 @@ export class DragDropActions implements TodoLifeCycle {
                 return;
             case 'link':
                 console.log('link')
+                if (this.willCreateCycle(draggingTaskData.task)) {
+                    alert('会成环!')
+                    return;
+                }
                 this.host.task.attachChild(draggingTaskData.task, targetIndex);
                 return;
             case "move":
                 console.log('move')
                 // 如果是在同一个list中, 仅调换位置, 就直接move
-                if (this.host.task.id === draggingTaskData.originParent.id) {
+                if ((this.host.task.id === draggingTaskData.originParent.id) && draggingTaskData.originPanelId === this.host.panel.id) {
                     console.log("move into same list");
                     console.log({
                         originParentId: draggingTaskData.originParent.id,
@@ -106,6 +112,11 @@ export class DragDropActions implements TodoLifeCycle {
                     }
 
                     return this.host.task.children.move(draggingTaskData.task.id, targetIndex); // FIXME:targetIndex其实是有问题的
+                }
+
+                if (this.willCreateCycle(draggingTaskData.task)) {
+                    alert('会成环!')
+                    return;
                 }
 
                 // 先attach再detach
@@ -125,6 +136,10 @@ export class DragDropActions implements TodoLifeCycle {
 
         const result = this.shouldMove(metaKeyPressed, targetIndex);
         return result;
+    }
+
+    private willCreateCycle(task: TaskProxy) {
+        return willCreateCycle(this.host.task, task);
     }
 
 

@@ -6,6 +6,7 @@
 	import TodoList from "./TodoList.svelte";
 	import type { TodoController } from "./controller/TodoController.svelte";
 	import type { TaskProxy } from "$lib/states/meta/task.svelte";
+	import { eventbus, type Events } from "./controller/eventbus";
 
 	interface Props {
 		task: TaskProxy;
@@ -22,11 +23,39 @@
 
 	let note = controller.task.note$;
 	let isCompleted = controller.task.isCompleted$;
-	let meDragging = $derived(controller.dragDropActions.$isMeDragging);
+
+	let sameTaskIdOtherTaskDragging = $state(false);
+	const sameTaskIdOtherTaskStartDragging = (event: Events["drag:start"]) => {
+		if (event.task.id === controller.task.id) {
+			sameTaskIdOtherTaskDragging = true;
+		}
+	};
+	$effect(() => {
+		eventbus.on("drag:start", sameTaskIdOtherTaskStartDragging);
+		return () => {
+			eventbus.off("drag:start", sameTaskIdOtherTaskStartDragging);
+		};
+	});
+
+	const sameTaskIdOtherTaskEndDragging = (event: Events["drag:end"]) => {
+		if (event.task.id === controller.task.id) {
+			sameTaskIdOtherTaskDragging = false;
+		}
+	};
+	$effect(() => {
+		eventbus.on("drag:end", sameTaskIdOtherTaskEndDragging);
+		return () => {
+			eventbus.off("drag:end", sameTaskIdOtherTaskEndDragging);
+		};
+	});
+
+	let meDragging = $derived(
+		controller.dragDropActions.$isMeDragging || sameTaskIdOtherTaskDragging,
+	);
 
 	// highlight
 	let highlighting = $state(false);
-	controller.doHighlight = () => {
+	controller.focusActions.doHighlight = () => {
 		highlighting = true;
 		setTimeout(() => (highlighting = false), 3000);
 	};
