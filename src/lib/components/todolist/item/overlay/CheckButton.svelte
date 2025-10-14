@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Circle, CircleCheckBig } from "lucide-svelte";
+	import { Circle, CircleCheckBig } from "@lucide/svelte";
 	import type { MouseEventHandler } from "svelte/elements";
 
 	interface Props {

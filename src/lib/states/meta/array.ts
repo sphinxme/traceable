@@ -24,6 +24,16 @@ export class YIterable<T> implements Iterable<T> {
         return this.yArray.get(index);
     }
 
+    public findIndex(id: string) {
+        let index = 0;
+        for (const childId of this.yArray) {
+            if (childId === id) {
+                return index;
+            }
+            index++;
+        }
+    }
+
     public get(index: number): T | undefined {
         const id = this.yArray.get(index);
         if (!id) {

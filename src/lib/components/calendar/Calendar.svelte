@@ -6,7 +6,7 @@
 		$props();
 </script>
 
-<div class="flex h-full flex-col justify-stretch">
+<div class="flex h-full flex-col justify-stretch" style="contain: content">
 	<div class=" grow overflow-y-auto">
 		<Week manager={eventProxyManager}></Week>
 	</div>

@@ -14,9 +14,10 @@
 	import type { EventProxy } from "$lib/states/meta/event.svelte";
 	import type { TaskProxy } from "$lib/states/meta/task.svelte";
 	import ObservableText from "$lib/components/ObservableText.svelte";
-	import { CornerLeftUp, Redo2 } from "lucide-svelte";
+	import { CornerLeftUp, Redo2 } from "@lucide/svelte";
 	import { highlightTaskSignal } from "$lib/states/signals.svelte";
 	import { fade } from "svelte/transition";
+	import { eventbus } from "$lib/components/todolist/controller/eventbus";
 
 	interface Props {
 		dayHeight: number;
@@ -218,10 +219,7 @@
 			})
 			.on("tap", (e) => {
 				clickCount++;
-				highlightTaskSignal.next({
-					id: task.id,
-					index: clickCount,
-				});
+				eventbus.emit("clickOnWeekEvent", { event, task, clickCount });
 			});
 	});
 </script>

@@ -9,8 +9,26 @@
     "beforeDevCommand": "deno task dev",
     "beforeBuildCommand": "deno task build"
   },
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["traceable"]
+      }
+    }
+  },
   "app": {
     "windows": [
+      {
+        "hiddenTitle": true,
+        "titleBarStyle": "Overlay",
+        "decorations": true,
+        "trafficLightPosition": {
+          "x": 12,
+          "y": 16
+        },
+        
+        "dragDropEnabled": false
+      }
     ],
     "security": {
       "csp": null

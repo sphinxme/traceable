@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { onDestroy, onMount } from "svelte";
 	import dayjs from "dayjs";
 
 	import { ScrollArea } from "$lib/components/ui/scroll-area";
@@ -15,6 +15,7 @@
 	import Focusable from "$lib/components/ui/focusable/Focusable.svelte";
 	import { EventProxyManager } from "$lib/states/meta/event.svelte";
 	import { list } from "radash";
+	import { weekPanelScrollStates } from "./state.svelte";
 
 	interface Props {
 		dayNum?: number;
@@ -99,10 +100,36 @@
 		const piece = dayHeight / pieceNum;
 		return list(0, pieceNum, (i) => i * piece);
 	});
+
+	let scrollAreaRef = $state<HTMLElement>(null as any);
+
+	onMount(() => {
+		if (weekPanelScrollStates["weekPanel"]) {
+			scrollAreaRef.scrollTo({
+				top: weekPanelScrollStates["weekPanel"].scrollTop,
+				left: weekPanelScrollStates["weekPanel"].scrollLeft,
+				behavior: "instant",
+			});
+		}
+
+		const update = () => {
+			console.log("updated");
+			weekPanelScrollStates["weekPanel"] = {
+				scrollTop: scrollAreaRef.scrollTop,
+				scrollLeft: scrollAreaRef.scrollLeft,
+			};
+		};
+		console.log({ weekPanelScrollStates });
+		scrollAreaRef.addEventListener("scroll", update);
+		// return () => {
+		// 	scrollAreaRef.removeEventListener("scrollend", update);
+		// };
+	});
 </script>
 
 <!-- 可滚动区域 -->
 <ScrollArea
+	bind:ref={scrollAreaRef}
 	class=" h-full w-full rounded-lg"
 	scrollbarYClasses="hidden"
 	orientation="both"
@@ -171,10 +198,11 @@
 						{day.format("ddd")}
 					</div>
 					<Focusable
-						focus={day.isSame(
-							dayjs().add(-offsetByHour, "hour"),
-							"day",
-						)}
+						focus={!weekPanelScrollStates["weekPanel"] &&
+							day.isSame(
+								dayjs().add(-offsetByHour, "hour"),
+								"day",
+							)}
 						inline="center"
 						block="start"
 					/>

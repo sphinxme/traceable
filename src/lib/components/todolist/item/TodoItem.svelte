@@ -2,62 +2,30 @@
 	import "quill/dist/quill.core.css";
 	import Quill from "quill";
 	import { QuillBinding } from "y-quill";
-	import { getContext, onMount } from "svelte";
+	import { onMount } from "svelte";
 	import * as Popover from "$lib/components/ui/popover";
 
-	import { warpKeyHandler, type KeyboardHandler } from "../../quill/model";
 	import EventIndicator from "./event/EventIndicator.svelte";
 	import NoteEditor from "./note/NoteEditor.svelte";
 	import Overlay from "./overlay/Overlay.svelte";
-	import type { TaskProxy } from "$lib/states/meta/task.svelte";
+	import type { TodoController } from "../controller/TodoController.svelte";
 
 	interface Props {
-		task: TaskProxy;
-		arrowUpHandle?: KeyboardHandler;
-		arrowDownHandle?: KeyboardHandler;
-		enterHandle?: KeyboardHandler;
-		tabHandle?: any;
-		untabHandle?: any;
+		controller: TodoController;
 		overlay?: import("svelte").Snippet;
 		handle?: import("svelte").Snippet;
 		drag?: import("svelte").Snippet;
-		hasNote: boolean;
-		titleViewTransitionName: string;
+		note: string;
 	}
 
-	let {
-		task,
-		arrowUpHandle = () => true,
-		arrowDownHandle = () => true,
-		enterHandle = () => true,
-		tabHandle = () => true,
-		untabHandle = () => true,
-		overlay,
-		handle,
-		drag,
-		hasNote = $bindable(),
-		titleViewTransitionName,
-	}: Props = $props();
+	let { controller, overlay, handle, drag, note }: Props = $props();
 	let container: HTMLDivElement;
 	let editor: Quill;
 	let noteEditor: NoteEditor;
 
-	const events = task.events.$;
+	const events = controller.task.events.$;
 	let sortedEvents = $derived([...$events].sort((a, b) => a.start - b.start));
-	const text = task.text;
-	let note = task.note$;
-	let isCompleted = task.isCompleted$;
-	$effect(() => {
-		hasNote = $note?.length > 0;
-	});
-
-	let shiftEnterHandle: KeyboardHandler = () => {
-		isNoteEditOpen = true;
-		return false;
-	};
-
-	export const focus = (index: number) => editor.setSelection(index);
-	let isNoteEditOpen = $state(false);
+	let isCompleted = controller.task.isCompleted$;
 
 	onMount(() => {
 		editor = new Quill(container, {
@@ -69,42 +37,71 @@
 		});
 		editor.keyboard.addBinding({
 			key: "ArrowUp",
-			handler: warpKeyHandler(arrowUpHandle),
+			handler(range, curContext, binding) {
+				return !controller.keyboardActions.navigateUp(
+					curContext.offset,
+				);
+			},
 		});
 		editor.keyboard.addBinding({
 			key: "ArrowDown",
-			handler: warpKeyHandler(arrowDownHandle),
+			handler(range, curContext, binding) {
+				return !controller.keyboardActions.navigateDown(
+					curContext.offset,
+				);
+			},
 		});
 		editor.keyboard.bindings["Enter"].unshift({
 			key: "Enter",
 			shiftKey: false,
-			handler: warpKeyHandler(enterHandle),
+			handler(range, curContext, binding) {
+				return !controller.keyboardActions.enter(
+					range,
+					curContext,
+					this.quill,
+				);
+			},
 		});
 		editor.keyboard.bindings["Enter"].unshift({
 			key: "Enter",
 			shiftKey: true,
-			handler: warpKeyHandler(shiftEnterHandle),
+			handler() {
+				controller.keyboardActions.shiftEnter();
+				return false;
+			},
 		});
 		editor.keyboard.bindings["Tab"].unshift({
 			key: "Tab",
 			shiftKey: true,
-			handler: untabHandle,
+			handler(range, curContext) {
+				controller.keyboardActions.untab(curContext.offset);
+			},
 		});
 		editor.keyboard.bindings["Tab"].unshift({
 			key: "Tab",
 			shiftKey: false,
-			handler: tabHandle,
+			handler(range, curContext) {
+				controller.keyboardActions.tab(curContext.offset);
+			},
 		});
 
-		const binding = new QuillBinding(text, editor /*, provider.awareness*/);
+		controller.focusActions.onfocus = (cursorIndex) => {
+			editor.setSelection(cursorIndex, 0);
+			return true;
+		};
+
+		const binding = new QuillBinding(
+			controller.task.text,
+			editor /*, provider.awareness*/,
+		);
 		return () => {
 			binding.destroy();
 		};
 	});
 
-	export const setTitleViewTransitionName = (name: string) => {
-		titleViewTransitionName = name;
-	};
+	// export const setTitleViewTransitionName = (name: string) => {
+	// 	titleViewTransitionName = name;
+	// };
 </script>
 
 <div class="group flex flex-col">
@@ -116,7 +113,8 @@
 				{@render handle?.()}
 				<div
 					class="todoitem w-full"
-					style:view-transition-name={titleViewTransitionName}
+					style:view-transition-name={controller.transitionActions
+						.$titleViewTransitionName}
 					style:font-size="large"
 					style:text-decoration={$isCompleted ? "line-through" : ""}
 					style:opacity={$isCompleted ? 0.5 : 1}
@@ -135,7 +133,7 @@
 		{/each}
 	</div>
 
-	<Popover.Root bind:open={isNoteEditOpen}>
+	<Popover.Root bind:open={controller.noteEditOpen}>
 		<Popover.Trigger>
 			<div
 				style:padding-left="18px"
@@ -144,7 +142,7 @@
 					? '-mt-1'
 					: ''}  line-clamp-3 text-nowrap whitespace-pre-line text-ellipsis text-start text-zinc-500 w-full transition"
 			>
-				{$note}
+				{note}
 			</div>
 		</Popover.Trigger>
 		<Popover.Content
@@ -161,10 +159,10 @@
 			<NoteEditor
 				bind:this={noteEditor}
 				onClose={() => {
-					isNoteEditOpen = false;
+					controller.noteEditOpen = false;
 					return false;
 				}}
-				text={task.note}
+				text={controller.task.note}
 			/>
 		</Popover.Content>
 	</Popover.Root>
