@@ -31,6 +31,7 @@ export class Repository {
         task.set("id", taskId);
         task.set("textId", textId);
         task.set("noteId", noteId);
+        task.set("noteDoc", new Y.Doc());
         task.set("children", new Y.Array());
         task.set("parents", new Y.Array());
         task.set("events", new Y.Array());
@@ -39,6 +40,13 @@ export class Repository {
         return taskId;
     }
     deleteYTask(id: string): void {
+        const task = this.tasks.get(id);
+        if (task) {
+            const noteDoc = task.get("noteDoc");
+            if (noteDoc) {
+                noteDoc.destroy();
+            }
+        }
         this.tasks.delete(id);
     }
 

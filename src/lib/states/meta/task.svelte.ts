@@ -73,6 +73,7 @@ export class TaskProxy {
     public readonly textId: string;
     public readonly noteId: string;
     public readonly id: string;
+    public readonly noteDoc: Y.Doc;
     private yText: Y.Text;
     private yNote: Y.Text;
 
@@ -84,6 +85,7 @@ export class TaskProxy {
         this.id = this.yMap.get("id");
         this.textId = yMap.get("textId");
         this.noteId = yMap.get("noteId");
+        this.noteDoc = yMap.get("noteDoc");
         this.yText = manager.textRepository.getYText(this.textId);
         this.yNote = manager.textRepository.getYText(this.noteId);
     }

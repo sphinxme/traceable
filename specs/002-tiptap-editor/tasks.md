@@ -77,16 +77,16 @@ Phase 3 (US1)                              Phase 4 (US2)
 **Goal**: 准备 Y.Doc 子文档结构，为编辑器协作奠定基础
 
 ### 独立测试标准
-- TaskProxy 实体中包含 nodeDoc 字段
-- nodeDoc 创建时正确初始化为 Y.Doc 实例
-- TaskProxy 创建时能够正确初始化 nodeDoc 字段
+- TaskProxy 实体中包含 noteDoc 字段
+- noteDoc 创建时正确初始化为 Y.Doc 实例
+- TaskProxy 创建时能够正确初始化 noteDoc 字段
 
 ### 任务
 
-- [ ] T003 [P] 在 TaskData 接口中添加 nodeDoc: Y.Doc 字段
+- [x] T003 [P] 在 TaskData 接口中添加 noteDoc: Y.Doc 字段
   ```typescript
   // specs/002-tiptap-editor/data-model.md
-  nodeDoc: Y.Doc  // TipTap ProseMirror 文档
+  noteDoc: Y.Doc  // TipTap ProseMirror 文档
   ```
 
 ---
@@ -125,7 +125,7 @@ Phase 3 (US1)                              Phase 4 (US2)
       extensions: [
         StarterKit.configure({ history: false }), // Yjs 已处理历史
         Collaboration.configure({
-          document: task.nodeDoc,
+          document: task.noteDoc,
         }),
       ],
       onUpdate: ({ editor }) => {
@@ -206,7 +206,7 @@ Phase 3 (US1)                              Phase 4 (US2)
   // NoteEditor.svelte - 添加 editorProps 处理
   extensions: [
     StarterKit.configure({ history: false }),
-    Collaboration.configure({ document: task.nodeDoc }),
+    Collaboration.configure({ document: task.noteDoc }),
   ],
   editorProps: {
     handleKeyDown: (view, event) => {

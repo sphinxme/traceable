@@ -41,7 +41,7 @@ import Collaboration from '@tiptap/extension-collaboration'
 const editor = new Editor({
   extensions: [
     Collaboration.configure({
-      document: task.nodeDoc, // Y.Doc 实例
+      document: task.noteDoc, // Y.Doc 实例
     }),
   ],
 })

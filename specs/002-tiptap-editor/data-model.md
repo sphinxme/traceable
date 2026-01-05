@@ -12,7 +12,7 @@ interface TaskData {
   id: string                    // 任务唯一标识
   textId: string                // 文本内容 Y.Text 的 ID
   noteId: string                // 备注内容 Y.Text 的 ID (直接删除旧字段)
-  nodeDoc: Y.Doc                // TipTap ProseMirror 文档
+  noteDoc: Y.Doc                // TipTap ProseMirror 文档
   status: 'TODO' | 'DONE' | 'BLOCKED'
   children: Y.Array<string>     // 子任务 ID 列表
   parents: Y.Array<string>      // 父任务 ID 列表
@@ -22,7 +22,7 @@ interface TaskData {
 }
 ```
 
-### nodeDoc (Y.Doc) 子文档结构
+### noteDoc (Y.Doc) 子文档结构
 
 ```
 Y.Doc
@@ -36,7 +36,7 @@ Y.Doc
 
 ```typescript
 interface NoteEditorProps {
-  task: TaskProxy              // 任务代理，包含 nodeDoc
+  task: TaskProxy              // 任务代理，包含 noteDoc
   onClose?: () => void         // 关闭回调
 }
 ```
