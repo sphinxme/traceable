@@ -5,11 +5,11 @@
 	import TodoItem from "./item/TodoItem.svelte";
 	import TodoList from "./TodoList.svelte";
 	import type { TodoController } from "./controller/TodoController.svelte";
-	import type { TaskProxy } from "$lib/states/meta/task.svelte";
+	import type { Task } from "$lib/states/meta/task.svelte";
 	import { eventbus, type Events } from "./controller/eventbus";
 
 	interface Props {
-		task: TaskProxy;
+		task: Task;
 		parentController: TodoController;
 		// controller: TodoController;
 	}

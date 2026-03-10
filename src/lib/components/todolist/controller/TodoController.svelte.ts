@@ -1,5 +1,5 @@
 
-import type { TaskProxy } from "$lib/states/meta/task.svelte";
+import type { Task } from "$lib/states/meta/task.svelte";
 import { TodoFoucsActions } from "./TodoFocusActions.svelte";
 import { TodoKeyboardActions } from "./TodoKeyboardActions.svelte";
 import { TodoTransitionActions } from "./TodoTransitionActions.svelte";
@@ -30,7 +30,7 @@ export class TodoController implements TodoLifeCycle {
 
     private constructor(
         public readonly depth: number,
-        public readonly task: TaskProxy,
+        public readonly task: Task,
         public readonly panel: PanelController,
         public readonly viewId: string,
         public readonly statesTree: StateStore,
@@ -46,11 +46,11 @@ export class TodoController implements TodoLifeCycle {
     // protected itemQuillEditor: Quill | undefined;
     // protected noteQuillEditor: Quill | undefined;
 
-    public static createRoot(panel: PanelController, task: TaskProxy, statesTree: StateStore) {
+    public static createRoot(panel: PanelController, task: Task, statesTree: StateStore) {
         return new TodoController(0, task, panel, makeViewId(panel.id, task.id), statesTree);
     }
 
-    public makeChild(task: TaskProxy) {
+    public makeChild(task: Task) {
         const childController = new TodoController(
             this.depth + 1,
             task,
@@ -155,7 +155,7 @@ export class TodoController implements TodoLifeCycle {
     // 包括home task, 包括自己
     private getCurrentPaths() {
         let curr: TodoController | undefined = this;
-        let subpaths: TaskProxy[] = [];
+        let subpaths: Task[] = [];
         while (curr) {
             subpaths.push(curr.task);
             curr = curr.parentController;

@@ -1,5 +1,5 @@
 import * as Y from "yjs";
-import type { TaskProxy } from "../meta/task.svelte";
+import type { Task } from "../meta/task.svelte";
 import { BehaviorSubject, distinctUntilChanged, map, Observable, of, share, shareReplay, tap } from "rxjs";
 import { getContext, setContext } from "svelte";
 
@@ -26,7 +26,7 @@ export class JournalPanelState {
         this.foldStatesTree = this.panelState.get("foldStates")
     }
 
-    loadChild(task: TaskProxy) {
+    loadChild(task: Task) {
         let subState = this.foldStatesTree.get(task.id)
         if (!subState) {
             subState = new Y.Map();
@@ -41,11 +41,11 @@ export class JournalPanelState {
 // 单个panel的状态
 export class EditorPanelState {
     public readonly id: string; // panelId
-    public readonly paths: BehaviorSubject<TaskProxy[]>; // paths仅本地内存保存
+    public readonly paths: BehaviorSubject<Task[]>; // paths仅本地内存保存
     private readonly panelState: Y.Map<any>;
     private readonly foldStatesTree: Y.Map<any>;
 
-    constructor(panelId: string, paths: TaskProxy[], states: Y.Map<any>) {
+    constructor(panelId: string, paths: Task[], states: Y.Map<any>) {
         this.id = panelId;
 
         if (!states.has(panelId)) {
@@ -73,7 +73,7 @@ export class EditorPanelState {
     /**
      * 调用时 需要确保paths已经更新
      */
-    private loadRootState(currentPaths: TaskProxy[]): EditorItemState {
+    private loadRootState(currentPaths: Task[]): EditorItemState {
         let tree = this.foldStatesTree;
         let currentRootTask = currentPaths.at(-1)
         if (!currentRootTask) {
@@ -101,7 +101,7 @@ export class EditorPanelState {
         this.paths.next([...(this.paths.value.slice(0, i))]);
     }
 
-    public push(subPaths: TaskProxy[]) {
+    public push(subPaths: Task[]) {
         this.paths.next([...this.paths.value, ...subPaths])
     }
 }
@@ -120,8 +120,8 @@ export class EditorItemState {
 
     static buildFromJournal(
         panelId: string,
-        task: TaskProxy,
-        relativePath: TaskProxy[],
+        task: Task,
+        relativePath: Task[],
         foldStatesTree: Y.Map<any>
     ) {
         return new EditorItemState(panelId, task, undefined, undefined, [], [], foldStatesTree, false);
@@ -129,14 +129,14 @@ export class EditorItemState {
 
     static buildFromEditor(
         panelId: string,
-        currentTask: TaskProxy,
+        currentTask: Task,
         panelState: EditorPanelState | undefined,
         parentState: EditorItemState | undefined,
 
         /**
          * 从root出发, 到当前zoom root的的路径, 包含root本身, 包含zoomroot
          */
-        currentParentPath: TaskProxy[],
+        currentParentPath: Task[],
 
         /**
          * 从当前panel的zoom root出发(不包含zoom root), 到当前Item的相对路径; 
@@ -144,7 +144,7 @@ export class EditorItemState {
          * 如果当前item不是zoom root, 则relativePath会包含当前item.
          * @see this.relativePath
          */
-        relativePath: TaskProxy[],
+        relativePath: Task[],
         foldStatesTree: Y.Map<any>,
     ): EditorItemState {
         return new EditorItemState(panelId, currentTask, panelState, parentState, currentParentPath, relativePath, foldStatesTree, true)
@@ -153,24 +153,24 @@ export class EditorItemState {
     // 从editor上创建
     constructor(
         public readonly panelId: string,
-        public readonly task: TaskProxy,
+        public readonly task: Task,
         private readonly panelState: EditorPanelState | undefined,
         private readonly parentState: EditorItemState | undefined,
-        private readonly currentParentPath: TaskProxy[],
+        private readonly currentParentPath: Task[],
 
         /**
          * 从当前panel的zoom root出发(不包含zoom root), 到当前Item的相对路径; 
          * 如果当前item就是zoom root, 则relativePath为空数组; 
          * 如果当前item不是zoom root, 则relativePath会包含当前item.
          */
-        public readonly relativePath: TaskProxy[],
+        public readonly relativePath: Task[],
         private readonly foldStatesTree: Y.Map<any>,
 
         public readonly zoomable: boolean = true,
     ) {
     }
 
-    public loadChild(task: TaskProxy): EditorItemState {
+    public loadChild(task: Task): EditorItemState {
         let subState = this.foldStatesTree.get(task.id)
         if (!subState) {
             subState = new Y.Map();
@@ -269,7 +269,7 @@ export function setStateIntoContext(state: Observable<EditorItemState>) {
 }
 
 // loadTodoItemStateFromContext
-export function loadStateFromContext(task: TaskProxy) {
+export function loadStateFromContext(task: Task) {
     // const parentState = getParentStateContext()
     // const state = parentState.loadChild(task)
     // setContext("parentState", state);

@@ -2,7 +2,7 @@ import type { Action } from "svelte/action";
 import dayjs, { Dayjs } from "dayjs";
 import interact from "interactjs";
 
-import type { TaskProxy } from "$lib/states/meta/task.svelte";
+import type { Task } from "$lib/states/meta/task.svelte";
 import { draggingTaskData } from "$lib/components/todolist/controller/DragDropActions.svelte";
 
 
@@ -38,9 +38,9 @@ export const dayDropZone: Action<HTMLDivElement> = (node) => {
 };
 
 type DayExternalDropZoneParams = {
-    onDragOver: (task: TaskProxy, topPx: number) => void;
+    onDragOver: (task: Task, topPx: number) => void;
     onDragEnd: () => void;
-    onDrop: (task: TaskProxy, topPx: number) => void;
+    onDrop: (task: Task, topPx: number) => void;
 };
 
 export const dayExternalDropZone: Action<

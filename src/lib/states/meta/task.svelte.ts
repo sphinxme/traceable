@@ -162,5 +162,3 @@ export class Task {
         };
     }
 }
-
-export type TaskProxy = Task;

@@ -1,8 +1,8 @@
 import type { TodoLifeCycle } from "$lib/components/todolist/controller/ILifeCycle.svelte";
 import type { PanelController } from "$lib/components/todolist/controller/IPanelController.svelte";
 import { TodoController } from "$lib/components/todolist/controller/TodoController.svelte";
-import type { JournalProxy } from "$lib/states/meta/journal.svelte";
-import type { TaskProxy } from "$lib/states/meta/task.svelte";
+import type { Journal } from "$lib/states/meta/journal.svelte";
+import type { Task } from "$lib/states/meta/task.svelte";
 import type { PanelStateStore } from "$lib/states/states/StatesTree.svelte";
 import type { Store } from "$lib/states/meta/store.svelte";
 import dayjs from "dayjs";
@@ -19,7 +19,7 @@ abstract class JournalPanelController implements TodoLifeCycle, PanelController 
     public onTodoReady() { }
     public destory() { }
 
-    pushPaths(childPaths: TaskProxy[]): void {
+    pushPaths(childPaths: Task[]): void {
         throw new Error("Method not implemented.");
     }
 
@@ -27,9 +27,9 @@ abstract class JournalPanelController implements TodoLifeCycle, PanelController 
         return false;
     }
 
-    public abstract getJournalList(): JournalProxy[];
+    public abstract getJournalList(): Journal[];
 
-    public getTodoController(journal: JournalProxy): TodoController {
+    public getTodoController(journal: Journal): TodoController {
         const task = journal.task;
         if (!task) {
             throw new Error("Journal task is undefined");
@@ -51,7 +51,7 @@ export class WeeklyJournalPanelController extends JournalPanelController {
         super(id, panelStateStore, rootTaskId, store);
     }
 
-    public getJournalList(): JournalProxy[] {
+    public getJournalList(): Journal[] {
         return this.genTimes().map((time) => {
             return this.store.getOrCreateJournal(
                 `${time.valueOf()}-WEEK`,
@@ -83,7 +83,7 @@ export class DailyJournalPanelController extends JournalPanelController {
         super(id, panelStateStore, rootTaskId, store);
     }
 
-    public getJournalList(): JournalProxy[] {
+    public getJournalList(): Journal[] {
         return this.genTimes().map((time) => {
             return this.store.getOrCreateJournal(
                 `${time.valueOf()}-DAY`,

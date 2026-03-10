@@ -1,5 +1,5 @@
 import * as Y from "yjs";
-import type { TaskProxy } from "../meta/task.svelte";
+import type { Task } from "../meta/task.svelte";
 
 /**
  * panel对应的Store
@@ -44,7 +44,7 @@ export class PanelStateStore {
         return this.panelStatesTree.get("__type__");
     }
 
-    public createHomeByPaths(paths: TaskProxy[]): StateStore {
+    public createHomeByPaths(paths: Task[]): StateStore {
         const subStatesTree = paths.reduce((stateTree, task) => {
             if (stateTree.has(task.id)) {
                 return stateTree.get(task.id);

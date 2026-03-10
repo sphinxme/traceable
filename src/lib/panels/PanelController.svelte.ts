@@ -1,4 +1,4 @@
-import type { Task, TaskProxy } from "$lib/states/meta/task.svelte";
+import type { Task } from "$lib/states/meta/task.svelte";
 import type { Store } from "$lib/states/meta/store.svelte";
 import { TodoController } from "../components/todolist/controller/TodoController.svelte";
 import { makeViewIdByPaths } from "../components/todolist/controller/utils";
@@ -14,7 +14,7 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
      * paths正常情况下不允许为空
      * paths的最后一个始终是当前页面的homeTodo, 即面包屑的最后一个&当前页面标题的Todo&当前页面的顶级节点的父节点
      */
-    public currentPaths: TaskProxy[];
+    public currentPaths: Task[];
     public currentHomeController: TodoController;
     public readonly isRootHome: boolean;
 
@@ -101,7 +101,7 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
      * 没有触发transition动画, 需要调用方自己触发
      * @param paths 从当前homeViewTask开始(包括当前homeViewTask), 到被点击的task为止
      */
-    public pushPaths(childPaths: TaskProxy[]) {
+    public pushPaths(childPaths: Task[]) {
         this.currentPaths = [...this.currentPaths, ...childPaths];
         this.savePaths();
     }

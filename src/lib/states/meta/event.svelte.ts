@@ -2,8 +2,6 @@ import * as Y from "yjs";
 import type { Store } from "./store.svelte";
 import { createYMapSubscriber } from "./reactive-yjs";
 
-export type EventProxy = Event;
-
 export class Event {
     readonly yMap: Y.Map<any>;
     private readonly store: Store;

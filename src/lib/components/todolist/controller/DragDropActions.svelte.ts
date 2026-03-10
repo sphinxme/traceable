@@ -1,4 +1,4 @@
-import type { TaskProxy } from "$lib/states/meta/task.svelte";
+import type { Task } from "$lib/states/meta/task.svelte";
 import { writable } from "svelte/store";
 import { eventbus } from "./eventbus";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
@@ -10,8 +10,8 @@ import { willCreateCycle } from "$lib/components/graph/graph";
 interface DraggingTaskData {
     originPanelId: string,
     originViewId: string,
-    originParent: TaskProxy,
-    task: TaskProxy,
+    originParent: Task,
+    task: Task,
     states: StateStore,
 }
 
@@ -138,7 +138,7 @@ export class DragDropActions implements TodoLifeCycle {
         return result;
     }
 
-    private willCreateCycle(task: TaskProxy) {
+    private willCreateCycle(task: Task) {
         return willCreateCycle(this.host.task, task);
     }
 

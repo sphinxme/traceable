@@ -1,5 +1,5 @@
-import type { EventProxy } from "$lib/states/meta/event.svelte";
-import type { TaskProxy } from "$lib/states/meta/task.svelte";
+import type { Event } from "$lib/states/meta/event.svelte";
+import type { Task } from "$lib/states/meta/task.svelte";
 import mitt, { type Emitter } from "mitt";
 import type { PanelController } from "./IPanelController.svelte";
 
@@ -18,10 +18,10 @@ export type Events = {
     'zoominto:beforeStart': { zoomingViewId: string, futureHomeViewId: string };
     'zoominto:afterTransitioned': { zoomingViewId: string, futureHomeViewId: string };
 
-    'drag:start': { originPanelId: string, originViewId: string, task: TaskProxy };
-    'drag:end': { originPanelId: string, originViewId: string, task: TaskProxy };
+    'drag:start': { originPanelId: string, originViewId: string, task: Task };
+    'drag:end': { originPanelId: string, originViewId: string, task: Task };
 
-    'clickOnWeekEvent': { event: EventProxy, task: TaskProxy, clickCount: number };
+    'clickOnWeekEvent': { event: Event, task: Task, clickCount: number };
     'highlight': { viewId: string };
     'collectActivePanel': { panelResultSet: Set<PanelController> }
 };

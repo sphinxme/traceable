@@ -11,8 +11,8 @@
 		highlightFEventIds,
 	} from "$lib/states/stores.svelte";
 	import { percent } from "./utils.svelte";
-	import type { EventProxy } from "$lib/states/meta/event.svelte";
-	import type { TaskProxy } from "$lib/states/meta/task.svelte";
+	import type { Event } from "$lib/states/meta/event.svelte";
+	import type { Task } from "$lib/states/meta/task.svelte";
 	import { CornerLeftUp, Redo2 } from "@lucide/svelte";
 	import { fade } from "svelte/transition";
 	import { eventbus } from "$lib/components/todolist/controller/eventbus";
@@ -20,8 +20,8 @@
 	interface Props {
 		dayHeight: number;
 		dayWidth: number;
-		event: EventProxy;
-		task: TaskProxy;
+		event: Event;
+		task: Task;
 		offsetByHour: number;
 		snapsOffset: number[];
 		getColumnIndex: (t: number) => number;

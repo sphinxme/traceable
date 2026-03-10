@@ -1,6 +1,6 @@
 <script lang="ts">
 	import * as HoverCard from "$lib/components/ui/hover-card";
-	import type { EventProxy } from "$lib/states/meta/event.svelte";
+	import type { Event } from "$lib/states/meta/event.svelte";
 	import {
 		foucsingEventIds,
 		highlightFEventIds,
@@ -8,7 +8,7 @@
 	import dayjs from "dayjs";
 
 	interface Props {
-		data: EventProxy;
+		data: Event;
 		isCompleted: boolean;
 	}
 

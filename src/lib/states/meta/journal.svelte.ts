@@ -6,8 +6,6 @@ import { createYMapSubscriber } from "./reactive-yjs";
 
 export type JournalType = "WEEK" | "DAY";
 
-export type JournalProxy = Journal;
-
 export class Journal {
     readonly yMap: Y.Map<any>;
     private readonly store: Store;

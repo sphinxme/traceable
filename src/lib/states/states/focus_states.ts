@@ -1,7 +1,7 @@
 /// 全局复用的 光标位置缓存
 /// 当TodoItem增加缩进/取消缩进时, 会触发Task.svelte的重新加载, 为了避免光标位置丢失, 临时存在这里
 
-import type { TaskProxy } from "../meta/task.svelte";
+import type { Task } from "../meta/task.svelte";
 
 /**
  * 定义焦点状态的接口
@@ -14,7 +14,7 @@ export interface FocusState {
     /**
      * 目标task路径
      */
-    focusPath: TaskProxy[] | null;
+    focusPath: Task[] | null;
     /**
      * 编辑器中的光标位置
      */
@@ -33,13 +33,13 @@ const focusState: FocusState = {
  * @param panelId - 面板ID
  * @param path - 任务代理对象数组，表示焦点路径
  */
-export function setFocusState(panelId: string, path: TaskProxy[] | null, index: number | null) {
+export function setFocusState(panelId: string, path: Task[] | null, index: number | null) {
     focusState.panelId = panelId;
     focusState.focusPath = path;
     focusState.index = index;
 }
 
-export function consumeFocusState(panelId: string, focusPath: TaskProxy[] | null) {
+export function consumeFocusState(panelId: string, focusPath: Task[] | null) {
     if (panelId !== focusState.panelId) {
         return null;
     }
