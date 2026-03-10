@@ -1,215 +1,107 @@
 import * as Y from "yjs";
-import type { TaskProxy, TaskProxyManager } from "./task.svelte";
-import { distinctUntilChanged, Observable, share, shareReplay } from "rxjs";
-import { YIterable } from "./array";
+import type { Store } from "./store.svelte";
+import type { Task } from "./task.svelte";
+import { createYMapSubscriber } from "./reactive-yjs";
 
-interface YEventRepository {
-    getYEvent(id: string): Y.Map<any>;
-    newYEvent(taskId: string, start: number, end: number): string; // 返回id
-    deleteYEvent(id: string): void
-}
+export type EventProxy = Event;
 
+export class Event {
+    readonly yMap: Y.Map<any>;
+    private readonly store: Store;
+    private readonly subscribe: () => void;
 
-export class EventProxyManager implements Iterable<EventProxy> {
-    public constructor(
-        private yMap: Y.Map<Y.Map<any>>,
-        public readonly repository: YEventRepository,
-        public readonly taskFactory: TaskProxyManager
-    ) { }
-
-    private cache = new Map<string, EventProxy>();
-
-    build(id: string, task?: TaskProxy): EventProxy {
-        if (this.cache.has(id)) {
-            return this.cache.get(id)!;
-        }
-        const data = this.repository.getYEvent(id);
-        const proxy = new EventProxy(data, this, task);
-        this.cache.set(id, proxy);
-        return proxy;
+    constructor(yMap: Y.Map<any>, store: Store) {
+        this.yMap = yMap;
+        this.store = store;
+        this.subscribe = createYMapSubscriber(yMap);
     }
 
-    public makeIterableByIdList(task: TaskProxy, yArray: Y.Array<string>) {
-        return new EventProxyIterable(task, yArray, this)
+    get id(): string {
+        this.subscribe();
+        return this.yMap.get("id");
     }
 
-    public get $(): Observable<EventProxyManager> {
-        return new Observable<EventProxyManager>((subscriber) => {
-            subscriber.next(this);
-            return observe(this.yMap, () => {
-                subscriber.next(this);
-            })
-        }).pipe(shareReplay({ bufferSize: 1, refCount: true }))
+    get taskId(): string {
+        this.subscribe();
+        return this.yMap.get("taskId");
     }
 
-    public queryByRange$(from: number, to: number): Observable<Iterable<EventProxy>> {
-        return new Observable<Iterable<EventProxy, any, any>>(subscriber => {
-            const callback = () => {
-                const iterable = {
-                    [Symbol.iterator]: () => {
-                        return this.query((key, yEvent) => {
-                            const start = yEvent.get("start") as number;
-                            return from < start && start < to;
-                        })
-                    }
-                }
-                subscriber.next(iterable);
-            }
-            callback();
-            return observe(this.yMap, callback)
-        }).pipe(shareReplay({ bufferSize: 1, refCount: true }))
+    set taskId(value: string) {
+        this.yMap.set("taskId", value);
     }
 
-    [Symbol.iterator](): Iterator<EventProxy> {
-        return this.query(() => true)
+    get start(): number {
+        this.subscribe();
+        return this.yMap.get("start");
     }
 
-    private query(filter: (key: string, yEvent: Y.Map<any>) => boolean): Iterator<EventProxy> {
-        const iterator = this.yMap[Symbol.iterator]();
-        const manager = this;
-
-        return {
-            next() {
-                while (true) {
-                    const { done, value } = iterator.next();
-                    if (done) {
-                        return {
-                            done,
-                            value: undefined
-                        }
-                    }
-                    const [key, yEvent] = value;
-
-                    if (filter(key, yEvent)) {
-                        return {
-                            done,
-                            value: new EventProxy(yEvent, manager)
-                        }
-                    }
-                }
-            }
-        }
+    set start(value: number) {
+        this.yMap.set("start", value);
     }
 
-    public createEvent(task: TaskProxy, start: number, end: number) {
-        const id = this.repository.newYEvent(task.id, start, end);
-        return this.build(id, task);
+    get end(): number {
+        this.subscribe();
+        return this.yMap.get("end");
     }
 
-    public delete(id: string) {
-        this.yMap.delete(id);
-    }
-}
-
-export class EventProxy {
-    public readonly id: string;
-    public readonly task: TaskProxy;
-
-
-    public readonly textId: string;
-    public constructor(
-        private readonly data: Y.Map<any>,
-        private manager: EventProxyManager,
-        task?: TaskProxy,
-    ) {
-        this.id = this.data.get("id");
-        this.textId = this.data.get("textId");
-        if (!task) {
-            const taskId = this.data.get("taskId");
-            task = this.manager.taskFactory.build(taskId);
-        }
-        this.task = task;
+    set end(value: number) {
+        if (value === this.end) return;
+        this.yMap.set("end", value);
     }
 
-    public get start$(): Observable<number> {
-        return observeYAttr<number>(this.data, "start");
+    get textId(): string {
+        this.subscribe();
+        return this.yMap.get("textId");
     }
 
-    public get start(): number {
-        return this.data.get("start")
-    }
-    public set start(value: number) {
-        this.data.set("start", value);
-    }
-
-    public get end$(): Observable<number> {
-        return observeYAttr<number>(this.data, "end");
+    get task(): Task | undefined {
+        this.subscribe();
+        const taskId = this.yMap.get("taskId");
+        return taskId ? this.store.getTask(taskId) : undefined;
     }
 
-    public get end(): number {
-        return this.data.get("end");
-    }
-    public set end(value: number) {
-        if (value === this.end) {
-            return;
-        }
-        this.data.set("end", value);
+    get duration(): number {
+        this.subscribe();
+        return this.end - this.start;
     }
 
-    public setPeriod(start: number, end: number) {
-        this.data.doc?.transact(() => {
+    setPeriod(start: number, end: number) {
+        this.store.doc.transact(() => {
             this.start = start;
             this.end = end;
-        })
+        });
     }
 
-    public moveTo(start: number) {
-        if (start === this.start) {
-            return;
-        }
+    moveTo(start: number) {
+        if (start === this.start) return;
         const duration = this.end - this.start;
         this.setPeriod(start, start + duration);
     }
 
-    public resizeTo(duration: number) {
+    resizeTo(duration: number) {
         const newEnd = this.start + duration;
         this.end = newEnd;
     }
 
-    public destory() {
-        this.data.doc?.transact(() => {
-            this.task.detachEvent(this.id);
-            this.manager.delete(this.id);
-        })
-
-    }
-}
-
-export class EventProxyIterable extends YIterable<EventProxy> {
-    public constructor(
-        private task: TaskProxy,
-        yArray: Y.Array<string>,
-        manager: EventProxyManager,
-    ) {
-        super(yArray, (id) => {
-            return manager.build(id, this.task)
+    destroy() {
+        this.store.doc.transact(() => {
+            const taskId = this.taskId;
+            if (taskId) {
+                const task = this.store.getTask(taskId);
+                if (task) {
+                    task.detachEvent(this.id);
+                }
+            }
+            this.store.deleteEvent(this.id);
         });
     }
-}
 
-function observeYAttr<T>(yMap: Y.Map<any>, key: string): Observable<T> {
-    // 可优化点: 可以缓存Observable 多次调用status只返回同一个Observable, 减少浪费
-    return new Observable<T>(subscriber => {
-        subscriber.next(yMap.get(key));
-        return observe(yMap, (event: Y.YMapEvent<any>, transaction: Y.Transaction) => {
-            subscriber.next(yMap.get(key));
-        })
-    }).pipe(distinctUntilChanged(), shareReplay({ bufferSize: 1, refCount: true }))
-}
-
-function observeYText(yText: Y.Text): Observable<string> {
-    // 可优化点: 可以缓存Observable 多次调用status只返回同一个Observable, 减少浪费
-    return new Observable<string>(subscriber => {
-        subscriber.next(yText.toJSON())
-        return observe(yText, (event: Y.YTextEvent, transaction: Y.Transaction) => {
-            subscriber.next(yText.toJSON())
-        })
-    }).pipe(shareReplay({ bufferSize: 1, refCount: true }))
-}
-
-function observe<T>(y: Y.AbstractType<T>, callback: (event: T, transaction: Y.Transaction) => void) {
-    y.observe(callback);
-    return () => {
-        y.unobserve(callback);
+    toJSON(): Record<string, any> {
+        return {
+            id: this.id,
+            taskId: this.taskId,
+            start: this.start,
+            end: this.end,
+        };
     }
 }

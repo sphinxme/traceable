@@ -13,9 +13,7 @@
 	}
 
 	let { data, isCompleted }: Props = $props();
-	let start = data.start$;
-	let end = data.end$;
-	let length = $derived(($end - $start) / (1000 * 60 * 2)); // 10分钟5px
+	let length = $derived((data.end - data.start) / (1000 * 60 * 2)); // 10分钟5px
 
 	function formatDuration(duration: number): string {
 		const hours = Math.floor(duration / (60 * 60 * 1000));

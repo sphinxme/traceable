@@ -1,9 +1,9 @@
 <script lang="ts">
 	import Calendar from "$lib/components/calendar/Calendar.svelte";
-	import type { EventProxyManager } from "$lib/states/meta/event.svelte";
+	import type { Store } from "$lib/states/meta/store.svelte";
 
-	let { eventProxyManager }: { eventProxyManager: EventProxyManager } =
+	let { store }: { store: Store } =
 		$props();
 </script>
 
-<Calendar {eventProxyManager} />
+<Calendar {store} />

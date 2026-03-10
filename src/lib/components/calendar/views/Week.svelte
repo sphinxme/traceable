@@ -11,18 +11,18 @@
 	} from "./utils.svelte";
 	import { dayDropZone, dayExternalDropZone } from "./interact.svelte";
 
-	import WeekEvent from "./WeekEvent.svelte";
-	import Focusable from "$lib/components/ui/focusable/Focusable.svelte";
-	import { EventProxyManager } from "$lib/states/meta/event.svelte";
-	import { list } from "radash";
-	import { weekPanelScrollStates } from "./state.svelte";
+import WeekEvent from "./WeekEvent.svelte";
+import Focusable from "$lib/components/ui/focusable/Focusable.svelte";
+import type { Store } from "$lib/states/meta/store.svelte";
+import { list } from "radash";
+import { weekPanelScrollStates } from "./state.svelte";
 
-	interface Props {
-		dayNum?: number;
-		manager: EventProxyManager;
-	}
+interface Props {
+	dayNum?: number;
+	store: Store;
+}
 
-	let { dayNum = 10, manager }: Props = $props();
+let { dayNum = 10, store }: Props = $props();
 	let offsetByHour = 6; // 每天从几点开始(当前每天从6点开始)
 	const notWorkHourRange = [
 		{ start: 6, end: 10 },
@@ -62,7 +62,7 @@
 	let size = 7; // 7rem
 	let sideWidth = 4;
 
-	const events = manager.queryByRange$(
+	const events = store.queryEventsByRange(
 		displayStartDay.valueOf(),
 		displayEndDay.valueOf(),
 	);
@@ -379,14 +379,14 @@
 
 		<!-- 事件 -->
 
-		{#each $events as event (event.id)}
+		{#each events.filter(e => e.task) as event (event.id)}
 			<WeekEvent
 				{offsetByHour}
 				{event}
 				{getColumnIndex}
 				{dayHeight}
 				dayWidth={Math.floor(containerWidth / displayDayNum)}
-				task={event.task}
+				task={event.task!}
 				{snapsOffset}
 			/>
 		{/each}

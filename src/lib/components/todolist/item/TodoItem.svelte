@@ -23,9 +23,8 @@
 	let editor: Quill;
 	let noteEditor: NoteEditor;
 
-	const events = controller.task.events.$;
-	let sortedEvents = $derived([...$events].sort((a, b) => a.start - b.start));
-	let isCompleted = controller.task.isCompleted$;
+	let sortedEvents = $derived([...controller.task.events].sort((a, b) => a.start - b.start));
+	let isCompleted = $derived(controller.task.isCompleted);
 
 	onMount(() => {
 		editor = new Quill(container, {
@@ -116,8 +115,8 @@
 					style:view-transition-name={controller.transitionActions
 						.$titleViewTransitionName}
 					style:font-size="large"
-					style:text-decoration={$isCompleted ? "line-through" : ""}
-					style:opacity={$isCompleted ? 0.5 : 1}
+					style:text-decoration={isCompleted ? "line-through" : ""}
+					style:opacity={isCompleted ? 0.5 : 1}
 					bind:this={container}
 				></div>
 			</div>
@@ -129,7 +128,7 @@
 	<div class="flex h-2 flex-row pt-1 items-center">
 		<div class="h-1" style:width="18px"></div>
 		{#each sortedEvents as event (event.id)}
-			<EventIndicator data={event} isCompleted={$isCompleted} />
+			<EventIndicator data={event} isCompleted={isCompleted} />
 		{/each}
 	</div>
 
@@ -138,7 +137,7 @@
 			<div
 				style:padding-left="18px"
 				style:transition-property="margin"
-				class=" {$events.isEmpty()
+				class=" {controller.task.events.isEmpty()
 					? '-mt-1'
 					: ''}  line-clamp-3 text-nowrap whitespace-pre-line text-ellipsis text-start text-zinc-500 w-full transition"
 			>

@@ -15,7 +15,7 @@
 
 	let { controller, side, alwaysDisplay = false }: Props = $props();
 
-	let children = $derived(controller.task.children.$);
+	let children = $derived(controller.task.children);
 	let display = $derived(alwaysDisplay || !controller.statesTree.$folded);
 </script>
 
@@ -28,16 +28,16 @@
 	>
 		{@render side?.()}
 
-		{#key $children}
+		{#key children}
 			<div class="relative w-full" role="list">
-				{#each $children as child, i (child.id)}
+				{#each children as child, i (child.id)}
 					<div>
-						<TaskDropable
-							{controller}
-							index={i}
-							topTaskId={child.id}
-							bottomTaskId={$children.get(i - 1)?.id}
-						/>
+					<TaskDropable
+						{controller}
+						index={i}
+						topTaskId={child.id}
+						bottomTaskId={children.at(i - 1)?.id}
+					/>
 
 						<Todo parentController={controller} task={child} />
 					</div>
@@ -45,8 +45,8 @@
 
 				<TaskDropable
 					{controller}
-					index={$children.size}
-					topTaskId={$children.getId($children.size - 1)}
+					index={children.size}
+					topTaskId={children.getId(children.size - 1)}
 				/>
 			</div>
 		{/key}

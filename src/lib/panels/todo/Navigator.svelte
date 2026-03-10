@@ -20,7 +20,7 @@
 
 <Root>
 	<List>
-		{#each controller.$currentPaths as task, i (task.id)}
+		{#each controller.currentPaths as task, i (task.id)}
 			<Item index={i}>
 				{#if i === 0}
 					<Link href="lang">
@@ -33,31 +33,31 @@
 							</button>
 						{/snippet}
 					</Link>
-				{:else if i + 1 < controller.$currentPaths.length}
+				{:else if i + 1 < controller.currentPaths.length}
 					<Link href="lang">
 						{#snippet child(attrs)}
 							<button
 								{...attrs}
 								onclick={() => controller.popTo(i)}
 							>
-								<Text text={task.text$} />
+								<Text text={task.text.toJSON()} />
 							</button>
 						{/snippet}
 					</Link>
 				{:else}
 					<Page>
-						<Text text={task.text$} />
+						<Text text={task.text.toJSON()} />
 					</Page>
 				{/if}
 			</Item>
 			{#if i === 0}
 				<Separator
 					index={i}
-					class={controller.$isRootHome
+					class={controller.isRootHome
 						? "-rotate-45 transition-transform"
 						: "transition-transform"}
 				/>
-			{:else if i + 1 < controller.$currentPaths.length}
+			{:else if i + 1 < controller.currentPaths.length}
 				<Separator index={i} />
 			{/if}
 		{/each}

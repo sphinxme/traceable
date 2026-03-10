@@ -4,7 +4,7 @@
 	import TodoView from "$lib/components/todolist/TodoView.svelte";
 	import dayjs, { Dayjs } from "dayjs";
 	import Focusable from "$lib/components/ui/focusable/Focusable.svelte";
-	import { JournalProxyManager } from "$lib/states/meta/journal.svelte";
+	import type { Store } from "$lib/states/meta/store.svelte";
 	import type { StateMap } from "$lib/states/states/panel_states";
 	import { PanelStateStore } from "$lib/states/states/StatesTree.svelte";
 	import { WeeklyJournalPanelController } from "./JournalPanelController.svelte";
@@ -13,12 +13,12 @@
 	import { ScrollArea } from "$lib/components/ui/scroll-area";
 
 	interface Props {
-		journalProxyManager: JournalProxyManager;
+		store: Store;
 		allPanelStates: Y.Map<StateMap>;
 		panelId: string;
 	}
 
-	let { journalProxyManager, allPanelStates, panelId }: Props = $props();
+	let { store, allPanelStates, panelId }: Props = $props();
 	const rootTaskId = "weekly";
 
 	const panelState = PanelStateStore.getOrCreateFromParentYMap(
@@ -31,7 +31,7 @@
 		panelId,
 		panelState,
 		rootTaskId,
-		journalProxyManager,
+		store,
 	);
 
 	function isCurrentWeek(t: Dayjs) {

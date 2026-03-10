@@ -21,8 +21,8 @@
 	}: Props = $props();
 	const controller = parentController.makeChild(task);
 
-	let note = controller.task.note$;
-	let isCompleted = controller.task.isCompleted$;
+	let note = $derived(controller.task.note.toJSON());
+	let isCompleted = $derived(controller.task.isCompleted);
 
 	let sameTaskIdOtherTaskDragging = $state(false);
 	const sameTaskIdOtherTaskStartDragging = (event: Events["drag:start"]) => {
@@ -59,8 +59,8 @@
 		highlighting = true;
 		setTimeout(() => (highlighting = false), 3000);
 	};
-	const children = controller.task.children.$;
-	const hasChildren = $derived($children.size > 0);
+	const children = controller.task.children;
+	const hasChildren = $derived(children.size > 0);
 
 	$effect(() => {
 		controller.onTodoReady();
@@ -76,7 +76,7 @@
 		.$todoViewTransitionName}
 	class=" relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}"
 >
-	<TodoItem {controller} note={$note}>
+	<TodoItem {controller} note={note}>
 		{#snippet handle()}
 			<ContextMenu.Root>
 				<ContextMenu.Trigger>
@@ -126,7 +126,7 @@
 	<TodoList {controller}>
 		{#snippet side()}
 			<div
-				class=" {$note.length > 0
+				class=" {note.length > 0
 					? ' -mt-8'
 					: ''} group flex w-5 flex-shrink-0 flex-row items-start pb-0 pl-1"
 			>

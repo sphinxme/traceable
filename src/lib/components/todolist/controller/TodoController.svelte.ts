@@ -1,5 +1,5 @@
 
-import { TaskProxy } from "$lib/states/meta/task.svelte";
+import type { TaskProxy } from "$lib/states/meta/task.svelte";
 import { TodoFoucsActions } from "./TodoFocusActions.svelte";
 import { TodoKeyboardActions } from "./TodoKeyboardActions.svelte";
 import { TodoTransitionActions } from "./TodoTransitionActions.svelte";

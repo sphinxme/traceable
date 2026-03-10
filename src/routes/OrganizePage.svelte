@@ -3,13 +3,14 @@
 	import Editor from "$lib/panels/todo/Editor.svelte";
 	import { db } from "@/state";
 	import Weekly from "$lib/panels/journal/Weekly.svelte";
-	import { type StateMap } from "$lib/states/states/panel_states";
+	import type { StateMap } from "$lib/states/states/panel_states";
 	import * as Y from "yjs";
-	let props = $props();
 
 	let rootTask = db.userManager.rootTask;
+	if (!rootTask) {
+		throw new Error("rootTask is undefined");
+	}
 	let panelStateMap = db.doc.getMap("panelStates") as Y.Map<StateMap>;
-	let journalProxyManager = db.journalProxyManager;
 </script>
 
 <PaneGroup direction="horizontal" class=" gap-1.5 p-3 pt-0">
@@ -19,7 +20,7 @@
 	>
 		<Weekly
 			panelId="weekly"
-			{journalProxyManager}
+			store={db.store}
 			allPanelStates={panelStateMap}
 		/>
 	</Pane>

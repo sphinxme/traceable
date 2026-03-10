@@ -64,7 +64,7 @@
         <Textarea bind:value={deleteEventId} />
         <Button
             onclick={async () => {
-                await db.eventProxyManager.delete(deleteEventId);
+                await db.store.deleteEvent(deleteEventId);
                 message2 = "已删除";
                 setTimeout(() => {
                     window.location.reload();
@@ -81,7 +81,7 @@
         <Textarea bind:value={deleteTaskId} />
         <Button
             onclick={async () => {
-                await db.eventProxyManager.delete(deleteTaskId);
+                await db.store.deleteTask(deleteTaskId);
                 message2 = "已删除";
                 setTimeout(() => {
                     window.location.reload();

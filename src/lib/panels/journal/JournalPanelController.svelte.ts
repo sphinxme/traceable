@@ -1,9 +1,10 @@
 import type { TodoLifeCycle } from "$lib/components/todolist/controller/ILifeCycle.svelte";
 import type { PanelController } from "$lib/components/todolist/controller/IPanelController.svelte";
 import { TodoController } from "$lib/components/todolist/controller/TodoController.svelte";
-import type { JournalProxyManager, JournalProxy } from "$lib/states/meta/journal.svelte";
+import type { JournalProxy } from "$lib/states/meta/journal.svelte";
 import type { TaskProxy } from "$lib/states/meta/task.svelte";
 import type { PanelStateStore } from "$lib/states/states/StatesTree.svelte";
+import type { Store } from "$lib/states/meta/store.svelte";
 import dayjs from "dayjs";
 import { range } from "radash";
 
@@ -12,7 +13,7 @@ abstract class JournalPanelController implements TodoLifeCycle, PanelController 
         public readonly id: string,
         public readonly panelStateStore: PanelStateStore,
         public readonly rootTaskId: string,
-        public readonly db: JournalProxyManager,
+        public readonly store: Store,
     ) { }
 
     public onTodoReady() { }
@@ -29,8 +30,12 @@ abstract class JournalPanelController implements TodoLifeCycle, PanelController 
     public abstract getJournalList(): JournalProxy[];
 
     public getTodoController(journal: JournalProxy): TodoController {
-        const homeStateTree = this.panelStateStore.createHomeByPaths([journal.task]);
-        return TodoController.createRoot(this, journal.task, homeStateTree);
+        const task = journal.task;
+        if (!task) {
+            throw new Error("Journal task is undefined");
+        }
+        const homeStateTree = this.panelStateStore.createHomeByPaths([task]);
+        return TodoController.createRoot(this, task, homeStateTree);
     }
 
 }
@@ -41,15 +46,16 @@ export class WeeklyJournalPanelController extends JournalPanelController {
         id: string,
         panelStateStore: PanelStateStore,
         rootTaskId: string,
-        db: JournalProxyManager,
+        store: Store,
     ) {
-        super(id, panelStateStore, rootTaskId, db);
+        super(id, panelStateStore, rootTaskId, store);
     }
 
     public getJournalList(): JournalProxy[] {
         return this.genTimes().map((time) => {
-            return this.db.getOrCreateJournal(
-                time,
+            return this.store.getOrCreateJournal(
+                `${time.valueOf()}-WEEK`,
+                time.valueOf(),
                 "WEEK",
                 time.format("MM/DD"),
                 `${time.format("YYYY-MM-DD")} - ${time.add(1, "week").format("YYYY-MM-DD")}`,
@@ -72,18 +78,19 @@ export class DailyJournalPanelController extends JournalPanelController {
         id: string,
         panelStateStore: PanelStateStore,
         rootTaskId: string,
-        db: JournalProxyManager,
+        store: Store,
     ) {
-        super(id, panelStateStore, rootTaskId, db);
+        super(id, panelStateStore, rootTaskId, store);
     }
 
     public getJournalList(): JournalProxy[] {
         return this.genTimes().map((time) => {
-            return this.db.getOrCreateJournal(
-                time,
+            return this.store.getOrCreateJournal(
+                `${time.valueOf()}-DAY`,
+                time.valueOf(),
                 "DAY",
                 time.format("MM/DD"),
-                `${time.format("YYYY-MM-DD")}}`,
+                `${time.format("YYYY-MM-DD")}`,
             );
         });
     }

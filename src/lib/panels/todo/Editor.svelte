@@ -25,7 +25,7 @@
 		panelId,
 		panelStates,
 		rootTaskId,
-		db.taskProxyManaager,
+		db.store,
 	);
 	let scrollAreaRef = $state<HTMLElement>(null as any);
 
@@ -57,9 +57,9 @@
 		<Navigator {controller} />
 	</div>
 	<div class="px-3">
-		<TodoView
-			showTitle={!controller.$isRootHome}
-			controller={controller.$currentHomeController}
-		/>
+	<TodoView
+		showTitle={!controller.isRootHome}
+		controller={controller.currentHomeController}
+	/>
 	</div>
 </ScrollArea>

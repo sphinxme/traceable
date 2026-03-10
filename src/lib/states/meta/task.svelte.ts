@@ -1,248 +1,168 @@
 import * as Y from "yjs";
-import { distinctUntilChanged, map, Observable, share, shareReplay } from 'rxjs';
-import { EventProxyIterable, EventProxyManager } from "./event.svelte";
-import { YIterable } from "./array";
+import type { Store } from "./store.svelte";
+import { createYMapSubscriber } from "./reactive-yjs";
+import { ReactiveYArrayProxy } from "./reactive-yarray";
+import type { Event } from "./event.svelte";
 
-interface YTaskFactory {
-    getYTask(id: string): Y.Map<any>;
-    newYTask(textId: string, noteId: string): string; // 返回id
-    deleteYTask(id: string): void
-}
+export class Task {
+    readonly yMap: Y.Map<any>;
+    private readonly store: Store;
+    private readonly subscribe: () => void;
 
-interface YTextFactory {
-    getYText(textId: string): Y.Text;
-    newYText(text?: string): string; // 返回id
-    deleteYText(textId: string): void
-}
+    private _children?: ReactiveYArrayProxy<Task>;
+    private _parents?: ReactiveYArrayProxy<Task>;
+    private _events?: ReactiveYArrayProxy<Event>;
 
-export class TaskProxyManager {
-    public eventproxyManager!: EventProxyManager;
-    constructor(
-        public readonly repository: YTaskFactory,
-        public readonly textRepository: YTextFactory,
-    ) { }
+    static readonly __isTaskProxy = true;
 
-    private cache: Map<string, TaskProxy> = new Map();
-    /**
-     * 请务必从此工厂方法生成TaskProxy对象, 已经缓存
-     */
-    build(id: string): TaskProxy {
-        const cached = this.cache.get(id);
-        if (cached) {
-            return cached;
+    constructor(yMap: Y.Map<any>, store: Store) {
+        this.yMap = yMap;
+        this.store = store;
+        this.subscribe = createYMapSubscriber(yMap);
+    }
+
+    get id(): string {
+        this.subscribe();
+        return this.yMap.get("id");
+    }
+
+    get textId(): string {
+        this.subscribe();
+        return this.yMap.get("textId");
+    }
+
+    get noteId(): string {
+        this.subscribe();
+        return this.yMap.get("noteId");
+    }
+
+    get noteDoc(): Y.Doc {
+        this.subscribe();
+        return this.yMap.get("noteDoc");
+    }
+
+    get text(): Y.Text {
+        this.subscribe();
+        const textId = this.yMap.get("textId");
+        return this.store.getText(textId)!;
+    }
+
+    get note(): Y.Text {
+        this.subscribe();
+        const noteId = this.yMap.get("noteId");
+        return this.store.getText(noteId)!;
+    }
+
+    get status(): "DONE" | "TODO" | "BLOCKED" {
+        this.subscribe();
+        return this.yMap.get("status");
+    }
+
+    set status(value: "DONE" | "TODO" | "BLOCKED") {
+        this.yMap.set("status", value);
+    }
+
+    done() {
+        this.status = "DONE";
+    }
+
+    toggleStatus() {
+        this.status = this.status === "DONE" ? "TODO" : "DONE";
+    }
+
+    get isCompleted(): boolean {
+        return this.status === "DONE";
+    }
+
+    get children(): ReactiveYArrayProxy<Task> {
+        this.subscribe();
+        if (!this._children) {
+            const yArray = this.yMap.get("children") as Y.Array<string>;
+            this._children = new ReactiveYArrayProxy<Task>(yArray, (taskId) => this.store.getTask(taskId));
         }
-
-        const proxy = new TaskProxy(this.repository.getYTask(id), this);
-        this.cache.set(id, proxy);
-        return proxy;
+        return this._children;
     }
 
-    private newTextAndNote(text?: string, note?: string): { textId: string, noteId: string } {
-        const textId = this.textRepository.newYText(text);
-        const noteId = this.textRepository.newYText(note);
-        return { textId, noteId }
-    }
-
-    newTask(text = "", note = "") {
-        const { textId, noteId } = this.newTextAndNote(text, note);
-        const childId = this.repository.newYTask(textId, noteId);
-        const child = this.build(childId);
-        return child;
-    }
-
-    deleteTaskDeeply(task: TaskProxy) {
-        for (const child of task.children) {
-            task.deleteChild(child);
+    get parents(): ReactiveYArrayProxy<Task> {
+        this.subscribe();
+        if (!this._parents) {
+            const yArray = this.yMap.get("parents") as Y.Array<string>;
+            this._parents = new ReactiveYArrayProxy<Task>(yArray, (taskId) => this.store.getTask(taskId));
         }
-        // FIXME: 这里费劲又生成了一遍EventProxy, 但是可以直接eventId的
-        for (const eventId of task.events) {
-            this.eventproxyManager.delete(eventId.id);
+        return this._parents;
+    }
+
+    get events(): ReactiveYArrayProxy<Event> {
+        this.subscribe();
+        if (!this._events) {
+            const yArray = this.yMap.get("events") as Y.Array<string>;
+            this._events = new ReactiveYArrayProxy<Event>(yArray, (eventId) => this.store.getEvent(eventId));
         }
-
-        this.textRepository.deleteYText(task.noteId);
-        this.textRepository.deleteYText(task.textId);
-        this.repository.deleteYTask(task.id);
-    }
-}
-
-// 封装task
-export class TaskProxy {
-    public readonly children: TaskProxyIterable;
-    public readonly parents: TaskProxyIterable;
-    public readonly events: EventProxyIterable;
-    public readonly textId: string;
-    public readonly noteId: string;
-    public readonly id: string;
-    public readonly noteDoc: Y.Doc;
-    private yText: Y.Text;
-    private yNote: Y.Text;
-
-    constructor(private yMap: Y.Map<any>, private manager: TaskProxyManager) {
-        this.children = new TaskProxyIterable(this, yMap.get("children"), manager.build.bind(manager));
-        this.parents = new TaskProxyIterable(this, yMap.get("parents"), manager.build.bind(manager));
-        this.events = this.manager.eventproxyManager.makeIterableByIdList(this, yMap.get("events"));
-
-        this.id = this.yMap.get("id");
-        this.textId = yMap.get("textId");
-        this.noteId = yMap.get("noteId");
-        this.noteDoc = yMap.get("noteDoc");
-        this.yText = manager.textRepository.getYText(this.textId);
-        this.yNote = manager.textRepository.getYText(this.noteId);
+        return this._events;
     }
 
-    public get text$(): Observable<string> {
-        return registerYText(this.yText);
+    hasChildren(): boolean {
+        return !this.children.isEmpty();
     }
 
-    public get text(): Y.Text {
-        return this.yText;
-    }
-
-    public get note$(): Observable<string> {
-        return registerYText(this.yNote);
-    }
-
-    public get note(): Y.Text {
-        return this.yNote;
-    }
-
-    private get status(): 'DONE' | 'TODO' | 'BLOCKED' {
-        return this.yMap.get('status')
-    }
-
-    public done() {
-        this.yMap.set('status', 'DONE')
-    }
-
-    public toggleStatus() {
-        this.yMap.set('status', this.status === 'DONE' ? 'TODO' : 'DONE')
-    }
-
-    public get status$(): Observable<'DONE' | 'TODO' | 'BLOCKED'> {
-        // 可优化点: 可以缓存Observable 多次调用status只返回同一个Observable, 减少浪费
-        return new Observable<'DONE' | 'TODO' | 'BLOCKED'>(subscriber => {
-            subscriber.next(this.status);
-
-            return register(this.yMap, (event: Y.YMapEvent<any>, transaction: Y.Transaction) => {
-                subscriber.next(this.status);
-            })
-        }).
-            pipe(distinctUntilChanged(), shareReplay({ bufferSize: 1, refCount: true }));
-    }
-
-    public get isCompleted$(): Observable<boolean> {
-        return this.status$.pipe(map(status => status === "DONE"), shareReplay({ bufferSize: 1, refCount: true }))
-    }
-
-    public hasChildren(): boolean {
-        return !this.children.isEmpty()
-    }
-
-    /**
-     * 把现有的task挂上去, 同时更新task的parent列表
-     */
-    public attachChild(child: TaskProxy, index?: number) {
-        if (child.parents.includes(child.id)) {
-            throw new Error("duplicate child in one parent")
+    attachChild(child: Task, index?: number) {
+        if (child.parents.includes(this.id)) {
+            throw new Error("duplicate child in one parent");
         }
-        child.parents._attach(this.id);
-        this.children._attach(child.id, index);
+        this.store.doc.transact(() => {
+            child.parents._attach(this.id);
+            this.children._attach(child.id, index);
+        });
     }
 
-    /**
-     * 新增一个task, 然后挂上去
-     */
-    public insertChild(index?: number, text: string = "", note: string = "") {
-        const child = this.manager.newTask(text, note)
+    insertChild(index?: number, text: string = "", note: string = "") {
+        const child = this.store.createTask(text, note);
         this.attachChild(child, index);
         return child;
     }
 
-    public detachChild(child: TaskProxy) {
-        this.yMap.doc?.transact(() => {
+    detachChild(child: Task) {
+        this.store.doc.transact(() => {
             child.parents._detach(this.id);
             this.children._detach(child.id);
         });
     }
 
-    /**
-     * 从task上删掉, 如果这是最后parent, 那么就把它递归彻底删掉
-     * 如果除了this之外还有其他的parent, 就只作detach
-     */
-    public deleteChild(child: TaskProxy) {
-        if (child.parents.size > 1) {
-            this.yMap.doc?.transact(() => {
+    deleteChild(child: Task) {
+        if (child.parents.length > 1) {
+            this.store.doc.transact(() => {
                 child.parents._detach(this.id);
                 this.children._detach(child.id);
             });
             return;
         }
 
-        this.yMap.doc?.transact(() => {
-            this.yMap.doc?.transact(() => {
-                this.children._detach(child.id);
-                this.manager.deleteTaskDeeply(child);
-            });
+        this.store.doc.transact(() => {
+            this.children._detach(child.id);
+            this.store.deleteTask(child.id);
         });
     }
 
-    public insertEvent(start: number, end: number) {
-        const event = this.manager.eventproxyManager.createEvent(this, start, end);
-        this.events._attach(event.id)
+    insertEvent(start: number, end: number) {
+        const event = this.store.createEvent(this.id, start, end);
         return event;
     }
 
-    public detachEvent(eventId: string) {
+    detachEvent(eventId: string) {
         this.events._detach(eventId);
     }
 
-    public deepSearch(targetChildId: string) {
-        this.parents
-
+    toJSON(): Record<string, any> {
+        return {
+            id: this.id,
+            textId: this.textId,
+            noteId: this.noteId,
+            status: this.status,
+            children: this.children.toIds(),
+            parents: this.parents.toIds(),
+            events: this.events.toIds(),
+        };
     }
 }
 
-class TaskProxyIterable extends YIterable<TaskProxy> {
-    public constructor(
-        public _parent: TaskProxy,
-        yArray: Y.Array<string>,
-        factory: (id: string) => TaskProxy,
-    ) {
-        super(yArray, factory);
-    }
-
-    public findIndex(id: string) {
-        for (let i = 0; i < this.yArray.length; i++) {
-            if (this.yArray.get(i) === id) {
-                return i;
-            }
-        }
-    }
-
-    public getById(id: string) {
-        const index = this.findIndex(id);
-        if (index === undefined) {
-            return undefined;
-        }
-        return this.get(index);
-    }
-}
-
-export type { TaskProxyIterable as TaskProxyArray };
-
-function registerYText(yText: Y.Text): Observable<string> {
-    // 可优化点: 可以缓存Observable 多次调用status只返回同一个Observable, 减少浪费
-    return new Observable<string>(subscriber => {
-        subscriber.next(yText.toJSON())
-        return register(yText, (event: Y.YTextEvent, transaction: Y.Transaction) => {
-            subscriber.next(yText.toJSON())
-        })
-    }).pipe(shareReplay({ bufferSize: 1, refCount: true }))
-}
-
-function register<T>(y: Y.AbstractType<T>, callback: (event: T, transaction: Y.Transaction) => void) {
-    y.observe(callback);
-    return () => {
-        y.unobserve(callback);
-    }
-}
+export type TaskProxy = Task;
