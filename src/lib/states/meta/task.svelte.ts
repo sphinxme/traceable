@@ -49,8 +49,35 @@ export class Task {
     }
 
     get $note() {
-        this.subscribeNote();
-        return this.note.toJSON();
+        // TODO: subscribeNoteDoc
+        const noteDoc = this.noteDoc;
+        if (!noteDoc) return '';
+
+        const xmlFragment = noteDoc.getXmlFragment('default');
+
+        for (const child of xmlFragment.toArray()) {
+            const text = this.extractTextFromNode(child);
+            if (text.trim()) {
+                return text.trim();
+            }
+            if (child instanceof Y.XmlElement && child.nodeName === 'image') {
+                return '[图片]';
+            }
+        }
+
+        return '';
+    }
+
+    private extractTextFromNode(node: any): string {
+        if (node instanceof Y.XmlText) {
+            return node.toString();
+        }
+        if (node instanceof Y.XmlElement) {
+            const children = node.toArray();
+            const texts = children.map((child: any) => this.extractTextFromNode(child)).filter(Boolean);
+            return texts.join('');
+        }
+        return '';
     }
 
     get status(): "DONE" | "TODO" | "BLOCKED" {
