@@ -14,7 +14,6 @@
 	import type { EventProxy } from "$lib/states/meta/event.svelte";
 	import type { TaskProxy } from "$lib/states/meta/task.svelte";
 	import { CornerLeftUp, Redo2 } from "@lucide/svelte";
-	import { highlightTaskSignal } from "$lib/states/signals.svelte";
 	import { fade } from "svelte/transition";
 	import { eventbus } from "$lib/components/todolist/controller/eventbus";
 
@@ -56,11 +55,6 @@
 		return Math.floor(percent(start, end) * dayHeight);
 	};
 
-	const reactiveStart = $derived(event.start);
-	const reactiveEnd = $derived(event.end);
-	const text = $derived(task.text.toJSON());
-	const note = $derived(task.note.toJSON());
-	const isCompleted = $derived(task.isCompleted);
 	const highlight = $derived(highlightFEventIds[event.id]);
 	const focusMe = $derived(foucsingEventIds[event.id] || false);
 	$effect(() => {
@@ -77,27 +71,23 @@
 
 	// 定位坐标: 移动过程中会被即时值替换
 	// 如果外部改动了, 也会自动刷新
-	let topOffset = $state(calculateTopOffset2(reactiveStart, dayHeight)); // 单位px
+	let topOffset = $state(calculateTopOffset2(event.start, dayHeight)); // 单位px
 	let eventHeight = $state(
-		calculateEventHeight2(reactiveStart, reactiveEnd, dayHeight),
+		calculateEventHeight2(event.start, event.end, dayHeight),
 	); // 单位px
-	let columnIndex = $state(getColumnIndex(reactiveStart));
+	let columnIndex = $state(getColumnIndex(event.start));
 	// 仅用于事件的展示, 在移动过程中会被offsetTop的即时值替换
-	let previewStart = $state(reactiveStart);
-	let previewEnd = $state(reactiveEnd);
+	let previewStart = $state(event.start);
+	let previewEnd = $state(event.end);
 	let clickCount = $state(0);
 	let isResizing = $state(false);
 
 	$effect(() => {
-		topOffset = calculateTopOffset2(reactiveStart, dayHeight);
-		eventHeight = calculateEventHeight2(
-			reactiveStart,
-			reactiveEnd,
-			dayHeight,
-		);
-		columnIndex = getColumnIndex(reactiveStart);
-		previewStart = reactiveStart;
-		previewEnd = reactiveEnd;
+		topOffset = calculateTopOffset2(event.start, dayHeight);
+		eventHeight = calculateEventHeight2(event.start, event.end, dayHeight);
+		columnIndex = getColumnIndex(event.start);
+		previewStart = event.start;
+		previewEnd = event.end;
 	});
 
 	function formatDuration(duration: number): string {
@@ -239,13 +229,13 @@
 		<Tooltip.Root delayDuration={0}>
 			<Tooltip.Trigger class="h-full w-full">
 				<ContextMenu.Root>
-				<ContextMenu.Trigger
-					class="flex h-full p-2  rounded-lg w-full relative flex-col text-left overflow-clip {isCompleted
-						? 'bg-zinc-400'
-						: 'bg-zinc-600'} {highlight
-						? ' shadow-2xl shadow-zinc-700'
-						: ''}"
-				>
+					<ContextMenu.Trigger
+						class="flex h-full p-2  rounded-lg w-full relative flex-col text-left overflow-clip {task.isCompleted
+							? 'bg-zinc-400'
+							: 'bg-zinc-600'} {highlight
+							? ' shadow-2xl shadow-zinc-700'
+							: ''}"
+					>
 						{#if isResizing}
 							<!-- 垂直居中 -->
 							<div
@@ -270,7 +260,7 @@
 								<div
 									class="break-words pb-1 text-wrap text-ellipsis"
 								>
-									{text}
+									{task.$text}
 								</div>
 								<div class=" text-xs pb-3 font-extralight">
 									{dayjs(previewStart).format("HH:mm")}
@@ -282,14 +272,14 @@
 										class=" text-xs whitespace-nowrap overflow-hidden text-ellipsis font-extralight inline w-full"
 									>
 										<Redo2 class="inline" size="10" />
-										{parentTask.text.toJSON()}
+										{parentTask.$text}
 									</p>
 								{/each}
 							</div>
 						{/if}
 					</ContextMenu.Trigger>
 					<ContextMenu.Content>
-						<ContextMenu.Item onclick={() => event.destroy()}>
+						<ContextMenu.Item onclick={() => event.delete()}>
 							删除
 						</ContextMenu.Item>
 					</ContextMenu.Content>
@@ -299,18 +289,18 @@
 				{#each parentTasks as parentTask}
 					<p class="text-xs inline">
 						<Redo2 class="inline" size="10" />
-						{parentTask.text.toJSON()}
+						{parentTask.$text}
 					</p>
 				{/each}
 
 				<div class="break-words font-semibold">
-					{text}
+					{task.$text}
 				</div>
 
 				<p
 					class=" pt-2 text-nowrap text-zinc-500 whitespace-pre-line overflow-hidden overflow-ellipsis"
 				>
-					{note}
+					{task.$note}
 				</p>
 
 				<div class=" pt-2 text-xs font-extralight">

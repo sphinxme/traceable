@@ -1,6 +1,6 @@
 import * as Y from "yjs";
 import type { Store } from "./store.svelte";
-import { createYMapSubscriber } from "./reactive-yjs";
+import { createYMapSubscriber, createYTextSubscriber } from "./reactive-yjs";
 import { ReactiveYArrayProxy } from "./reactive-yarray";
 import type { Event } from "./event.svelte";
 
@@ -8,6 +8,8 @@ export class Task {
     readonly yMap: Y.Map<any>;
     private readonly store: Store;
     private readonly subscribe: () => void;
+    private readonly subscribeText: () => void;
+    private readonly subscribeNote: () => void;
 
     private _children?: ReactiveYArrayProxy<Task>;
     private _parents?: ReactiveYArrayProxy<Task>;
@@ -15,25 +17,25 @@ export class Task {
 
     static readonly __isTaskProxy = true;
 
+    readonly id: string;
+    readonly textId: string;
+    readonly text: Y.Text;
+    readonly noteId: string;
+    readonly note: Y.Text;
+
     constructor(yMap: Y.Map<any>, store: Store) {
         this.yMap = yMap;
         this.store = store;
         this.subscribe = createYMapSubscriber(yMap);
-    }
 
-    get id(): string {
-        this.subscribe();
-        return this.yMap.get("id");
-    }
+        this.id = this.yMap.get("id");
+        this.textId = this.yMap.get("textId");
+        this.noteId = this.yMap.get("noteId");
+        this.text = this.store.getText(this.textId)!;
+        this.note = this.store.getText(this.noteId)!;
 
-    get textId(): string {
-        this.subscribe();
-        return this.yMap.get("textId");
-    }
-
-    get noteId(): string {
-        this.subscribe();
-        return this.yMap.get("noteId");
+        this.subscribeText = createYTextSubscriber(this.text);
+        this.subscribeNote = createYTextSubscriber(this.note);
     }
 
     get noteDoc(): Y.Doc {
@@ -41,16 +43,14 @@ export class Task {
         return this.yMap.get("noteDoc");
     }
 
-    get text(): Y.Text {
-        this.subscribe();
-        const textId = this.yMap.get("textId");
-        return this.store.getText(textId)!;
+    get $text() {
+        this.subscribeText();
+        return this.text.toJSON();
     }
 
-    get note(): Y.Text {
-        this.subscribe();
-        const noteId = this.yMap.get("noteId");
-        return this.store.getText(noteId)!;
+    get $note() {
+        this.subscribeNote();
+        return this.note.toJSON();
     }
 
     get status(): "DONE" | "TODO" | "BLOCKED" {
@@ -75,7 +75,6 @@ export class Task {
     }
 
     get children(): ReactiveYArrayProxy<Task> {
-        this.subscribe();
         if (!this._children) {
             const yArray = this.yMap.get("children") as Y.Array<string>;
             this._children = new ReactiveYArrayProxy<Task>(yArray, (taskId) => this.store.getTask(taskId));
@@ -84,7 +83,6 @@ export class Task {
     }
 
     get parents(): ReactiveYArrayProxy<Task> {
-        this.subscribe();
         if (!this._parents) {
             const yArray = this.yMap.get("parents") as Y.Array<string>;
             this._parents = new ReactiveYArrayProxy<Task>(yArray, (taskId) => this.store.getTask(taskId));

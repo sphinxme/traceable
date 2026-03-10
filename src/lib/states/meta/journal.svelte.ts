@@ -13,36 +13,25 @@ export class Journal {
     private readonly store: Store;
     private readonly subscribe: () => void;
 
+    readonly id: string;
+    readonly taskId: string;
+    readonly task: Task;
+    readonly type: JournalType;
+
     constructor(yMap: Y.Map<any>, store: Store) {
         this.yMap = yMap;
         this.store = store;
         this.subscribe = createYMapSubscriber(yMap);
-    }
 
-    get id(): string {
-        this.subscribe();
-        return this.yMap.get("id");
+        this.id = this.yMap.get("id");
+        this.taskId = this.yMap.get("taskId");
+        this.task = this.store.getTask(this.taskId)!;
+        this.type = this.yMap.get("type");
     }
 
     get time(): Dayjs {
         this.subscribe();
         return dayjs(this.yMap.get("time") as number);
-    }
-
-    get type(): JournalType {
-        this.subscribe();
-        return this.yMap.get("type");
-    }
-
-    get taskId(): string {
-        this.subscribe();
-        return this.yMap.get("taskId");
-    }
-
-    get task(): Task | undefined {
-        this.subscribe();
-        const taskId = this.yMap.get("taskId");
-        return taskId ? this.store.getTask(taskId) : undefined;
     }
 
     static genKey(time: Dayjs, type: JournalType): string {

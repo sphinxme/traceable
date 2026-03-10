@@ -1,6 +1,5 @@
 import * as Y from "yjs";
 import type { Store } from "./store.svelte";
-import type { Task } from "./task.svelte";
 import { createYMapSubscriber } from "./reactive-yjs";
 
 export type EventProxy = Event;
@@ -10,24 +9,18 @@ export class Event {
     private readonly store: Store;
     private readonly subscribe: () => void;
 
+    readonly id: string;
+    readonly taskId: string;
+    readonly textId: string;
+
     constructor(yMap: Y.Map<any>, store: Store) {
         this.yMap = yMap;
         this.store = store;
         this.subscribe = createYMapSubscriber(yMap);
-    }
 
-    get id(): string {
-        this.subscribe();
-        return this.yMap.get("id");
-    }
-
-    get taskId(): string {
-        this.subscribe();
-        return this.yMap.get("taskId");
-    }
-
-    set taskId(value: string) {
-        this.yMap.set("taskId", value);
+        this.id = this.yMap.get("id");
+        this.taskId = this.yMap.get("taskId");
+        this.textId = this.yMap.get("textId");
     }
 
     get start(): number {
@@ -49,15 +42,12 @@ export class Event {
         this.yMap.set("end", value);
     }
 
-    get textId(): string {
-        this.subscribe();
-        return this.yMap.get("textId");
-    }
-
-    get task(): Task | undefined {
-        this.subscribe();
-        const taskId = this.yMap.get("taskId");
-        return taskId ? this.store.getTask(taskId) : undefined;
+    get task() {
+        const task = this.store.getTask(this.taskId);
+        if (!task) {
+            throw new Error(`invalid taskId: ${this.taskId} from event:${this.id}`);
+        }
+        return task;
     }
 
     get duration(): number {
@@ -83,7 +73,7 @@ export class Event {
         this.end = newEnd;
     }
 
-    destroy() {
+    delete() {
         this.store.doc.transact(() => {
             const taskId = this.taskId;
             if (taskId) {
@@ -94,14 +84,5 @@ export class Event {
             }
             this.store.deleteEvent(this.id);
         });
-    }
-
-    toJSON(): Record<string, any> {
-        return {
-            id: this.id,
-            taskId: this.taskId,
-            start: this.start,
-            end: this.end,
-        };
     }
 }
