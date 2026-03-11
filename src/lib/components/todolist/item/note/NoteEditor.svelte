@@ -1,35 +1,47 @@
 <script lang="ts">
-	import { quill } from "$lib/components/quill/quill";
-	import type Quill from "quill";
-	import { onMount } from "svelte";
+	import { tiptap } from "$lib/components/tiptap/tiptap";
+	import type { Editor } from "@tiptap/core";
+	import { Extension } from "@tiptap/core";
 	import * as Y from "yjs";
 
 	interface Props {
-		text: Y.Text;
+		noteDoc: Y.Doc;
 		onClose: () => void;
 	}
 
-	let { text, onClose }: Props = $props();
-	let editor: Quill;
+	let { noteDoc, onClose }: Props = $props();
+	let editor: Editor;
+
+	const ShiftEnterClose = Extension.create({
+		name: "shiftEnterClose",
+		addKeyboardShortcuts() {
+			return {
+				"Shift-Enter": () => {
+					onClose();
+					return true;
+				},
+			};
+		},
+	});
 
 	export function focus() {
-		editor.focus();
+		editor?.commands.focus();
 	}
 </script>
 
 <div
-	use:quill={{
-		text,
+	use:tiptap={{
+		yDoc: noteDoc,
+		configs: {
+			extensions: [ShiftEnterClose],
+			editorProps: {
+				attributes: {
+					class: "prose prose-sm max-w-none focus:outline-none min-h-[100px]",
+				},
+			},
+		},
 		init(_editor) {
 			editor = _editor;
-			_editor.keyboard.bindings["Enter"].unshift({
-				key: "Enter",
-				shiftKey: true,
-				handler(range, curContext, binding) {
-					onClose();
-					return false;
-				},
-			});
 		},
 	}}
 ></div>

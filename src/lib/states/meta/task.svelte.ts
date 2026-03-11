@@ -20,8 +20,17 @@ export class Task {
     readonly id: string;
     readonly textId: string;
     readonly text: Y.Text;
+
+    /**
+     * @deprecated 使用noteDoc作为替代
+     */
     readonly noteId: string;
+    /**
+     * @deprecated 使用noteDoc作为替代
+     */
     readonly note: Y.Text;
+
+    readonly noteDoc: Y.Doc;
 
     constructor(yMap: Y.Map<any>, store: Store) {
         this.yMap = yMap;
@@ -30,17 +39,15 @@ export class Task {
 
         this.id = this.yMap.get("id");
         this.textId = this.yMap.get("textId");
-        this.noteId = this.yMap.get("noteId");
         this.text = this.store.getText(this.textId)!;
+
+        this.noteId = this.yMap.get("noteId");
         this.note = this.store.getText(this.noteId)!;
+
+        this.noteDoc = this.yMap.get("noteDoc");
 
         this.subscribeText = createYTextSubscriber(this.text);
         this.subscribeNote = createYTextSubscriber(this.note);
-    }
-
-    get noteDoc(): Y.Doc {
-        this.subscribe();
-        return this.yMap.get("noteDoc");
     }
 
     get $text() {

@@ -161,7 +161,7 @@
 					controller.noteEditOpen = false;
 					return false;
 				}}
-				text={controller.task.note}
+				noteDoc={controller.task.noteDoc}
 			/>
 		</Popover.Content>
 	</Popover.Root>
