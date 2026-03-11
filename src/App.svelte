@@ -50,7 +50,8 @@
 	let open = $state(false); // open dialog
 	const doc = newYDoc();
 	const loadingFromIndexedDBPromise = loadFromIndexedDB(doc);
-	const loadingFromLiveBlocksPromise = loadFromLiveBlocks(doc);
+	// const loadingFromLiveBlocksPromise = loadFromLiveBlocks(doc);
+	const loadingFromLiveBlocksPromise = Promise.resolve();
 	const loadPromise = Promise.all([
 		loadingFromIndexedDBPromise,
 		loadingFromLiveBlocksPromise,

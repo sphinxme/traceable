@@ -70,7 +70,7 @@ export class Store {
             taskYMap.set("id", taskId);
             taskYMap.set("textId", textId);
             taskYMap.set("noteId", noteId);
-            taskYMap.set("noteDoc", new Y.Doc());
+            taskYMap.set("noteDoc", new Y.XmlFragment());
             taskYMap.set("children", new Y.Array());
             taskYMap.set("parents", new Y.Array());
             taskYMap.set("events", new Y.Array());

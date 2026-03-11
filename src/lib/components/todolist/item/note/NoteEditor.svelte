@@ -1,16 +1,15 @@
 <script lang="ts">
-	import { tiptap } from "$lib/components/tiptap/tiptap";
-	import type { Editor } from "@tiptap/core";
+	import TipTap from "$lib/components/tiptap/tiptap.svelte";
 	import { Extension } from "@tiptap/core";
 	import * as Y from "yjs";
 
 	interface Props {
-		noteDoc: Y.Doc;
+		noteDoc: Y.XmlFragment;
 		onClose: () => void;
 	}
 
 	let { noteDoc, onClose }: Props = $props();
-	let editor: Editor;
+	let tipTapRef: { focus: () => void };
 
 	const ShiftEnterClose = Extension.create({
 		name: "shiftEnterClose",
@@ -25,23 +24,12 @@
 	});
 
 	export function focus() {
-		editor?.commands.focus();
+		tipTapRef?.focus();
 	}
 </script>
 
-<div
-	use:tiptap={{
-		yDoc: noteDoc,
-		configs: {
-			extensions: [ShiftEnterClose],
-			editorProps: {
-				attributes: {
-					class: "prose prose-sm max-w-none focus:outline-none min-h-[100px]",
-				},
-			},
-		},
-		init(_editor) {
-			editor = _editor;
-		},
-	}}
-></div>
+<TipTap
+	yDoc={noteDoc}
+	customExtensions={[ShiftEnterClose]}
+	bind:this={tipTapRef}
+/>

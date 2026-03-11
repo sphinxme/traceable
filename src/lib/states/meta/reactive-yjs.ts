@@ -28,6 +28,15 @@ export function createYTextSubscriber(yText: Y.Text): () => void {
     return subscribe;
 }
 
+export function createYXmlFragmentSubscriber(yXmlFragment: Y.XmlFragment): () => void {
+    const subscribe = createSubscriber((update) => {
+        const handler = () => update();
+        yXmlFragment.observe(handler);
+        return () => yXmlFragment.unobserve(handler);
+    });
+    return subscribe;
+}
+
 export function createYMapKeysSubscriber(yMap: Y.Map<any>): () => void {
     const subscribe = createSubscriber((update) => {
         const handler = () => update();

@@ -16,6 +16,7 @@
     "npm:@tauri-apps/plugin-fs@~2.4.2": "2.4.2",
     "npm:@tauri-apps/plugin-http@2": "2.5.2",
     "npm:@tiptap/core@^3.14.0": "3.14.0_@tiptap+pm@3.14.0__prosemirror-model@1.25.4__prosemirror-state@1.4.4__prosemirror-view@1.41.4",
+    "npm:@tiptap/extension-bubble-menu@^3.20.1": "3.20.1_@tiptap+core@3.14.0__@tiptap+pm@3.14.0___prosemirror-model@1.25.4___prosemirror-state@1.4.4___prosemirror-view@1.41.4_@tiptap+pm@3.14.0__prosemirror-model@1.25.4__prosemirror-state@1.4.4__prosemirror-view@1.41.4",
     "npm:@tiptap/extension-collaboration@^3.14.0": "3.14.0_@tiptap+core@3.14.0__@tiptap+pm@3.14.0___prosemirror-model@1.25.4___prosemirror-state@1.4.4___prosemirror-view@1.41.4_@tiptap+pm@3.14.0__prosemirror-model@1.25.4__prosemirror-state@1.4.4__prosemirror-view@1.41.4_@tiptap+y-tiptap@3.0.1__prosemirror-model@1.25.4__prosemirror-state@1.4.4__prosemirror-view@1.41.4__y-protocols@1.0.6___yjs@13.6.29__yjs@13.6.29_yjs@13.6.29",
     "npm:@tiptap/pm@^3.14.0": "3.14.0_prosemirror-model@1.25.4_prosemirror-state@1.4.4_prosemirror-view@1.41.4",
     "npm:@tiptap/starter-kit@^3.14.0": "3.14.0_@tiptap+pm@3.14.0__prosemirror-model@1.25.4__prosemirror-state@1.4.4__prosemirror-view@1.41.4_@tiptap+core@3.14.0__@tiptap+pm@3.14.0___prosemirror-model@1.25.4___prosemirror-state@1.4.4___prosemirror-view@1.41.4_@tiptap+extension-list@3.14.0__@tiptap+core@3.14.0___@tiptap+pm@3.14.0____prosemirror-model@1.25.4____prosemirror-state@1.4.4____prosemirror-view@1.41.4__@tiptap+pm@3.14.0___prosemirror-model@1.25.4___prosemirror-state@1.4.4___prosemirror-view@1.41.4_@tiptap+extensions@3.14.0__@tiptap+core@3.14.0___@tiptap+pm@3.14.0____prosemirror-model@1.25.4____prosemirror-state@1.4.4____prosemirror-view@1.41.4__@tiptap+pm@3.14.0___prosemirror-model@1.25.4___prosemirror-state@1.4.4___prosemirror-view@1.41.4",
@@ -595,6 +596,15 @@
         "@tiptap/core"
       ],
       "tarball": "https://registry.npmmirror.com/@tiptap/extension-bold/-/extension-bold-3.14.0.tgz"
+    },
+    "@tiptap/extension-bubble-menu@3.20.1_@tiptap+core@3.14.0__@tiptap+pm@3.14.0___prosemirror-model@1.25.4___prosemirror-state@1.4.4___prosemirror-view@1.41.4_@tiptap+pm@3.14.0__prosemirror-model@1.25.4__prosemirror-state@1.4.4__prosemirror-view@1.41.4": {
+      "integrity": "sha512-XaPvO6aCoWdFnCBus0s88lnj17NR/OopV79i8Qhgz3WMR0vrsL5zsd45l0lZuu9pSvm5VW47SoxakkJiZC1suw==",
+      "dependencies": [
+        "@floating-ui/dom",
+        "@tiptap/core",
+        "@tiptap/pm"
+      ],
+      "tarball": "https://registry.npmmirror.com/@tiptap/extension-bubble-menu/-/extension-bubble-menu-3.20.1.tgz"
     },
     "@tiptap/extension-bullet-list@3.14.0_@tiptap+extension-list@3.14.0__@tiptap+core@3.14.0___@tiptap+pm@3.14.0____prosemirror-model@1.25.4____prosemirror-state@1.4.4____prosemirror-view@1.41.4__@tiptap+pm@3.14.0___prosemirror-model@1.25.4___prosemirror-state@1.4.4___prosemirror-view@1.41.4_@tiptap+core@3.14.0__@tiptap+pm@3.14.0___prosemirror-model@1.25.4___prosemirror-state@1.4.4___prosemirror-view@1.41.4_@tiptap+pm@3.14.0__prosemirror-model@1.25.4__prosemirror-state@1.4.4__prosemirror-view@1.41.4": {
       "integrity": "sha512-luqPX4u52hiOAHJ95mYsNE+x+9dZxsM461Xny9d/eTXLjAcnwS7MghjrnpljvyYsSXNiwQtxUyEr4uEZZJ5gIQ==",
@@ -2360,6 +2370,7 @@
         "npm:@tauri-apps/plugin-fs@~2.4.2",
         "npm:@tauri-apps/plugin-http@2",
         "npm:@tiptap/core@^3.14.0",
+        "npm:@tiptap/extension-bubble-menu@^3.20.1",
         "npm:@tiptap/extension-collaboration@^3.14.0",
         "npm:@tiptap/pm@^3.14.0",
         "npm:@tiptap/starter-kit@^3.14.0",
