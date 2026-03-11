@@ -56,24 +56,34 @@ export class Task {
     }
 
     get $note() {
-        // TODO: subscribeNoteDoc
         this.subscribeNote();
         const noteDoc = this.noteDoc;
         if (!noteDoc) return '';
 
         const xmlFragment = noteDoc;
+        let firstTextFound = false;
+        let result = '';
 
         for (const child of xmlFragment.toArray()) {
             const text = this.extractTextFromNode(child);
             if (text.trim()) {
-                return text.trim();
-            }
-            if (child instanceof Y.XmlElement && child.nodeName === 'image') {
-                return '[图片]';
+                if (!firstTextFound) {
+                    firstTextFound = true;
+                    result = text.trim();
+                } else {
+                    return result + '...';
+                }
+            } else if (child instanceof Y.XmlElement && child.nodeName === 'image') {
+                if (!firstTextFound) {
+                    firstTextFound = true;
+                    result = '[图片]';
+                } else {
+                    return result + '...';
+                }
             }
         }
 
-        return '';
+        return result;
     }
 
     private extractTextFromNode(node: any): string {
