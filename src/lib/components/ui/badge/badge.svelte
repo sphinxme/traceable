@@ -39,12 +39,19 @@
 	} = $props();
 </script>
 
-<svelte:element
-	this={href ? "a" : "span"}
-	bind:this={ref}
-	{href}
-	class={cn(badgeVariants({ variant, className }))}
-	{...restProps}
->
-	{@render children?.()}
-</svelte:element>
+{#if href}
+	<a
+		bind:this={ref}
+		{href}
+		{...restProps}
+	>
+		{@render children?.()}
+	</a>
+{:else}
+	<span
+		bind:this={ref}
+		{...restProps}
+	>
+		{@render children?.()}
+	</span>
+{/if}

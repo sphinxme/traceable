@@ -30,8 +30,6 @@ export function focusOnNextTask(id: string) {
         highlightTaskItems = taskTodoItems[id];
     }
 
-    highlightTaskItems.at(1)?.focus(0);
-
 }
 
 // 循环右移数组
