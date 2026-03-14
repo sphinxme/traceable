@@ -4,8 +4,11 @@
 	import StarterKit from "@tiptap/starter-kit";
 	import Collaboration from "@tiptap/extension-collaboration";
 	import BubbleMenu from "@tiptap/extension-bubble-menu";
+	import Image from "@tiptap/extension-image";
+	import FileHandler from "@tiptap/extension-file-handler";
 	import type { Extension } from "@tiptap/core";
 	import * as Y from "yjs";
+	import { uploadImage } from "./uploadImage";
 
 	interface Props {
 		yDoc: Y.XmlFragment;
@@ -26,6 +29,8 @@
 	let element = $state<HTMLElement | null>(null);
 
 	onMount(() => {
+		let editor: Editor;
+
 		const extensions = [
 			StarterKit.configure({
 				// document: false,
@@ -35,13 +40,30 @@
 			Collaboration.configure({
 				fragment: yDoc,
 			}),
+			Image,
+			FileHandler.configure({
+				allowedMimeTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
+				onPaste: (_view, files) => {
+					for (const file of files) {
+						if (!file.type.startsWith("image/")) continue;
+						uploadImage(file)
+							.then((url) => {
+								editor.chain().focus().setImage({ src: url }).run();
+							})
+							.catch((err) => {
+								console.error("图片上传失败", err);
+							});
+					}
+				},
+				onDrop: () => false,
+			}),
 			// BubbleMenu.configure({
 			// 	element: bubbleMenu,
 			// }),
 			...customExtensions,
 		];
 
-		editorState.editor = new Editor({
+		editor = new Editor({
 			element: element,
 			extensions: extensions,
 			editorProps: {
@@ -50,10 +72,12 @@
 				},
 				...editorProps,
 			},
-			onTransaction: ({ editor }) => {
-				editorState = { editor };
+			onTransaction: ({ editor: e }) => {
+				editorState = { editor: e };
 			},
 		});
+
+		editorState.editor = editor;
 	});
 
 	onDestroy(() => {
