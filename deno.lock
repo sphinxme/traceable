@@ -2,6 +2,7 @@
   "version": "5",
   "specifiers": {
     "jsr:@hono/hono@*": "4.9.4",
+    "jsr:@mhart/aws4fetch@*": "1.0.18",
     "npm:@liveblocks/client@^2.11.0": "2.24.3",
     "npm:@liveblocks/yjs@^2.11.0": "2.24.3_yjs@13.6.29",
     "npm:@lucide/svelte@0.539": "0.539.0_svelte@5.36.13__acorn@8.15.0",
@@ -59,6 +60,9 @@
   "jsr": {
     "@hono/hono@4.9.4": {
       "integrity": "de006e32f3bab18e5a5bed4c75c5e0aaa46958d3653e6646b534a874d690dccc"
+    },
+    "@mhart/aws4fetch@1.0.18": {
+      "integrity": "59729fa8f2808c0b5eca87731f644887dd77ab4c65d02e2d083168763dda6014"
     }
   },
   "npm": {
