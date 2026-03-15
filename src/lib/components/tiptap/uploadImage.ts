@@ -26,7 +26,7 @@ export async function uploadImage(file: File): Promise<string> {
 	const { data } = await response.json();
 
 	// 2. 上传文件到 S3
-	const uploadResponse = await fetch(data.uploadUrl, {
+	const uploadResponse = await _fetch(data.uploadUrl, {
 		method: data.method,
 		headers: data.headers,
 		body: file,
