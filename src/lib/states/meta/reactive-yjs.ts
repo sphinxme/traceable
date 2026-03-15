@@ -28,11 +28,11 @@ export function createYTextSubscriber(yText: Y.Text): () => void {
     return subscribe;
 }
 
-export function createYXmlFragmentSubscriber(yXmlFragment: Y.XmlFragment): () => void {
+export function createYXmlFragmentDeepSubscriber(yXmlFragment: Y.XmlFragment): () => void {
     const subscribe = createSubscriber((update) => {
         const handler = () => update();
-        yXmlFragment.observe(handler);
-        return () => yXmlFragment.unobserve(handler);
+        yXmlFragment.observeDeep(handler);
+        return () => yXmlFragment.unobserveDeep(handler);
     });
     return subscribe;
 }

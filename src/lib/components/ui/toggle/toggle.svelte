@@ -44,6 +44,7 @@
 
 	// @ts-ignore
 	let computedClass: any = $derived.by(() =>
+		// @ts-ignore
 		cn(toggleVariants({ variant, size, className })),
 	);
 </script>

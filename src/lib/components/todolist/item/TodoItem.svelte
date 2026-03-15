@@ -15,16 +15,18 @@
 		overlay?: import("svelte").Snippet;
 		handle?: import("svelte").Snippet;
 		drag?: import("svelte").Snippet;
-		note: string;
 	}
 
-	let { controller, overlay, handle, drag, note }: Props = $props();
+	let { controller, overlay, handle, drag }: Props = $props();
 	let container: HTMLDivElement;
 	let editor: Quill;
 	let noteEditor: NoteEditor;
 
-	let sortedEvents = $derived([...controller.task.events].sort((a, b) => a.start - b.start));
+	let sortedEvents = $derived(
+		[...controller.task.events].sort((a, b) => a.start - b.start),
+	);
 	let isCompleted = $derived(controller.task.isCompleted);
+	let note = $derived(controller.task.$note);
 
 	onMount(() => {
 		editor = new Quill(container, {
@@ -128,7 +130,7 @@
 	<div class="flex h-2 flex-row pt-1 items-center">
 		<div class="h-1" style:width="18px"></div>
 		{#each sortedEvents as event (event.id)}
-			<EventIndicator data={event} isCompleted={isCompleted} />
+			<EventIndicator data={event} {isCompleted} />
 		{/each}
 	</div>
 

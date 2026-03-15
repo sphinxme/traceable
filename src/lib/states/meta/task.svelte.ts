@@ -1,6 +1,6 @@
 import * as Y from "yjs";
 import type { Store } from "./store.svelte";
-import { createYMapSubscriber, createYTextSubscriber, createYXmlFragmentSubscriber } from "./reactive-yjs";
+import { createYMapSubscriber, createYTextSubscriber, createYXmlFragmentDeepSubscriber } from "./reactive-yjs";
 import { ReactiveYArrayProxy } from "./reactive-yarray";
 import type { Event } from "./event.svelte";
 
@@ -47,7 +47,7 @@ export class Task {
         this.noteDoc = this.yMap.get("noteDoc");
 
         this.subscribeText = createYTextSubscriber(this.text);
-        this.subscribeNote = createYXmlFragmentSubscriber(this.noteDoc);
+        this.subscribeNote = createYXmlFragmentDeepSubscriber(this.noteDoc);
     }
 
     get $text() {

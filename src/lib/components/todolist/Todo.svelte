@@ -76,7 +76,7 @@
 		.$todoViewTransitionName}
 	class=" relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}"
 >
-	<TodoItem {controller} note={controller.task.$note}>
+	<TodoItem {controller}>
 		{#snippet handle()}
 			<ContextMenu.Root>
 				<ContextMenu.Trigger>

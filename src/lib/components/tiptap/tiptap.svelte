@@ -4,11 +4,11 @@
 	import StarterKit from "@tiptap/starter-kit";
 	import Collaboration from "@tiptap/extension-collaboration";
 	import BubbleMenu from "@tiptap/extension-bubble-menu";
-	import Image from "@tiptap/extension-image";
 	import FileHandler from "@tiptap/extension-file-handler";
 	import type { Extension } from "@tiptap/core";
 	import * as Y from "yjs";
 	import { uploadImage } from "./uploadImage";
+	import { CustomImage } from "./extensions/CustomImage";
 
 	interface Props {
 		yDoc: Y.XmlFragment;
@@ -40,7 +40,7 @@
 			Collaboration.configure({
 				fragment: yDoc,
 			}),
-			Image,
+			CustomImage,
 			FileHandler.configure({
 				allowedMimeTypes: ["image/jpeg", "image/png", "image/gif", "image/webp"],
 				onPaste: (_view, files) => {
