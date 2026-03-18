@@ -1,6 +1,7 @@
 import { Image } from '@tiptap/extension-image';
 import { mount, unmount } from 'svelte';
 import ImageNodeView from '../image-node/ImageNodeView.svelte';
+import type { NodeViewRenderer, NodeViewRendererProps } from '@tiptap/core';
 
 export const CustomImage = Image.extend({
 	name: 'image',
@@ -57,8 +58,8 @@ export const CustomImage = Image.extend({
 		};
 	},
 
-	addNodeView() {
-		return ({ node, editor, getPos, HTMLAttributes }) => {
+	addNodeView(): NodeViewRenderer {
+		return ({ node, editor, getPos, HTMLAttributes }: NodeViewRendererProps) => {
 			const container = document.createElement('div');
 			container.className = 'tiptap-image-node-wrapper';
 
