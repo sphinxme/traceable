@@ -6,28 +6,27 @@
 		node: any;
 		editor: Editor;
 		getPos: () => number | undefined;
-		HTMLAttributes: Record<string, any>;
 	}
 
 	let {
 		node,
 		editor,
 		getPos,
-		HTMLAttributes,
 	}: Props = $props();
 
 	let myNode = $state(node);
 
-	let src = $derived(HTMLAttributes.src ?? myNode.attrs.src ?? '');
-	let alt = $derived(HTMLAttributes.alt ?? myNode.attrs.alt ?? '');
-	let title = $derived(HTMLAttributes.title ?? myNode.attrs.title ?? '');
-	let width = $derived(HTMLAttributes.width ?? myNode.attrs.width ?? undefined);
-	let height = $derived(HTMLAttributes.height ?? myNode.attrs.height ?? undefined);
+	let src = $derived(myNode.attrs.src ?? '');
+	let alt = $derived(myNode.attrs.alt ?? '');
+	let title = $derived(myNode.attrs.title ?? '');
+	let width = $derived(myNode.attrs.width ?? undefined);
+	let height = $derived(myNode.attrs.height ?? undefined);
 
 	let isDragging = $state(false);
 	let resizeHandle = $state<string | null>(null);
 	let startWidth = $state(0);
 	let startHeight = $state(0);
+	let aspectRatio = $state(0);
 	let startX = $state(0);
 	let startY = $state(0);
 
@@ -38,12 +37,6 @@
 
 	export function updateNode(newNode: any) {
 		myNode = newNode;
-		if (imgElement && newNode.attrs.width) {
-			imgElement.style.width = `${newNode.attrs.width}px`;
-		}
-		if (imgElement && newNode.attrs.height) {
-			imgElement.style.height = `${newNode.attrs.height}px`;
-		}
 	}
 
 	function handleResizeStart(handle: string, event: MouseEvent | TouchEvent) {
@@ -60,6 +53,7 @@
 		startY = clientY;
 		startWidth = imgElement.offsetWidth;
 		startHeight = imgElement.offsetHeight;
+		aspectRatio = startHeight > 0 ? startWidth / startHeight : 0;
 
 		document.addEventListener('mousemove', handleResizeMove);
 		document.addEventListener('mouseup', handleResizeEnd);
@@ -94,6 +88,15 @@
 
 		newWidth = Math.max(MIN_SIZE, newWidth);
 		newHeight = Math.max(MIN_SIZE, newHeight);
+
+		if (aspectRatio > 0) {
+			const hasHorizontal = resizeHandle.includes('right') || resizeHandle.includes('left');
+			if (hasHorizontal) {
+				newHeight = newWidth / aspectRatio;
+			} else {
+				newWidth = newHeight * aspectRatio;
+			}
+		}
 
 		imgElement.style.width = `${newWidth}px`;
 		imgElement.style.height = `${newHeight}px`;

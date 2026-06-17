@@ -59,7 +59,7 @@ export const CustomImage = Image.extend({
 	},
 
 	addNodeView(): NodeViewRenderer {
-		return ({ node, editor, getPos, HTMLAttributes }: NodeViewRendererProps) => {
+		return ({ node, editor, getPos }: NodeViewRendererProps) => {
 			const container = document.createElement('div');
 			container.className = 'tiptap-image-node-wrapper';
 
@@ -71,7 +71,6 @@ export const CustomImage = Image.extend({
 					node: latestNode,
 					editor,
 					getPos,
-					HTMLAttributes,
 				},
 			});
 
