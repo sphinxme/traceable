@@ -10,6 +10,7 @@
 	import { uploadImage } from "./image-node/uploadImage";
 	import { CustomImage } from "./image-node/CustomImage";
 	import { uploadTasks } from "./image-node/imageUploadState.svelte";
+	import BubbleMenuToolbar from "./BubbleMenuToolbar.svelte";
 
 	interface Props {
 		yDoc: Y.XmlFragment;
@@ -26,7 +27,7 @@
 	}: Props = $props();
 
 	let editorState = $state<{ editor: Editor | null }>({ editor: null });
-	let bubbleMenu = $state<HTMLElement | null>(null);
+	let bubbleMenuElement = $state<HTMLElement | null>(null);
 	let element = $state<HTMLElement | null>(null);
 
 	async function getImageDimensions(
@@ -137,9 +138,16 @@
 				},
 				onDrop: () => false,
 			}),
-			// BubbleMenu.configure({
-			// 	element: bubbleMenu,
-			// }),
+			BubbleMenu.configure({
+				element: bubbleMenuElement,
+				updateDelay: 0,
+				options: {
+					placement: "top",
+					offset: 8,
+					flip: true,
+					shift: true,
+				},
+			}),
 			...customExtensions,
 		];
 
@@ -170,50 +178,11 @@
 </script>
 
 <div style="position: relative" class="app">
-	{#if editorState.editor}
-		<div class="fixed-menu">
-			<button
-				onclick={() =>
-					editorState.editor
-						?.chain()
-						.focus()
-						.toggleHeading({ level: 1 })
-						.run()}
-				class:active={editorState.editor?.isActive("heading", {
-					level: 1,
-				})}
-			>
-				H1
-			</button>
-			<button
-				onclick={() =>
-					editorState.editor
-						?.chain()
-						.focus()
-						.toggleHeading({ level: 2 })
-						.run()}
-				class:active={editorState.editor?.isActive("heading", {
-					level: 2,
-				})}
-			>
-				H2
-			</button>
-			<button
-				onclick={() =>
-					editorState.editor?.chain().focus().setParagraph().run()}
-				class:active={editorState.editor?.isActive("paragraph")}
-			>
-				P
-			</button>
-		</div>
-	{/if}
+	<div bind:this={bubbleMenuElement} class="invisible">
+		{#if editorState.editor}
+			<BubbleMenuToolbar editor={editorState.editor} />
+		{/if}
+	</div>
 
 	<div bind:this={element}></div>
 </div>
-
-<style>
-	button.active {
-		background: black;
-		color: white;
-	}
-</style>
