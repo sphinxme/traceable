@@ -92,6 +92,16 @@ export const CustomImage = Image.extend({
 					}
 					return true;
 				},
+				selectNode() {
+					if (instance.setSelected) {
+						instance.setSelected(true);
+					}
+				},
+				deselectNode() {
+					if (instance.setSelected) {
+						instance.setSelected(false);
+					}
+				},
 				destroy() {
 					unmount(instance);
 				},

@@ -23,42 +23,36 @@
 	let task = $derived(uploadId ? uploadTasks.get(uploadId) : undefined);
 	let isUploading = $derived(task?.status === "uploading");
 	let hasError = $derived(task?.status === "error" || (src === "" && !task));
-	let showResizeHandles = $derived(src !== "" && !isUploading && !hasError);
+	let showResizeHandle = $derived(src !== "" && !isUploading && !hasError);
 
-	let isDragging = $state(false);
-	let resizeHandle = $state<string | null>(null);
+	let isResizing = $state(false);
 	let startWidth = $state(0);
-	let startHeight = $state(0);
-	let aspectRatio = $state(0);
 	let startX = $state(0);
-	let startY = $state(0);
 
 	const MIN_SIZE = 50;
 
 	let imgElement: HTMLImageElement;
-	let wrapperElement: HTMLElement;
+	let isNodeSelected = $state(false);
 
 	export function updateNode(newNode: any) {
 		myNode = newNode;
 	}
 
-	function handleResizeStart(handle: string, event: MouseEvent | TouchEvent) {
+	export function setSelected(value: boolean) {
+		isNodeSelected = value;
+	}
+
+	function handleResizeStart(event: MouseEvent | TouchEvent) {
 		event.preventDefault();
 		event.stopPropagation();
 
-		isDragging = true;
-		resizeHandle = handle;
+		isResizing = true;
 
 		const clientX =
 			"touches" in event ? event.touches[0].clientX : event.clientX;
-		const clientY =
-			"touches" in event ? event.touches[0].clientY : event.clientY;
 
 		startX = clientX;
-		startY = clientY;
 		startWidth = imgElement.offsetWidth;
-		startHeight = imgElement.offsetHeight;
-		aspectRatio = startHeight > 0 ? startWidth / startHeight : 0;
 
 		document.addEventListener("mousemove", handleResizeMove);
 		document.addEventListener("mouseup", handleResizeEnd);
@@ -69,51 +63,21 @@
 	}
 
 	function handleResizeMove(event: MouseEvent | TouchEvent) {
-		if (!isDragging || !resizeHandle) return;
+		if (!isResizing) return;
 
 		const clientX =
 			"touches" in event ? event.touches[0].clientX : event.clientX;
-		const clientY =
-			"touches" in event ? event.touches[0].clientY : event.clientY;
 
 		const deltaX = clientX - startX;
-		const deltaY = clientY - startY;
-
-		let newWidth = startWidth;
-		let newHeight = startHeight;
-
-		if (resizeHandle.includes("right")) {
-			newWidth = startWidth + deltaX;
-		}
-		if (resizeHandle.includes("left")) {
-			newWidth = startWidth - deltaX;
-		}
-		if (resizeHandle.includes("bottom")) {
-			newHeight = startHeight + deltaY;
-		}
-		if (resizeHandle.includes("top")) {
-			newHeight = startHeight - deltaY;
-		}
-
+		let newWidth = startWidth + deltaX;
 		newWidth = Math.max(MIN_SIZE, newWidth);
-		newHeight = Math.max(MIN_SIZE, newHeight);
-
-		if (aspectRatio > 0) {
-			const hasHorizontal =
-				resizeHandle.includes("right") || resizeHandle.includes("left");
-			if (hasHorizontal) {
-				newHeight = newWidth / aspectRatio;
-			} else {
-				newWidth = newHeight * aspectRatio;
-			}
-		}
 
 		imgElement.style.width = `${newWidth}px`;
-		imgElement.style.height = `${newHeight}px`;
+		imgElement.style.height = "auto";
 	}
 
 	function handleResizeEnd() {
-		if (!isDragging) return;
+		if (!isResizing) return;
 
 		const newWidth = imgElement.offsetWidth;
 		const newHeight = imgElement.offsetHeight;
@@ -129,8 +93,7 @@
 			})
 			.run();
 
-		isDragging = false;
-		resizeHandle = null;
+		isResizing = false;
 
 		document.removeEventListener("mousemove", handleResizeMove);
 		document.removeEventListener("mouseup", handleResizeEnd);
@@ -150,7 +113,7 @@
 	});
 </script>
 
-<div class="image-node-wrapper" bind:this={wrapperElement}>
+<div class="group relative mx-auto w-fit">
 	{#if src}
 		<img
 			bind:this={imgElement}
@@ -160,10 +123,11 @@
 			style:width={width ? `${width}px` : undefined}
 			style:height={height ? `${height}px` : undefined}
 			draggable="false"
+			class="block max-w-full select-none rounded-md transition-shadow duration-200 hover:shadow-md hover:ring-1 hover:ring-border/60 {isNodeSelected ? 'ring-1 ring-primary/50' : ''}"
 		/>
 	{:else}
 		<div
-			class="image-placeholder"
+			class="flex min-h-[150px] min-w-[200px] items-center justify-center rounded bg-gray-100 text-sm text-gray-400"
 			style:width={width ? `${width}px` : "200px"}
 			style:height={height ? `${height}px` : "150px"}
 		>
@@ -172,188 +136,30 @@
 	{/if}
 
 	{#if isUploading}
-		<div class="upload-overlay">
-			<div class="spinner"></div>
-			<div class="progress-text">Uploading...</div>
+		<div
+			class="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded bg-black/40 text-white"
+		>
+			<div
+				class="h-6 w-6 animate-spin rounded-full border-[3px] border-white/30 border-t-white"
+			></div>
+			<div class="text-xs font-medium">Uploading...</div>
 		</div>
 	{:else if hasError}
-		<div class="error-overlay">
+		<div
+			class="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded bg-red-500/10 text-red-500"
+		>
 			<span>Upload failed</span>
 		</div>
 	{/if}
 
-	{#if showResizeHandles}
+	{#if showResizeHandle}
 		<div
-			class="resize-handle top-left"
+			class="absolute top-1/2 -translate-y-1/2 -right-1 w-1 h-10 cursor-col-resize rounded-full bg-gray-400/50 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-gray-500/70 {isNodeSelected || isResizing ? 'opacity-100' : ''}"
 			role="button"
 			tabindex="0"
-			aria-label="Resize image from top-left"
-			onmousedown={(e) => handleResizeStart("top-left", e)}
-			ontouchstart={(e) => handleResizeStart("top-left", e)}
-		></div>
-		<div
-			class="resize-handle top-right"
-			role="button"
-			tabindex="0"
-			aria-label="Resize image from top-right"
-			onmousedown={(e) => handleResizeStart("top-right", e)}
-			ontouchstart={(e) => handleResizeStart("top-right", e)}
-		></div>
-		<div
-			class="resize-handle bottom-left"
-			role="button"
-			tabindex="0"
-			aria-label="Resize image from bottom-left"
-			onmousedown={(e) => handleResizeStart("bottom-left", e)}
-			ontouchstart={(e) => handleResizeStart("bottom-left", e)}
-		></div>
-		<div
-			class="resize-handle bottom-right"
-			role="button"
-			tabindex="0"
-			aria-label="Resize image from bottom-right"
-			onmousedown={(e) => handleResizeStart("bottom-right", e)}
-			ontouchstart={(e) => handleResizeStart("bottom-right", e)}
+			aria-label="Resize image"
+			onmousedown={handleResizeStart}
+			ontouchstart={handleResizeStart}
 		></div>
 	{/if}
 </div>
-
-<style>
-	.image-node-wrapper {
-		position: relative;
-		display: inline-block;
-		line-height: 0;
-	}
-
-	.image-node-wrapper img {
-		display: block;
-		max-width: 100%;
-		user-select: none;
-		-webkit-user-drag: none;
-	}
-
-	.image-placeholder {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background-color: #f3f4f6;
-		border-radius: 4px;
-		color: #9ca3af;
-		font-size: 14px;
-		min-width: 200px;
-		min-height: 150px;
-	}
-
-	.upload-overlay,
-	.error-overlay {
-		position: absolute;
-		inset: 0;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		border-radius: 4px;
-		gap: 8px;
-	}
-
-	.upload-overlay {
-		background-color: rgba(0, 0, 0, 0.4);
-		color: white;
-	}
-
-	.error-overlay {
-		background-color: rgba(239, 68, 68, 0.1);
-		color: #ef4444;
-	}
-
-	.spinner {
-		width: 24px;
-		height: 24px;
-		border: 3px solid rgba(255, 255, 255, 0.3);
-		border-top-color: white;
-		border-radius: 50%;
-		animation: spin 0.8s linear infinite;
-	}
-
-	@keyframes spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
-	.progress-text {
-		font-size: 12px;
-		font-weight: 500;
-	}
-
-	.resize-handle {
-		position: absolute;
-		width: 12px;
-		height: 12px;
-		background-color: white;
-		border: 2px solid #3b82f6;
-		border-radius: 50%;
-		opacity: 0;
-		transition: opacity 0.15s ease;
-		z-index: 10;
-	}
-
-	.image-node-wrapper:hover .resize-handle {
-		opacity: 1;
-	}
-
-	.resize-handle:active {
-		background-color: #3b82f6;
-	}
-
-	.resize-handle.top-left {
-		top: -6px;
-		left: -6px;
-		cursor: nwse-resize;
-	}
-
-	.resize-handle.top-right {
-		top: -6px;
-		right: -6px;
-		cursor: nesw-resize;
-	}
-
-	.resize-handle.bottom-left {
-		bottom: -6px;
-		left: -6px;
-		cursor: nesw-resize;
-	}
-
-	.resize-handle.bottom-right {
-		bottom: -6px;
-		right: -6px;
-		cursor: nwse-resize;
-	}
-
-	@media (max-width: 768px) {
-		.resize-handle {
-			width: 16px;
-			height: 16px;
-		}
-
-		.resize-handle.top-left {
-			top: -8px;
-			left: -8px;
-		}
-
-		.resize-handle.top-right {
-			top: -8px;
-			right: -8px;
-		}
-
-		.resize-handle.bottom-left {
-			bottom: -8px;
-			left: -8px;
-		}
-
-		.resize-handle.bottom-right {
-			bottom: -8px;
-			right: -8px;
-		}
-	}
-</style>
