@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
-	import type { Editor } from '@tiptap/core';
+	import { onDestroy } from "svelte";
+	import type { Editor } from "@tiptap/core";
+	import { uploadTasks } from "./imageUploadState.svelte";
 
 	interface Props {
 		node: any;
@@ -8,19 +9,21 @@
 		getPos: () => number | undefined;
 	}
 
-	let {
-		node,
-		editor,
-		getPos,
-	}: Props = $props();
+	let { node, editor, getPos }: Props = $props();
 
 	let myNode = $state(node);
 
-	let src = $derived(myNode.attrs.src ?? '');
-	let alt = $derived(myNode.attrs.alt ?? '');
-	let title = $derived(myNode.attrs.title ?? '');
+	let src = $derived(myNode.attrs.src ?? "");
+	let alt = $derived(myNode.attrs.alt ?? "");
+	let title = $derived(myNode.attrs.title ?? "");
 	let width = $derived(myNode.attrs.width ?? undefined);
 	let height = $derived(myNode.attrs.height ?? undefined);
+	let uploadId = $derived(myNode.attrs.uploadId ?? null);
+
+	let task = $derived(uploadId ? uploadTasks.get(uploadId) : undefined);
+	let isUploading = $derived(task?.status === "uploading");
+	let hasError = $derived(task?.status === "error" || (src === "" && !task));
+	let showResizeHandles = $derived(src !== "" && !isUploading && !hasError);
 
 	let isDragging = $state(false);
 	let resizeHandle = $state<string | null>(null);
@@ -46,8 +49,10 @@
 		isDragging = true;
 		resizeHandle = handle;
 
-		const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
-		const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY;
+		const clientX =
+			"touches" in event ? event.touches[0].clientX : event.clientX;
+		const clientY =
+			"touches" in event ? event.touches[0].clientY : event.clientY;
 
 		startX = clientX;
 		startY = clientY;
@@ -55,17 +60,21 @@
 		startHeight = imgElement.offsetHeight;
 		aspectRatio = startHeight > 0 ? startWidth / startHeight : 0;
 
-		document.addEventListener('mousemove', handleResizeMove);
-		document.addEventListener('mouseup', handleResizeEnd);
-		document.addEventListener('touchmove', handleResizeMove, { passive: false });
-		document.addEventListener('touchend', handleResizeEnd);
+		document.addEventListener("mousemove", handleResizeMove);
+		document.addEventListener("mouseup", handleResizeEnd);
+		document.addEventListener("touchmove", handleResizeMove, {
+			passive: false,
+		});
+		document.addEventListener("touchend", handleResizeEnd);
 	}
 
 	function handleResizeMove(event: MouseEvent | TouchEvent) {
 		if (!isDragging || !resizeHandle) return;
 
-		const clientX = 'touches' in event ? event.touches[0].clientX : event.clientX;
-		const clientY = 'touches' in event ? event.touches[0].clientY : event.clientY;
+		const clientX =
+			"touches" in event ? event.touches[0].clientX : event.clientX;
+		const clientY =
+			"touches" in event ? event.touches[0].clientY : event.clientY;
 
 		const deltaX = clientX - startX;
 		const deltaY = clientY - startY;
@@ -73,16 +82,16 @@
 		let newWidth = startWidth;
 		let newHeight = startHeight;
 
-		if (resizeHandle.includes('right')) {
+		if (resizeHandle.includes("right")) {
 			newWidth = startWidth + deltaX;
 		}
-		if (resizeHandle.includes('left')) {
+		if (resizeHandle.includes("left")) {
 			newWidth = startWidth - deltaX;
 		}
-		if (resizeHandle.includes('bottom')) {
+		if (resizeHandle.includes("bottom")) {
 			newHeight = startHeight + deltaY;
 		}
-		if (resizeHandle.includes('top')) {
+		if (resizeHandle.includes("top")) {
 			newHeight = startHeight - deltaY;
 		}
 
@@ -90,7 +99,8 @@
 		newHeight = Math.max(MIN_SIZE, newHeight);
 
 		if (aspectRatio > 0) {
-			const hasHorizontal = resizeHandle.includes('right') || resizeHandle.includes('left');
+			const hasHorizontal =
+				resizeHandle.includes("right") || resizeHandle.includes("left");
 			if (hasHorizontal) {
 				newHeight = newWidth / aspectRatio;
 			} else {
@@ -108,11 +118,12 @@
 		const newWidth = imgElement.offsetWidth;
 		const newHeight = imgElement.offsetHeight;
 		const pos = getPos();
+		if (pos == null) return;
 
 		editor
 			.chain()
 			.setNodeSelection(pos)
-			.updateAttributes('image', {
+			.updateAttributes("image", {
 				width: newWidth,
 				height: newHeight,
 			})
@@ -121,63 +132,88 @@
 		isDragging = false;
 		resizeHandle = null;
 
-		document.removeEventListener('mousemove', handleResizeMove);
-		document.removeEventListener('mouseup', handleResizeEnd);
-		document.removeEventListener('touchmove', handleResizeMove);
-		document.removeEventListener('touchend', handleResizeEnd);
+		document.removeEventListener("mousemove", handleResizeMove);
+		document.removeEventListener("mouseup", handleResizeEnd);
+		document.removeEventListener("touchmove", handleResizeMove);
+		document.removeEventListener("touchend", handleResizeEnd);
 	}
 
 	onDestroy(() => {
-		document.removeEventListener('mousemove', handleResizeMove);
-		document.removeEventListener('mouseup', handleResizeEnd);
-		document.removeEventListener('touchmove', handleResizeMove);
-		document.removeEventListener('touchend', handleResizeEnd);
+		document.removeEventListener("mousemove", handleResizeMove);
+		document.removeEventListener("mouseup", handleResizeEnd);
+		document.removeEventListener("touchmove", handleResizeMove);
+		document.removeEventListener("touchend", handleResizeEnd);
+
+		if (uploadId) {
+			uploadTasks.delete(uploadId);
+		}
 	});
 </script>
 
 <div class="image-node-wrapper" bind:this={wrapperElement}>
-	<img
-		bind:this={imgElement}
-		{src}
-		{alt}
-		{title}
-		style:width={width ? `${width}px` : undefined}
-		style:height={height ? `${height}px` : undefined}
-		draggable="false"
-	/>
+	{#if src}
+		<img
+			bind:this={imgElement}
+			{src}
+			{alt}
+			{title}
+			style:width={width ? `${width}px` : undefined}
+			style:height={height ? `${height}px` : undefined}
+			draggable="false"
+		/>
+	{:else}
+		<div
+			class="image-placeholder"
+			style:width={width ? `${width}px` : "200px"}
+			style:height={height ? `${height}px` : "150px"}
+		>
+			<span>Image</span>
+		</div>
+	{/if}
 
-	{#if !isDragging}
+	{#if isUploading}
+		<div class="upload-overlay">
+			<div class="spinner"></div>
+			<div class="progress-text">Uploading...</div>
+		</div>
+	{:else if hasError}
+		<div class="error-overlay">
+			<span>Upload failed</span>
+		</div>
+	{/if}
+
+	{#if showResizeHandles}
 		<div
 			class="resize-handle top-left"
 			role="button"
 			tabindex="0"
 			aria-label="Resize image from top-left"
-			onmousedown={(e) => handleResizeStart('top-left', e)}
-			ontouchstart={(e) => handleResizeStart('top-left', e)}
+			onmousedown={(e) => handleResizeStart("top-left", e)}
+			ontouchstart={(e) => handleResizeStart("top-left", e)}
 		></div>
 		<div
 			class="resize-handle top-right"
 			role="button"
 			tabindex="0"
 			aria-label="Resize image from top-right"
-			onmousedown={(e) => handleResizeStart('top-right', e)}
-			ontouchstart={(e) => handleResizeStart('top-right', e)}
+			onmousedown={(e) => handleResizeStart("top-right", e)}
+			ontouchstart={(e) => handleResizeStart("top-right", e)}
 		></div>
 		<div
 			class="resize-handle bottom-left"
 			role="button"
 			tabindex="0"
 			aria-label="Resize image from bottom-left"
-			onmousedown={(e) => handleResizeStart('bottom-left', e)}
-			ontouchstart={(e) => handleResizeStart('bottom-left', e)}
+			onmousedown={(e) => handleResizeStart("bottom-left", e)}
+			ontouchstart={(e) => handleResizeStart("bottom-left", e)}
 		></div>
 		<div
 			class="resize-handle bottom-right"
 			role="button"
 			tabindex="0"
 			aria-label="Resize image from bottom-right"
-			onmousedown={(e) => handleResizeStart('bottom-right', e)}
-			ontouchstart={(e) => handleResizeStart('bottom-right', e)}
+			onmousedown={(e) => handleResizeStart("bottom-right", e)}
+			ontouchstart={(e) => handleResizeStart("bottom-right", e)}
 		></div>
 	{/if}
 </div>
@@ -194,6 +230,60 @@
 		max-width: 100%;
 		user-select: none;
 		-webkit-user-drag: none;
+	}
+
+	.image-placeholder {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: #f3f4f6;
+		border-radius: 4px;
+		color: #9ca3af;
+		font-size: 14px;
+		min-width: 200px;
+		min-height: 150px;
+	}
+
+	.upload-overlay,
+	.error-overlay {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		border-radius: 4px;
+		gap: 8px;
+	}
+
+	.upload-overlay {
+		background-color: rgba(0, 0, 0, 0.4);
+		color: white;
+	}
+
+	.error-overlay {
+		background-color: rgba(239, 68, 68, 0.1);
+		color: #ef4444;
+	}
+
+	.spinner {
+		width: 24px;
+		height: 24px;
+		border: 3px solid rgba(255, 255, 255, 0.3);
+		border-top-color: white;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.progress-text {
+		font-size: 12px;
+		font-weight: 500;
 	}
 
 	.resize-handle {

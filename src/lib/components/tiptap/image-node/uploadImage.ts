@@ -3,9 +3,13 @@ import { fetch as rustFetch } from '@tauri-apps/plugin-http';
 const API_ENDPOINT = import.meta.env.VITE_API_ENDPOINT;
 const API_KEY = import.meta.env.VITE_API_KEY;
 
-const _fetch = rustFetch ? rustFetch : fetch;
+const _fetch = (rustFetch as unknown as typeof fetch | undefined) || fetch;
 
-export async function uploadImage(file: File): Promise<string> {
+export interface UploadCallbacks {
+	onProgress?: (percent: number) => void;
+}
+
+export async function uploadImage(file: File, callbacks?: UploadCallbacks): Promise<string> {
 	// 1. 获取预签名 URL
 	const response = await _fetch(`${API_ENDPOINT}/pictures/upload`, {
 		method: "POST",

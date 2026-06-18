@@ -1,6 +1,6 @@
 import { Image } from '@tiptap/extension-image';
 import { mount, unmount } from 'svelte';
-import ImageNodeView from '../image-node/ImageNodeView.svelte';
+import ImageNodeView from './ImageNodeView.svelte';
 import type { NodeViewRenderer, NodeViewRendererProps } from '@tiptap/core';
 
 export const CustomImage = Image.extend({
@@ -54,6 +54,11 @@ export const CustomImage = Image.extend({
 						style: `height: ${attributes.height}px`,
 					};
 				},
+			},
+			uploadId: {
+				default: null,
+				parseHTML: () => null,
+				renderHTML: () => ({}),
 			},
 		};
 	},
