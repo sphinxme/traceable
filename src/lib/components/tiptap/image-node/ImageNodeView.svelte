@@ -123,7 +123,7 @@
 			style:width={width ? `${width}px` : undefined}
 			style:height={height ? `${height}px` : undefined}
 			draggable="false"
-			class="block max-w-full select-none rounded-md transition-shadow duration-200 hover:shadow-md hover:ring-1 hover:ring-border/60 {isNodeSelected ? 'ring-1 ring-primary/50' : ''}"
+			class="block max-w-full select-none rounded-md transition-shadow duration-200 hover:shadow-md hover:ring-1 hover:ring-border/60 {isNodeSelected ? 'shadow-md ring-1 ring-border/60' : ''}"
 		/>
 	{:else}
 		<div
@@ -154,7 +154,7 @@
 
 	{#if showResizeHandle}
 		<div
-			class="absolute top-1/2 -translate-y-1/2 -right-1 w-1 h-10 cursor-col-resize rounded-full bg-gray-400/50 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-gray-500/70 {isNodeSelected || isResizing ? 'opacity-100' : ''}"
+			class="absolute top-1/2 -translate-y-1/2 right-1 w-1 h-10 cursor-col-resize rounded-full bg-gray-400/50 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-gray-500/70 {isNodeSelected || isResizing ? 'opacity-100' : ''}"
 			role="button"
 			tabindex="0"
 			aria-label="Resize image"
