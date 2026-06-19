@@ -2,7 +2,7 @@ import type { Action } from "svelte/action";
 import interact from "interactjs";
 
 import type { Task } from "$lib/states/meta/task.svelte";
-import { draggingTaskData } from "$lib/components/todolist/controller/DragDropActions.svelte";
+import type { DragService } from "$lib/interaction/services/DragService.svelte";
 
 
 export const dayDropZone: Action<HTMLDivElement> = (node) => {
@@ -14,6 +14,7 @@ export const dayDropZone: Action<HTMLDivElement> = (node) => {
 };
 
 type DayExternalDropZoneParams = {
+    drag: DragService;
     onDragOver: (task: Task, topPx: number) => void;
     onDragEnd: () => void;
     onDrop: (task: Task, topPx: number) => void;
@@ -22,13 +23,14 @@ type DayExternalDropZoneParams = {
 export const dayExternalDropZone: Action<
     HTMLDivElement,
     DayExternalDropZoneParams
-> = (node, { onDragOver, onDragEnd, onDrop }) => {
+> = (node, { drag, onDragOver, onDragEnd, onDrop }) => {
     node.ondragover = (event) => {
         event.preventDefault();
-        if (!draggingTaskData) {
+        const data = drag.data;
+        if (!data) {
             return;
         }
-        onDragOver(draggingTaskData.task, event.offsetY);
+        onDragOver(data.task, event.offsetY);
     };
     node.ondragend = (event) => {
         event.preventDefault();
@@ -36,10 +38,11 @@ export const dayExternalDropZone: Action<
     };
     node.ondrop = (event) => {
         event.preventDefault();
-        if (!draggingTaskData) {
+        const data = drag.data;
+        if (!data) {
             return;
         }
         // const data: TaskDnDData = getDnDData("tasks");
-        onDrop(draggingTaskData.task, event.offsetY);
+        onDrop(data.task, event.offsetY);
     };
 };

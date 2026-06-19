@@ -1,9 +1,9 @@
 <script lang="ts">
 	import hotkeys from "hotkeys-js";
-	import { dragging } from "../controller/DragDropActions.svelte";
 	import type { TodoController } from "../controller/TodoController.svelte";
 	import { eventbus } from "../controller/eventbus";
 	import { isMetaKeyPressed } from "$lib/components/utils/key-state.svelte";
+	import { getInteractionContext } from "$lib/interaction/context.svelte";
 
 	interface Props {
 		controller: TodoController;
@@ -13,6 +13,8 @@
 	}
 
 	let { controller, index }: Props = $props();
+
+	const { drag } = getInteractionContext();
 
 	let hovering = $state(false);
 	$effect(() => {
@@ -33,7 +35,7 @@
 		: 'h-0'}"
 >
 	<!-- 拖拽检测区域(超出上方的relative范围) -->
-	{#if $dragging}
+	{#if drag.active}
 		<div
 			class:hovering
 			class=" absolute -bottom-1.5 -top-3 flex w-full flex-col items-center justify-center"

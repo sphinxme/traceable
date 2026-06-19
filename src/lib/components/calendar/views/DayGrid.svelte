@@ -5,6 +5,7 @@
 	import { isRestDay } from "./geometry";
 	import { roundToNearest15MinutesDayjs } from "./geometry";
 	import { dayDropZone, dayExternalDropZone } from "./interact.svelte";
+	import type { DragService } from "$lib/interaction/services/DragService.svelte";
 
 	interface Props {
 		displayDays: Dayjs[];
@@ -12,6 +13,7 @@
 		notWorkHourRange: ReadonlyArray<{ start: number; end: number }>;
 		dayHeight: number;
 		containerWidth: number;
+		drag: DragService;
 		onDragOver: (day: Dayjs, task: Task, topPx: number) => void;
 		onDrop: (day: Dayjs, task: Task, topPx: number) => void;
 		onDragEnd: () => void;
@@ -23,6 +25,7 @@
 		notWorkHourRange,
 		dayHeight = $bindable(),
 		containerWidth = $bindable(),
+		drag,
 		onDragOver,
 		onDrop,
 		onDragEnd,
@@ -136,6 +139,7 @@
 			style:grid-area="1 / {i + 1} / 1 / {i + 1}"
 			use:dayDropZone
 			use:dayExternalDropZone={{
+				drag,
 				onDragEnd() {
 					onDragEnd();
 				},

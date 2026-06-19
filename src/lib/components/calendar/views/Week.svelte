@@ -27,6 +27,7 @@
 	import type { Store } from "$lib/states/meta/store.svelte";
 	import type { Task } from "$lib/states/meta/task.svelte";
 	import { list } from "radash";
+	import { getInteractionContext } from "$lib/interaction/context.svelte";
 
 	interface Props {
 		dayNum?: number;
@@ -35,6 +36,8 @@
 
 	let { dayNum = DEFAULT_DAY_NUM, store }: Props = $props();
 	let offsetByHour = OFFSET_BY_HOUR;
+
+	const { drag } = getInteractionContext();
 
 	let today = dayjs().startOf("day").add(offsetByHour, "hour");
 	let displayDayNum = 2 * dayNum + 1;
@@ -157,6 +160,7 @@
 			{displayDays}
 			{offsetByHour}
 			notWorkHourRange={NOT_WORK_HOUR_RANGES}
+			{drag}
 			bind:dayHeight
 			bind:containerWidth
 			onDragOver={handleDragOver}
