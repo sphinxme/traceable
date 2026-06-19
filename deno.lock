@@ -3,6 +3,7 @@
   "specifiers": {
     "jsr:@hono/hono@*": "4.9.4",
     "jsr:@mhart/aws4fetch@*": "1.0.18",
+    "npm:@floating-ui/dom@^1.7.6": "1.7.6",
     "npm:@liveblocks/client@^2.11.0": "2.24.3",
     "npm:@liveblocks/yjs@^2.11.0": "2.24.3_yjs@13.6.29",
     "npm:@lucide/svelte@0.539": "0.539.0_svelte@5.36.13__acorn@8.15.0",
@@ -236,24 +237,24 @@
       "cpu": ["x64"],
       "tarball": "https://registry.npmmirror.com/@esbuild/win32-x64/-/win32-x64-0.25.8.tgz"
     },
-    "@floating-ui/core@1.7.2": {
-      "integrity": "sha512-wNB5ooIKHQc+Kui96jE/n69rHFWAVoxn5CAzL1Xdd8FG03cgY3MLO+GF9U3W737fYDSgPWA6MReKhBQBop6Pcw==",
+    "@floating-ui/core@1.7.5": {
+      "integrity": "sha512-1Ih4WTWyw0+lKyFMcBHGbb5U5FtuHJuujoyyr5zTaWS5EYMeT6Jb2AuDeftsCsEuchO+mM2ij5+q9crhydzLhQ==",
       "dependencies": [
         "@floating-ui/utils"
       ],
-      "tarball": "https://registry.npmmirror.com/@floating-ui/core/-/core-1.7.2.tgz"
+      "tarball": "https://registry.npmmirror.com/@floating-ui/core/-/core-1.7.5.tgz"
     },
-    "@floating-ui/dom@1.7.2": {
-      "integrity": "sha512-7cfaOQuCS27HD7DX+6ib2OrnW+b4ZBwDNnCcT0uTyidcmyWb03FnQqJybDBoCnpdxwBSfA94UAYlRCt7mV+TbA==",
+    "@floating-ui/dom@1.7.6": {
+      "integrity": "sha512-9gZSAI5XM36880PPMm//9dfiEngYoC6Am2izES1FF406YFsjvyBMmeJ2g4SAju3xWwtuynNRFL2s9hgxpLI5SQ==",
       "dependencies": [
         "@floating-ui/core",
         "@floating-ui/utils"
       ],
-      "tarball": "https://registry.npmmirror.com/@floating-ui/dom/-/dom-1.7.2.tgz"
+      "tarball": "https://registry.npmmirror.com/@floating-ui/dom/-/dom-1.7.6.tgz"
     },
-    "@floating-ui/utils@0.2.10": {
-      "integrity": "sha512-aGTxbpbg8/b5JfU1HXSrbH3wXZuLPJcNEcZQFMxLs3oSzgtVu6nFPkbbGGUvBcUjKV2YyB9Wxxabo+HEH9tcRQ==",
-      "tarball": "https://registry.npmmirror.com/@floating-ui/utils/-/utils-0.2.10.tgz"
+    "@floating-ui/utils@0.2.11": {
+      "integrity": "sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==",
+      "tarball": "https://registry.npmmirror.com/@floating-ui/utils/-/utils-0.2.11.tgz"
     },
     "@interactjs/types@1.10.27": {
       "integrity": "sha512-BUdv0cvs4H5ODuwft2Xp4eL8Vmi3LcihK42z0Ft/FbVJZoRioBsxH+LlsBdK4tAie7PqlKGy+1oyOncu1nQ6eA==",
@@ -2419,6 +2420,7 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
+        "npm:@floating-ui/dom@^1.7.6",
         "npm:@liveblocks/client@^2.11.0",
         "npm:@liveblocks/yjs@^2.11.0",
         "npm:@lucide/svelte@0.539",

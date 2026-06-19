@@ -10,6 +10,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.node.json"
   },
   "dependencies": {
+    "@floating-ui/dom": "^1.7.6",
     "@liveblocks/client": "^2.11.0",
     "@liveblocks/yjs": "^2.11.0",
     "@lucide/svelte": "^0.539.0",

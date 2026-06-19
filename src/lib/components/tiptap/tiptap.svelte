@@ -3,7 +3,6 @@
 	import { Editor } from "@tiptap/core";
 	import StarterKit from "@tiptap/starter-kit";
 	import Collaboration from "@tiptap/extension-collaboration";
-	import BubbleMenu from "@tiptap/extension-bubble-menu";
 	import FileHandler from "@tiptap/extension-file-handler";
 	import type { Extension } from "@tiptap/core";
 	import * as Y from "yjs";
@@ -11,6 +10,11 @@
 	import { CustomImage } from "./image-node/CustomImage";
 	import { uploadTasks } from "./image-node/imageUploadState.svelte";
 	import BubbleMenuToolbar from "./BubbleMenuToolbar.svelte";
+	import {
+		CustomBubbleMenu,
+		createHandlers,
+	} from "./custom-bubble-menu";
+	import CustomBubbleMenuView from "./custom-bubble-menu/CustomBubbleMenu.svelte";
 
 	interface Props {
 		yDoc: Y.XmlFragment;
@@ -27,8 +31,8 @@
 	}: Props = $props();
 
 	let editorState = $state<{ editor: Editor | null }>({ editor: null });
-	let bubbleMenuElement = $state<HTMLElement | null>(null);
 	let element = $state<HTMLElement | null>(null);
+	const bubbleMenuHandlers = createHandlers();
 
 	async function getImageDimensions(
 		file: File,
@@ -138,9 +142,8 @@
 				},
 				onDrop: () => false,
 			}),
-			BubbleMenu.configure({
-				element: bubbleMenuElement,
-				updateDelay: 0,
+			CustomBubbleMenu.configure({
+				handlers: bubbleMenuHandlers,
 				options: {
 					placement: "top",
 					offset: 8,
@@ -178,11 +181,17 @@
 </script>
 
 <div style="position: relative" class="app">
-	<div bind:this={bubbleMenuElement} class="invisible">
-		{#if editorState.editor}
-			<BubbleMenuToolbar editor={editorState.editor} />
-		{/if}
-	</div>
+	{#if editorState.editor}
+		<CustomBubbleMenuView
+			editor={editorState.editor}
+			handlers={bubbleMenuHandlers}
+			options={{ placement: "top", offset: 8, flip: true, shift: true }}
+		>
+			{#snippet children()}
+				<BubbleMenuToolbar editor={editorState.editor} />
+			{/snippet}
+		</CustomBubbleMenuView>
+	{/if}
 
 	<div bind:this={element}></div>
 </div>
