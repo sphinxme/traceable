@@ -60,16 +60,14 @@ export class Store {
         return task;
     }
 
-    createTask(text = "", note = ""): Task {
+    createTask(text = ""): Task {
         const textId = this.createText(text);
-        const noteId = this.createText(note);
         const taskId = id();
 
         this.doc.transact(() => {
             const taskYMap = new Y.Map();
             taskYMap.set("id", taskId);
             taskYMap.set("textId", textId);
-            taskYMap.set("noteId", noteId);
             taskYMap.set("noteDoc", new Y.XmlFragment());
             taskYMap.set("children", new Y.Array());
             taskYMap.set("parents", new Y.Array());
@@ -96,9 +94,6 @@ export class Store {
 
                 const textId = taskYMap.get("textId");
                 if (textId) this.texts.delete(textId);
-
-                const noteId = taskYMap.get("noteId");
-                if (noteId) this.texts.delete(noteId);
 
                 const parents = (taskYMap.get("parents") as Y.Array<string>).toArray();
                 for (const parentId of parents) {
@@ -181,7 +176,6 @@ export class Store {
             eventYMap.set("taskId", taskId);
             eventYMap.set("start", start);
             eventYMap.set("end", end);
-            eventYMap.set("textId", "");
 
             this.events.set(eventId, eventYMap);
 
@@ -254,11 +248,11 @@ export class Store {
         return journal;
     }
 
-    getOrCreateJournal(key: string, time: number, type: "WEEK" | "DAY", text: string, note: string): Journal {
+    getOrCreateJournal(key: string, time: number, type: "WEEK" | "DAY", text: string): Journal {
         let journal = this.getJournal(key);
         if (journal) return journal;
 
-        const task = this.createTask(text, note);
+        const task = this.createTask(text);
 
         this.doc.transact(() => {
             const journalYMap = new Y.Map();

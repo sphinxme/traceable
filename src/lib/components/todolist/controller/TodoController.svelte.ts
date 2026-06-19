@@ -74,20 +74,20 @@ export class TodoController implements TodoLifeCycle {
     }
 
     // 需要可重复调用
-    public destory() {
+    public destroy() {
         if (this.parentController) {
             this.parentController.childrenControllers.delete(this.task.id);
         }
         // this.childrenControllers.forEach((childController) => {
-        //     childController.destory();
+        //     childController.destroy();
         // })
 
-        this.focusActions.destory();
-        this.keyboardActions.destory();
-        this.transitionActions.destory();
-        this.childrenActions.destory();
-        this.dragDropActions.destory();
-        this.statesTree.destory();
+        this.focusActions.destroy();
+        this.keyboardActions.destroy();
+        this.transitionActions.destroy();
+        this.childrenActions.destroy();
+        this.dragDropActions.destroy();
+        this.statesTree.destroy();
 
     }
     // children Controller
@@ -110,7 +110,7 @@ export class TodoController implements TodoLifeCycle {
     public deleteMyself() {
         // parent.deleteChild(task)
         this.parentController?.task.deleteChild(this.task);
-        this.destory();
+        this.destroy();
         throw new Error("not implemented");
     }
 
@@ -120,9 +120,9 @@ export class TodoController implements TodoLifeCycle {
      * 把statetree和child都挪过去
      * @param anotherTask 
      */
-    public moveInto(anotherTask: TodoController, index?: number) {
+    public receiveChild(anotherTask: TodoController, index?: number) {
         // 1. state先挪过去
-        this.statesTree.moveInto(anotherTask.statesTree);
+        this.statesTree.receiveChild(anotherTask.statesTree);
         // 2. 先attach再删除
         this.task.attachChild(anotherTask.task, index);
         anotherTask.parentController?.task?.detachChild(anotherTask.task);

@@ -7,8 +7,8 @@
 	import * as Tooltip from "$lib/components/ui/tooltip";
 
 	import {
-		foucsingEventIds,
-		highlightFEventIds,
+		focusingEventIds,
+		highlightEventIds,
 	} from "$lib/states/stores.svelte";
 	import { percent } from "./utils.svelte";
 	import type { Event } from "$lib/states/meta/event.svelte";
@@ -55,8 +55,8 @@
 		return Math.floor(percent(start, end) * dayHeight);
 	};
 
-	const highlight = $derived(highlightFEventIds[event.id]);
-	const focusMe = $derived(foucsingEventIds[event.id] || false);
+	const highlight = $derived(highlightEventIds[event.id]);
+	const focusMe = $derived(focusingEventIds[event.id] || false);
 	$effect(() => {
 		if (focusMe) {
 			container.scrollIntoView({
@@ -64,7 +64,7 @@
 				inline: "center",
 				block: "center",
 			});
-			foucsingEventIds[event.id] = false;
+			focusingEventIds[event.id] = false;
 		}
 	});
 	let parentTasks = task.parents;

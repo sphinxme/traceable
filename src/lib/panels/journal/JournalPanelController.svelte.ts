@@ -17,7 +17,7 @@ abstract class JournalPanelController implements TodoLifeCycle, PanelController 
     ) { }
 
     public onTodoReady() { }
-    public destory() { }
+    public destroy() { }
 
     pushPaths(childPaths: Task[]): void {
         throw new Error("Method not implemented.");
@@ -58,7 +58,6 @@ export class WeeklyJournalPanelController extends JournalPanelController {
                 time.valueOf(),
                 "WEEK",
                 time.format("MM/DD"),
-                `${time.format("YYYY-MM-DD")} - ${time.add(1, "week").format("YYYY-MM-DD")}`,
             );
         });
     }
@@ -90,7 +89,6 @@ export class DailyJournalPanelController extends JournalPanelController {
                 time.valueOf(),
                 "DAY",
                 time.format("MM/DD"),
-                `${time.format("YYYY-MM-DD")}`,
             );
         });
     }

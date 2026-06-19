@@ -2,8 +2,8 @@
 	import * as HoverCard from "$lib/components/ui/hover-card";
 	import type { Event } from "$lib/states/meta/event.svelte";
 	import {
-		foucsingEventIds,
-		highlightFEventIds,
+		focusingEventIds,
+		highlightEventIds,
 	} from "$lib/states/stores.svelte";
 	import dayjs from "dayjs";
 
@@ -43,15 +43,15 @@
 		closeDelay={0}
 		onOpenChange={(open) => {
 			if (open) {
-				highlightFEventIds[data.id] = true;
+				highlightEventIds[data.id] = true;
 			} else {
-				highlightFEventIds[data.id] = false;
+				highlightEventIds[data.id] = false;
 			}
 		}}
 	>
 		<HoverCard.Trigger
 			onclick={() => {
-				foucsingEventIds[data.id] = true;
+				focusingEventIds[data.id] = true;
 			}}
 		>
 			<div

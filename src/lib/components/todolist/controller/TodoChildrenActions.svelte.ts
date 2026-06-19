@@ -8,7 +8,7 @@ export class TodoChildrenActions implements TodoLifeCycle {
         public readonly host: TodoController,
     ) { }
     public onTodoReady() { }
-    public destory() { }
+    public destroy() { }
 
     // children操作
     // 获取该孩子的下一个平级兄弟(如有)

@@ -13,7 +13,7 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         public readonly host: TodoController,
     ) { }
     public onTodoReady() { }
-    public destory() { }
+    public destroy() { }
 
     //////
     // 上下导航: up/down
@@ -77,15 +77,13 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         }
 
         eventbus.emit('tab:beforeStart', { originViewId, nextViewId, cursorIndex })
-        console.log('tab:beforeStart', { originViewId, nextViewId, cursorIndex })
         // TODO: 是否需要await一下 等待变更前的todoView设置生效?
         const transition = document.startViewTransition(async () => {
-            preSilbingController.moveInto(this.host);
+            preSilbingController.receiveChild(this.host);
             preSilbingController.statesTree.unfold();
         })
         transition.finished.then(() => {
             eventbus.emit('tab:afterTransitioned', { originViewId, nextViewId, cursorIndex })
-            console.log('tab:afterTransitioned', { originViewId, nextViewId, cursorIndex });
         })
         return true;
     }
@@ -110,8 +108,8 @@ export class TodoKeyboardActions implements TodoLifeCycle {
 
         eventbus.emit('tab:beforeStart', { originViewId, nextViewId, cursorIndex })
         const transition = document.startViewTransition(async () => {
-            grandpaController.moveInto(this.host, parentIndex + 1);
-            // this.host.destory();
+            grandpaController.receiveChild(this.host, parentIndex + 1);
+            // this.host.destroy();
             await tick();
         })
         transition.finished.then(() => {
@@ -159,7 +157,6 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         // case 3: 光标在首部, prefix为空, 此时内容一定不为空
         // 行为: 在自己上面新增一个item, 然后光标跳转在新增的item上
         if (curContext.prefix.length === 0) {
-            console.log(123)
             const newViewId = this.insertBeforeMyself();
             eventbus.emit('enter:taskNextFoucs', { newViewId, cursorIndex: 0 });
             return true;
@@ -173,21 +170,21 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         return true;
     }
 
-    private insertBeforeMyself(text?: string, note?: string) {
+    private insertBeforeMyself(text?: string) {
         assertNotEmpty(this.host.parentController, "根节点无法创建前序节点");
 
         const myIndex = this.host.parentController.childrenActions.getChildIndex(this.host.task.id);
-        const newChildTask = this.host.parentController.task.insertChild(myIndex, text, note);
+        const newChildTask = this.host.parentController.task.insertChild(myIndex, text);
 
         const newViewId = this.host.calculateChildViewId(newChildTask.id);
         return newViewId;
     }
 
-    private insertAfterMyself(text?: string, note?: string) {
-        assertNotEmpty(this.host.parentController, "根节点无法创建后序节点");
+    private insertAfterMyself(text?: string) {
+        assertNotEmpty(this.host.parentController, "根节点无法创建前序节点");
 
         const myIndex = this.host.parentController.childrenActions.getChildIndex(this.host.task.id);
-        const newChildTask = this.host.parentController.task.insertChild(myIndex + 1, text, note);
+        const newChildTask = this.host.parentController.task.insertChild(myIndex + 1, text);
 
         const newViewId = this.host.parentController.calculateChildViewId(newChildTask.id);
         return newViewId;

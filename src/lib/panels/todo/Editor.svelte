@@ -41,12 +41,12 @@
 		});
 		controller.onTodoReady();
 		return () => {
-			controller.destory();
+			controller.destroy();
 		};
 	});
 </script>
 
-<svelte:window onbeforeunload={() => controller.destory()} />
+<svelte:window onbeforeunload={() => controller.destroy()} />
 <ScrollArea
 	data-tauri-drag-region
 	class="flex h-full grow flex-col overflow-auto rounded-lg bg-background py-4 pt-2 pl-4"

@@ -7,5 +7,5 @@ export interface TodoLifeCycle {
     /**
      * 需要可重复调用
      */
-    destory(): void;
+    destroy(): void;
 }

@@ -21,15 +21,6 @@ export class Task {
     readonly textId: string;
     readonly text: Y.Text;
 
-    /**
-     * @deprecated 使用noteDoc作为替代
-     */
-    readonly noteId: string;
-    /**
-     * @deprecated 使用noteDoc作为替代
-     */
-    readonly note: Y.Text;
-
     readonly noteDoc: Y.XmlFragment;
 
     constructor(yMap: Y.Map<any>, store: Store) {
@@ -40,9 +31,6 @@ export class Task {
         this.id = this.yMap.get("id");
         this.textId = this.yMap.get("textId");
         this.text = this.store.getText(this.textId)!;
-
-        this.noteId = this.yMap.get("noteId");
-        this.note = this.store.getText(this.noteId)!;
 
         this.noteDoc = this.yMap.get("noteDoc");
 
@@ -158,8 +146,8 @@ export class Task {
         });
     }
 
-    insertChild(index?: number, text: string = "", note: string = "") {
-        const child = this.store.createTask(text, note);
+    insertChild(index?: number, text: string = "") {
+        const child = this.store.createTask(text);
         this.attachChild(child, index);
         return child;
     }
@@ -199,7 +187,6 @@ export class Task {
         return {
             id: this.id,
             textId: this.textId,
-            noteId: this.noteId,
             status: this.status,
             children: this.children.toIds(),
             parents: this.parents.toIds(),

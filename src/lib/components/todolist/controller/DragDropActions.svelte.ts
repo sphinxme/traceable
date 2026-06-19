@@ -38,7 +38,7 @@ export class DragDropActions implements TodoLifeCycle {
 
     // lifecycle
     public onTodoReady() { }
-    public destory() { }
+    public destroy() { }
 
     // drag
     public startDrag() {
@@ -122,7 +122,7 @@ export class DragDropActions implements TodoLifeCycle {
                 // 先attach再detach
                 // 1. attach
                 this.host.task.attachChild(draggingTaskData.task, targetIndex);
-                this.host.statesTree.moveInto(draggingTaskData.states);
+                this.host.statesTree.receiveChild(draggingTaskData.states);
                 // 2. detach from origin
                 draggingTaskData.originParent.deleteChild(draggingTaskData.task);
                 return;

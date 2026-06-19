@@ -27,7 +27,7 @@ export class TodoFoucsActions implements TodoLifeCycle {
         eventbus.on('highlight', this.highlight);
     }
 
-    public destory() {
+    public destroy() {
         eventbus.off('highlight', this.highlight);
     }
 

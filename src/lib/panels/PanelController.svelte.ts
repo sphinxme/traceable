@@ -37,7 +37,7 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
             this.currentHomeController = TodoController.createRoot(this, this.currentPaths[this.currentPaths.length - 1], panelStateStore.createHomeByPaths(this.currentPaths));
             return () => {
                 if (this.currentHomeController) {
-                    this.currentHomeController.destory();
+                    this.currentHomeController.destroy();
                 }
             }
         })
@@ -49,9 +49,9 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
         }
     }
 
-    public destory() {
-        console.debug("editor panel destoryed")
-        // this.currentHomeController.destory();
+    public destroy() {
+        console.debug("editor panel destroyed")
+        // this.currentHomeController.destroy();
         // this.panelStateStore.savePaths(this.currentPaths.map(x => x.id));
     }
 

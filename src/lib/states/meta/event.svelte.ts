@@ -9,7 +9,6 @@ export class Event {
 
     readonly id: string;
     readonly taskId: string;
-    readonly textId: string;
 
     constructor(yMap: Y.Map<any>, store: Store) {
         this.yMap = yMap;
@@ -18,7 +17,6 @@ export class Event {
 
         this.id = this.yMap.get("id");
         this.taskId = this.yMap.get("taskId");
-        this.textId = this.yMap.get("textId");
     }
 
     get start(): number {

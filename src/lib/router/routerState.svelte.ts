@@ -19,9 +19,9 @@ class Router {
         window.addEventListener('popstate', this.handlePopState);
     }
 
-    public destory() {
+    public destroy() {
         if (this.isInitialized) {
-            console.log('destoryed')
+            console.log('destroyed')
             window.removeEventListener('popstate', this.handlePopState);
             this.isInitialized = false;
         }

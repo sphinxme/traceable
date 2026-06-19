@@ -1,5 +1,4 @@
 import { eventbus, type Events } from "$lib/components/todolist/controller/eventbus";
-import type { PanelController } from "$lib/components/todolist/controller/IPanelController.svelte";
 
 export class HighlightService {
 
@@ -8,17 +7,12 @@ export class HighlightService {
     }
 
     // 实际上用不到
-    public destory() {
+    public destroy() {
         eventbus.off('clickOnWeekEvent', this.onClickWeekEvent);
     }
 
     private onClickWeekEvent = (event: Events['clickOnWeekEvent']) => {
-        // 1. 找到当前所有panel的所有home task
-        const panels = new Set<PanelController>();
-        eventbus.emit('collectActivePanel', { panelResultSet: panels });
-        panels.forEach((panel) => {
-            panel.id
-        })
+        // TODO: Stage 1~2 接 pluggable 处理(原实现是 stray 语句 `panel.id`,无实际行为)
     }
 
 }

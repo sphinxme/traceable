@@ -23,7 +23,7 @@
 	$effect(() => {
 		controller.onTodoReady();
 		return () => {
-			controller.destory();
+			controller.destroy();
 		};
 	});
 </script>

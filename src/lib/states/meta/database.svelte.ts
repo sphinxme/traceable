@@ -50,7 +50,6 @@ export class Database {
         const tasks = this.store.tasks.toJSON() as Record<string, {
             id: string;
             textId: string;
-            noteId: string;
             children: string[];
             parents: string[];
             events: string[];

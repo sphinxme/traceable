@@ -71,7 +71,7 @@ export class TodoTransitionActions implements TodoLifeCycle {
         this.onAfterTabNewTodoMounted();
     }
 
-    public destory() {
+    public destroy() {
         // 事件卸载
         eventbus.off('tab:beforeStart', this.onBeforeTabStart);
         eventbus.off('tab:afterTransitioned', this.onAfterTabTransitioned);
@@ -187,7 +187,7 @@ export class TodoTransitionActions implements TodoLifeCycle {
         eventbus.emit('tab:beforeStart', { originViewId, nextViewId, cursorIndex })
         const transition = document.startViewTransition(async () => {
             doMove();
-            // this.host.destory();
+            // this.host.destroy();
             await tick();
         })
         transition.finished.then(() =>
