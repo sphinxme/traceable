@@ -44,7 +44,6 @@ export class TodoTransitionActions implements TodoLifeCycle {
 
     private getInitTodoViewTransitionName(): typeof this.$todoViewTransitionName {
         if (this.host.isRoot() || this.cursor.isTabbing(this.host.viewId)) {
-            console.log(`init todoview: todoView_${this.host.viewId}`)
             return `todoView_${this.host.viewId}`;
         }
 
@@ -75,7 +74,6 @@ export class TodoTransitionActions implements TodoLifeCycle {
     ///////
     public onBeforeZoomOutStart = ({ homeNextViewId }: Events['zoomout:beforeStart']) => {
         if (this.host.isRoot()) {
-            console.log(`zoomout:beforeStart-:${homeNextViewId}`);
             // 1. 设置title的viewTransitionName为nextViewId
             this.$titleViewTransitionName = `titleView_${homeNextViewId}`;
 
@@ -125,7 +123,6 @@ export class TodoTransitionActions implements TodoLifeCycle {
         }
 
         this.$todoViewTransitionName = `todoView_${event.nextViewId}`;
-        console.log(`beforeStart:todoView:${this.$todoViewTransitionName}`);
     }
 
     public onAfterTabNewTodoMounted = () => {

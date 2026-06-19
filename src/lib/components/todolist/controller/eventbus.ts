@@ -1,7 +1,6 @@
 import type { Event } from "$lib/states/meta/event.svelte";
 import type { Task } from "$lib/states/meta/task.svelte";
 import mitt, { type Emitter } from "mitt";
-import type { PanelController } from "./IPanelController.svelte";
 
 export type Events = {
     'zoomout:beforeStart': { homeNextViewId: string };
@@ -14,7 +13,6 @@ export type Events = {
 
     'clickOnWeekEvent': { event: Event, task: Task, clickCount: number };
     'highlight': { viewId: string };
-    'collectActivePanel': { panelResultSet: Set<PanelController> }
 };
 
 export const eventbus: Emitter<Events> = mitt<Events>();

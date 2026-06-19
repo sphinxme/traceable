@@ -64,10 +64,6 @@
 	]);
 	const finalLoad = loadPromise.then(() => {
 		load(doc);
-		// ========== 临时清理脏数据（运行一次后删除此行）==========
-		// db.clear();
-		// console.log("[DEV] 已清空 IndexedDB + Liveblocks 脏数据，下次启动即为空");
-		// ========== 临时清理结束 ==========
 	});
 
 	const routes = {
