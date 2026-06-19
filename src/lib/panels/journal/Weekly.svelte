@@ -8,8 +8,8 @@
 	import { PanelStateStore, type StateMap } from "$lib/states/states/StatesTree.svelte";
 	import { WeeklyJournalPanelController } from "./JournalPanelController.svelte";
 	import { onMount } from "svelte";
-	import { journalScrollStates } from "./state.svelte";
 	import { ScrollArea } from "$lib/components/ui/scroll-area";
+	import { getInteractionContext } from "$lib/interaction/context.svelte";
 
 	interface Props {
 		store: Store;
@@ -33,6 +33,8 @@
 		store,
 	);
 
+	const { scroll } = getInteractionContext();
+
 	function isCurrentWeek(t: Dayjs) {
 		return t.startOf("week").isSame(dayjs().startOf("week"));
 	}
@@ -40,20 +42,20 @@
 
 	let scrollAreaRef = $state<HTMLElement>(null as any);
 	onMount(() => {
-		if (journalScrollStates[panelId]) {
+		if (scroll.journal[panelId]) {
 			scrollAreaRef.scrollTo({
-				top: journalScrollStates[panelId].scrollTop,
-				left: journalScrollStates[panelId].scrollLeft,
+				top: scroll.journal[panelId].scrollTop,
+				left: scroll.journal[panelId].scrollLeft,
 				behavior: "instant",
 			});
 		}
 		const update = () => {
-			journalScrollStates[panelId] = {
+			scroll.journal[panelId] = {
 				scrollTop: scrollAreaRef.scrollTop,
 				scrollLeft: scrollAreaRef.scrollLeft,
 			};
 		};
-		// console.log({ journalScrollStates });
+		// console.log({ scroll.journal });
 		scrollAreaRef.addEventListener("scroll", update);
 	});
 </script>
@@ -67,7 +69,7 @@
 		{#each controller.getJournalList() as weekDoc}
 			<div>
 				<Focusable
-					focus={!journalScrollStates[panelId] &&
+					focus={!scroll.journal[panelId] &&
 						isCurrentWeek(weekDoc.time)}
 					inline="start"
 				/>

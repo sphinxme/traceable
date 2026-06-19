@@ -1,4 +1,4 @@
-import { weekPanelScrollStates } from "./state.svelte";
+import { getInteractionContext } from "$lib/interaction/context.svelte";
 
 export type RestoreKey = string;
 
@@ -16,23 +16,22 @@ export function useScrollRestore(
 	options: UseScrollRestoreOptions = {},
 ) {
 	const key = options.key ?? "weekPanel";
+	const { scroll } = getInteractionContext();
 
-	if (weekPanelScrollStates[key]) {
+	if (scroll.weekPanel[key]) {
 		ref.scrollTo({
-			top: weekPanelScrollStates[key].scrollTop,
-			left: weekPanelScrollStates[key].scrollLeft,
+			top: scroll.weekPanel[key].scrollTop,
+			left: scroll.weekPanel[key].scrollLeft,
 			behavior: "instant",
 		});
 	}
 
 	const update = () => {
-		console.log("updated");
-		weekPanelScrollStates[key] = {
+		scroll.weekPanel[key] = {
 			scrollTop: ref.scrollTop,
 			scrollLeft: ref.scrollLeft,
 		};
 	};
-	console.log({ weekPanelScrollStates });
 
 	ref.addEventListener("scroll", update);
 

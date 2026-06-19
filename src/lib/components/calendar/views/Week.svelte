@@ -17,7 +17,6 @@
 	} from "./config";
 	import { useNowIndicator } from "./useNowIndicator.svelte";
 	import { useScrollRestore } from "./useScrollRestore.svelte";
-	import { weekPanelScrollStates } from "./state.svelte";
 
 	import DayHeader from "./DayHeader.svelte";
 	import DayGrid from "./DayGrid.svelte";
@@ -37,7 +36,7 @@
 	let { dayNum = DEFAULT_DAY_NUM, store }: Props = $props();
 	let offsetByHour = OFFSET_BY_HOUR;
 
-	const { drag } = getInteractionContext();
+	const { drag, scroll } = getInteractionContext();
 
 	let today = dayjs().startOf("day").add(offsetByHour, "hour");
 	let displayDayNum = 2 * dayNum + 1;
@@ -153,7 +152,7 @@
 		<DayHeader
 			{displayDays}
 			{offsetByHour}
-			scrollStates={weekPanelScrollStates}
+			scrollStates={scroll.weekPanel}
 		/>
 
 		<DayGrid
