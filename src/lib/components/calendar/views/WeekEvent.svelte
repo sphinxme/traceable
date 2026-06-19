@@ -5,9 +5,8 @@
 	import * as Tooltip from "$lib/components/ui/tooltip";
 
 	import {
-		focusingEventIds,
-		highlightEventIds,
-	} from "$lib/states/stores.svelte";
+		getInteractionContext,
+	} from "$lib/interaction/context.svelte";
 	import {
 		calculateTopOffset2,
 		calculateEventHeight,
@@ -41,10 +40,12 @@
 		snapsOffset,
 	}: Props = $props();
 
+	const { focus } = getInteractionContext();
+
 	let container: HTMLDivElement;
 
-	const highlight = $derived(highlightEventIds[event.id]);
-	const focusMe = $derived(focusingEventIds[event.id] || false);
+	const highlight = $derived(focus.highlight[event.id]);
+	const focusMe = $derived(focus.focusing[event.id] || false);
 	$effect(() => {
 		if (focusMe) {
 			container.scrollIntoView({
@@ -52,7 +53,7 @@
 				inline: "center",
 				block: "center",
 			});
-			focusingEventIds[event.id] = false;
+			focus.focusing[event.id] = false;
 		}
 	});
 	let parentTasks = task.parents;

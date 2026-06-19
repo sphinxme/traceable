@@ -1,10 +1,7 @@
 <script lang="ts">
 	import * as HoverCard from "$lib/components/ui/hover-card";
 	import type { Event } from "$lib/states/meta/event.svelte";
-	import {
-		focusingEventIds,
-		highlightEventIds,
-	} from "$lib/states/stores.svelte";
+	import { getInteractionContext } from "$lib/interaction/context.svelte";
 	import dayjs from "dayjs";
 
 	interface Props {
@@ -14,6 +11,8 @@
 
 	let { data, isCompleted }: Props = $props();
 	let length = $derived((data.end - data.start) / (1000 * 60 * 2)); // 10分钟5px
+
+	const { focus } = getInteractionContext();
 
 	function formatDuration(duration: number): string {
 		const hours = Math.floor(duration / (60 * 60 * 1000));
@@ -43,15 +42,15 @@
 		closeDelay={0}
 		onOpenChange={(open) => {
 			if (open) {
-				highlightEventIds[data.id] = true;
+				focus.highlight[data.id] = true;
 			} else {
-				highlightEventIds[data.id] = false;
+				focus.highlight[data.id] = false;
 			}
 		}}
 	>
 		<HoverCard.Trigger
 			onclick={() => {
-				focusingEventIds[data.id] = true;
+				focus.focusing[data.id] = true;
 			}}
 		>
 			<div
