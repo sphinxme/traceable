@@ -3,7 +3,11 @@
 <script lang="ts">
 	// import Button from "$lib/components/ui/button/button.svelte";
 	// import { SquareLibrary, PanelsTopLeft, CalendarRange } from "@lucide/svelte";
-	import { onDestroy, setContext } from "svelte";
+	import { onDestroy } from "svelte";
+	import {
+		InteractionContext,
+		setInteractionContext,
+	} from "$lib/interaction/context.svelte";
 
 	// import Router from "svelte-spa-router";
 	// import { Window } from "@tauri-apps/api/window";
@@ -48,6 +52,8 @@
 
 	// const appWindow = new Window("main");
 	let open = $state(false); // open dialog
+	const interaction = new InteractionContext();
+	setInteractionContext(interaction);
 	const doc = newYDoc();
 	const loadingFromIndexedDBPromise = loadFromIndexedDB(doc);
 	const loadingFromLiveBlocksPromise = loadFromLiveBlocks(doc);
@@ -83,6 +89,7 @@
 
 	onDestroy(() => {
 		hotkeys.unbind();
+		interaction.destroy();
 	});
 </script>
 
