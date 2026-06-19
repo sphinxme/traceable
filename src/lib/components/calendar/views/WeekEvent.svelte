@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { onMount } from "svelte";
 	import dayjs from "dayjs";
-	import interact from "interactjs";
 
 	import * as ContextMenu from "$lib/components/ui/context-menu";
 	import * as Tooltip from "$lib/components/ui/tooltip";
@@ -10,12 +8,18 @@
 		focusingEventIds,
 		highlightEventIds,
 	} from "$lib/states/stores.svelte";
-	import { percent } from "./utils.svelte";
+	import {
+		calculateTopOffset2,
+		calculateEventHeight,
+	} from "./geometry";
 	import type { Event } from "$lib/states/meta/event.svelte";
 	import type { Task } from "$lib/states/meta/task.svelte";
 	import { CornerLeftUp, Redo2 } from "@lucide/svelte";
 	import { fade } from "svelte/transition";
-	import { eventbus } from "$lib/components/todolist/controller/eventbus";
+	import {
+		useEventInteract,
+		type UseEventInteractParams,
+	} from "./useEventInteract.svelte";
 
 	interface Props {
 		dayHeight: number;
@@ -38,22 +42,6 @@
 	}: Props = $props();
 
 	let container: HTMLDivElement;
-	const calculateTopOffset2 = (start: number, dayHeight: number): number => {
-		const startOfDay = dayjs(start)
-			.add(-offsetByHour, "hour")
-			.startOf("day")
-			.add(offsetByHour, "hour");
-		const percentOfDay = percent(startOfDay.valueOf(), start);
-		const result = Math.floor(percentOfDay * dayHeight);
-		return result;
-	};
-	const calculateEventHeight2 = (
-		start: number,
-		end: number,
-		dayHeight: number,
-	): number => {
-		return Math.floor(percent(start, end) * dayHeight);
-	};
 
 	const highlight = $derived(highlightEventIds[event.id]);
 	const focusMe = $derived(focusingEventIds[event.id] || false);
@@ -71,9 +59,11 @@
 
 	// 定位坐标: 移动过程中会被即时值替换
 	// 如果外部改动了, 也会自动刷新
-	let topOffset = $state(calculateTopOffset2(event.start, dayHeight)); // 单位px
+	let topOffset = $state(
+		calculateTopOffset2(event.start, offsetByHour, dayHeight),
+	); // 单位px
 	let eventHeight = $state(
-		calculateEventHeight2(event.start, event.end, dayHeight),
+		calculateEventHeight(event.start, event.end, dayHeight),
 	); // 单位px
 	let columnIndex = $state(getColumnIndex(event.start));
 	// 仅用于事件的展示, 在移动过程中会被offsetTop的即时值替换
@@ -83,8 +73,8 @@
 	let isResizing = $state(false);
 
 	$effect(() => {
-		topOffset = calculateTopOffset2(event.start, dayHeight);
-		eventHeight = calculateEventHeight2(event.start, event.end, dayHeight);
+		topOffset = calculateTopOffset2(event.start, offsetByHour, dayHeight);
+		eventHeight = calculateEventHeight(event.start, event.end, dayHeight);
 		columnIndex = getColumnIndex(event.start);
 		previewStart = event.start;
 		previewEnd = event.end;
@@ -107,114 +97,27 @@
 		return `${hours}小时${minutes}分钟`;
 	}
 
-	function roundToNearest15Minutes(
-		snapsOffset: number[],
-		offset: number,
-	): number {
-		for (const snap of snapsOffset) {
-			// 15px内自动吸附
-			if (Math.abs(offset - snap) < 6) {
-				return snap;
-			}
-		}
-		return offset;
-	}
-
-	onMount(() => {
-		// 移动过程中暂存的变量
-		let preStart = event.start;
-		let preEnd = event.end;
-		let preDuration = preStart - preEnd;
-
-		let realTopOffset = topOffset; // 吸附时使用, 虽然吸附了 但是还在继续记录移动距离
-		let realHeight = eventHeight; //  吸附时使用, 虽然吸附了 但是还在继续记录拉动距离
-		const refesh = () => {
-			preStart = event.start;
-			preEnd = event.end;
-			preDuration = preEnd - preStart;
-			realTopOffset = topOffset;
-			realHeight = eventHeight;
-		};
-
-		interact(container)
-			.resizable({
-				invert: "reposition",
-				autoScroll: false,
-				edges: {
-					bottom: true,
-					// top: true,
-				},
-				listeners: {
-					start(dragEvent) {
-						isResizing = true;
-						// 初始化中间变量, 用于显示
-						refesh();
-						container.style.opacity = "50%";
-					},
-					move(dragEvent) {
-						let heightPx = dragEvent.rect.height;
-						eventHeight = heightPx;
-						previewEnd =
-							preStart +
-							(heightPx / dayHeight) * 24 * 60 * 60 * 1000;
-						// TODO:吸附
-					},
-					end(dragEvent) {
-						isResizing = false;
-						container.style.opacity = "75%";
-						const duration =
-							(24 * 60 * 60 * 1000 * eventHeight) / dayHeight;
-						event.resizeTo(duration);
-					},
-				},
-			})
-			.draggable({
-				listeners: {
-					start(dragEvent) {
-						container.style.opacity = "50%";
-						// 初始化中间变量, 用于显示
-						refesh();
-					},
-					move(dragEvent) {
-						const targetDayStartTs = Number(
-							dragEvent.dropzone.target.dataset.dayts,
-						);
-						columnIndex = getColumnIndex(targetDayStartTs);
-						realTopOffset += dragEvent.dy;
-						topOffset = roundToNearest15Minutes(
-							snapsOffset,
-							realTopOffset,
-						);
-
-						previewStart =
-							(topOffset / dayHeight) * 24 * 60 * 60 * 1000 +
-							targetDayStartTs;
-						previewEnd = previewStart + preDuration;
-					},
-					end(dragEvent) {
-						container.style.opacity = "75%";
-						const targetDayTs = Number(
-							dragEvent.dropzone.target.dataset.dayts,
-						);
-						const startTempTs =
-							(topOffset / dayHeight) * (24 * 60 * 60 * 1000) +
-							targetDayTs;
-						const startTemp = dayjs(startTempTs)
-							.startOf("minute")
-							.valueOf();
-						event.moveTo(startTemp);
-					},
-				},
-			})
-			.on("tap", (e) => {
-				clickCount++;
-				eventbus.emit("clickOnWeekEvent", { event, task, clickCount });
-			});
-	});
+	const interactParams: UseEventInteractParams = {
+		event,
+		task,
+		getDayHeight: () => dayHeight,
+		getSnapsOffset: () => snapsOffset,
+		getColumnIndex,
+		getTopOffset: () => topOffset,
+		getEventHeight: () => eventHeight,
+		setTopOffset: (v) => (topOffset = v),
+		setEventHeight: (v) => (eventHeight = v),
+		setColumnIndex: (v) => (columnIndex = v),
+		setPreviewStart: (v) => (previewStart = v),
+		setPreviewEnd: (v) => (previewEnd = v),
+		setIsResizing: (v) => (isResizing = v),
+		bumpClickCount: () => ++clickCount,
+	};
 </script>
 
 <div
 	bind:this={container}
+	use:useEventInteract={interactParams}
 	style:z-index="8"
 	style:padding="2px"
 	class="border-1 z-10 absolute w-full ease-out grow-0 hover:opacity-90 overflow-visible text-sm text-zinc-50 opacity-75"
