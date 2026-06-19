@@ -7,6 +7,7 @@ import { PanelStateStore } from "$lib/states/states/StatesTree.svelte";
 import { eventbus } from "../components/todolist/controller/eventbus";
 import { tick } from "svelte";
 import type { PanelController } from "../components/todolist/controller/IPanelController.svelte";
+import { getInteractionContext, type InteractionContext } from "$lib/interaction/context.svelte";
 
 //
 export class EditorPanelController implements TodoLifeCycle, PanelController {
@@ -17,6 +18,7 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
     public currentPaths: Task[];
     public currentHomeController: TodoController;
     public readonly isRootHome: boolean;
+    public readonly interaction: InteractionContext;
 
     private static readonly panelScrollState: Record<string, { top: number, left: number }> = {}
 
@@ -26,6 +28,7 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
         public readonly rootTaskId: string,
         store: Store,
     ) {
+        this.interaction = getInteractionContext();
         const paths = this.panelStateStore.getPaths();
         const initialPaths = (paths).map((id) => store.getTask(id)).filter((task): task is Task => task !== undefined);
 

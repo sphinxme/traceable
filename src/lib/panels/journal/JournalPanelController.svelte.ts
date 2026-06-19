@@ -7,14 +7,19 @@ import type { PanelStateStore } from "$lib/states/states/StatesTree.svelte";
 import type { Store } from "$lib/states/meta/store.svelte";
 import dayjs from "dayjs";
 import { range } from "radash";
+import { getInteractionContext, type InteractionContext } from "$lib/interaction/context.svelte";
 
 abstract class JournalPanelController implements TodoLifeCycle, PanelController {
+    public readonly interaction: InteractionContext;
+
     public constructor(
         public readonly id: string,
         public readonly panelStateStore: PanelStateStore,
         public readonly rootTaskId: string,
         public readonly store: Store,
-    ) { }
+    ) {
+        this.interaction = getInteractionContext();
+    }
 
     public onTodoReady() { }
     public destroy() { }
