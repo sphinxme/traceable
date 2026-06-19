@@ -4,25 +4,6 @@ import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import type { TodoController } from "./TodoController.svelte";
 import { makeViewId } from "./utils";
 
-// 正在tab/untab中的todo项目的viewId, 当加载时发现自己在tansition中的时候, 要把自己的TodoViewTransitionName设上
-let tabingTodoViewId = "";
-let tabingTodoCursorIndex = 0;
-eventbus.on('tab:beforeStart', (event) => {
-    tabingTodoViewId = event.nextViewId;
-    tabingTodoCursorIndex = event.cursorIndex;
-})
-
-eventbus.on("tab:afterTransitioned", (event) => {
-    if (event.nextViewId === tabingTodoViewId) {
-        tabingTodoViewId = "";
-        tabingTodoCursorIndex = 0;
-    }
-})
-
-function isMeTabTransitioning(viewId: string): boolean {
-    return tabingTodoViewId === viewId;
-}
- 
 // 正在zoom out的, zoom out之前的home task, 那个task在zoom out之后的viewId. 当加载发现自己是的时候, 要把自己的title和todoList ViewTransitionName设上
 let zoomingViewId = "";
 eventbus.on("zoominto:beforeStart", (event) => {
@@ -60,8 +41,6 @@ export class TodoTransitionActions implements TodoLifeCycle {
         this.$titleViewTransitionName = $state(this.getInitTitleViewTransitionName());
 
         // 事件挂载
-        eventbus.on('tab:beforeStart', this.onBeforeTabStart);
-        eventbus.on('tab:afterTransitioned', this.onAfterTabTransitioned);
         eventbus.on('zoomout:beforeStart', this.onBeforeZoomOutStart);
         eventbus.on('zoomout:afterTransitioned', this.onAfterZoomOutTransitioned);
         eventbus.on('zoominto:afterTransitioned', this.onAfterZoomIntoTransitioned);
@@ -73,15 +52,17 @@ export class TodoTransitionActions implements TodoLifeCycle {
 
     public destroy() {
         // 事件卸载
-        eventbus.off('tab:beforeStart', this.onBeforeTabStart);
-        eventbus.off('tab:afterTransitioned', this.onAfterTabTransitioned);
         eventbus.off('zoomout:beforeStart', this.onBeforeZoomOutStart);
         eventbus.off('zoomout:afterTransitioned', this.onAfterZoomOutTransitioned);
         eventbus.off('zoominto:afterTransitioned', this.onAfterZoomIntoTransitioned);
     }
 
+    private get cursor() {
+        return this.host.panel.interaction.cursor;
+    }
+
     private getInitTodoViewTransitionName(): typeof this.$todoViewTransitionName {
-        if (this.host.isRoot() || isMeTabTransitioning(this.host.viewId)) {
+        if (this.host.isRoot() || this.cursor.isTabbing(this.host.viewId)) {
             console.log(`init todoview: todoView_${this.host.viewId}`)
             return `todoView_${this.host.viewId}`;
         }
@@ -157,7 +138,7 @@ export class TodoTransitionActions implements TodoLifeCycle {
     ///////
     // tab操作
     ///////
-    public onBeforeTabStart = (event: Events['tab:beforeStart']) => {
+    public onBeforeTabStart = (event: { originViewId: string; nextViewId: string; cursorIndex: number }) => {
         if (event.originViewId !== this.host.viewId) {
             return;
         }
@@ -167,37 +148,13 @@ export class TodoTransitionActions implements TodoLifeCycle {
     }
 
     public onAfterTabNewTodoMounted = () => {
-        if (isMeTabTransitioning(this.host.viewId)) {
-            this.host.focusActions.onfocus(tabingTodoCursorIndex);
+        const cursorIndex = this.cursor.consumeTabCursor(this.host.viewId);
+        if (cursorIndex !== undefined) {
+            this.host.focusActions.onfocus(cursorIndex);
         }
-    }
-
-    public onAfterTabTransitioned = (event: Events['tab:afterTransitioned']) => {
-        if (event.nextViewId !== this.host.viewId) {
-            return;
-        }
-
-        // this.$todoViewTransitionName = "none";
-    }
-
-    public withTabMoveIntoTransition(taskId: string, originViewId: string, cursorIndex: number, doMove: () => void) {
-        // const originViewId = this.host.viewId;
-        const nextViewId = this.host.calculateChildViewId(taskId); // TODO:viewId有问题 对不上
-
-        eventbus.emit('tab:beforeStart', { originViewId, nextViewId, cursorIndex })
-        const transition = document.startViewTransition(async () => {
-            doMove();
-            // this.host.destroy();
-            await tick();
-        })
-        transition.finished.then(() =>
-            eventbus.emit('tab:afterTransitioned', { originViewId, nextViewId, cursorIndex })
-        )
-
     }
 
     public withAllTodoListTransition(action: () => void) {
-        
         action();
     }
 }

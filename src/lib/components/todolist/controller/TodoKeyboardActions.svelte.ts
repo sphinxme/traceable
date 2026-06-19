@@ -1,5 +1,4 @@
 import type Quill from "quill";
-import { eventbus } from "./eventbus";
 import type { TodoController } from "./TodoController.svelte";
 import { tick } from "svelte";
 import { assertNotEmpty } from "./utils";
@@ -76,14 +75,15 @@ export class TodoKeyboardActions implements TodoLifeCycle {
             alert("会成环!")
         }
 
-        eventbus.emit('tab:beforeStart', { originViewId, nextViewId, cursorIndex })
+        this.host.panel.interaction.cursor.startTab(originViewId, nextViewId, cursorIndex);
+        this.host.transitionActions.onBeforeTabStart({ originViewId, nextViewId, cursorIndex });
         // TODO: 是否需要await一下 等待变更前的todoView设置生效?
         const transition = document.startViewTransition(async () => {
             preSilbingController.receiveChild(this.host);
             preSilbingController.statesTree.unfold();
         })
         transition.finished.then(() => {
-            eventbus.emit('tab:afterTransitioned', { originViewId, nextViewId, cursorIndex })
+            this.host.panel.interaction.cursor.endTab(nextViewId);
         })
         return true;
     }
@@ -106,14 +106,15 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         const originViewId = this.host.viewId;
         const nextViewId = grandpaController.calculateChildViewId(this.host.task.id);
 
-        eventbus.emit('tab:beforeStart', { originViewId, nextViewId, cursorIndex })
+        this.host.panel.interaction.cursor.startTab(originViewId, nextViewId, cursorIndex);
+        this.host.transitionActions.onBeforeTabStart({ originViewId, nextViewId, cursorIndex });
         const transition = document.startViewTransition(async () => {
             grandpaController.receiveChild(this.host, parentIndex + 1);
             // this.host.destroy();
             await tick();
         })
         transition.finished.then(() => {
-            eventbus.emit('tab:afterTransitioned', { originViewId, nextViewId, cursorIndex })
+            this.host.panel.interaction.cursor.endTab(nextViewId);
         })
 
         return true;

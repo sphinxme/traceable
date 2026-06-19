@@ -4,9 +4,6 @@ import mitt, { type Emitter } from "mitt";
 import type { PanelController } from "./IPanelController.svelte";
 
 export type Events = {
-    'tab:beforeStart': { originViewId: string, nextViewId: string, cursorIndex: number };
-    'tab:afterTransitioned': { originViewId: string, nextViewId: string, cursorIndex: number };
-
     'zoomout:beforeStart': { homeNextViewId: string };
     'zoomout:afterTransitioned': { homeNextViewId: string };
 
