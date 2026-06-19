@@ -4,25 +4,6 @@ import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import type { TodoController } from "./TodoController.svelte";
 import { makeViewId } from "./utils";
 
-// 正在zoom out的, zoom out之前的home task, 那个task在zoom out之后的viewId. 当加载发现自己是的时候, 要把自己的title和todoList ViewTransitionName设上
-let zoomingViewId = "";
-eventbus.on("zoominto:beforeStart", (event) => {
-    zoomingViewId = event.futureHomeViewId;
-})
-eventbus.on("zoominto:afterTransitioned", (event) => {
-    if (event.futureHomeViewId === zoomingViewId) {
-        zoomingViewId = "";
-    }
-})
-eventbus.on("zoomout:afterTransitioned", (event) => {
-    if (event.homeNextViewId === zoomingViewId) {
-        zoomingViewId = "";
-    }
-})
-function isMeZoomingOut(viewId: string): boolean {
-    return zoomingViewId === viewId;
-}
-
 export class TodoTransitionActions implements TodoLifeCycle {
 
     // states: 供UI使用, 当外部变动时, 这些值将会变动
@@ -75,7 +56,7 @@ export class TodoTransitionActions implements TodoLifeCycle {
             return `todoListView_${this.host.viewId}`;
         }
 
-        if (isMeZoomingOut(this.host.viewId)) {
+        if (this.cursor.isZoomingOut(this.host.viewId)) {
             return `todoListView_${this.host.viewId}`;
         }
 
@@ -83,7 +64,7 @@ export class TodoTransitionActions implements TodoLifeCycle {
     }
 
     private getInitTitleViewTransitionName(): typeof this.$titleViewTransitionName {
-        if (this.host.isRoot() || isMeZoomingOut(this.host.viewId)) {
+        if (this.host.isRoot() || this.cursor.isZoomingOut(this.host.viewId)) {
             return `titleView_${this.host.viewId}`;
         }
         return "none";
@@ -101,8 +82,7 @@ export class TodoTransitionActions implements TodoLifeCycle {
             // 2. 设置list的viewTransitionName为nextViewId
             this.$todoListViewTransitionName = `todoListView_${homeNextViewId}`;
 
-            // 3. 保存
-            zoomingViewId = homeNextViewId;
+            // 3. 保存(cursor state 由 EditorPanelController.withZoomoutTransition 调用 cursor.startZoomout 设置)
         }
     }
 
@@ -125,7 +105,7 @@ export class TodoTransitionActions implements TodoLifeCycle {
         const futureViewId = makeViewId(this.host.panel.id, this.host.task.id);
         this.$titleViewTransitionName = `titleView_${futureViewId}`;
         this.$todoListViewTransitionName = `todoListView_${futureViewId}`;
-        eventbus.emit('zoominto:beforeStart', { futureHomeViewId: futureViewId, zoomingViewId: this.host.viewId });
+        this.cursor.startZoominto(futureViewId);
         await tick();
         const transition = document.startViewTransition(() => {
             doZoomInto();
@@ -133,6 +113,7 @@ export class TodoTransitionActions implements TodoLifeCycle {
 
         await transition.finished;
         eventbus.emit('zoominto:afterTransitioned', { futureHomeViewId: futureViewId, zoomingViewId: this.host.viewId });
+        this.cursor.endZoominto(futureViewId);
     }
 
     ///////

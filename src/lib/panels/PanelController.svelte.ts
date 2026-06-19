@@ -92,12 +92,14 @@ export class EditorPanelController implements TodoLifeCycle, PanelController {
         }
 
         eventbus.emit('zoomout:beforeStart', { homeNextViewId });
+        this.interaction.cursor.startZoomout(homeNextViewId);
         await tick();
         const transition = document.startViewTransition(() => {
             doZoomout();
         });
         await transition.finished;
         eventbus.emit('zoomout:afterTransitioned', { homeNextViewId });
+        this.interaction.cursor.endZoomout(homeNextViewId);
     }
 
     /**

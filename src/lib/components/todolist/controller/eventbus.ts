@@ -7,7 +7,6 @@ export type Events = {
     'zoomout:beforeStart': { homeNextViewId: string };
     'zoomout:afterTransitioned': { homeNextViewId: string };
 
-    'zoominto:beforeStart': { zoomingViewId: string, futureHomeViewId: string };
     'zoominto:afterTransitioned': { zoomingViewId: string, futureHomeViewId: string };
 
     'drag:start': { originPanelId: string, originViewId: string, task: Task };
