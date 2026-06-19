@@ -3,7 +3,7 @@
 	import Editor from "$lib/panels/todo/Editor.svelte";
 	import { db } from "@/state";
 	import Weekly from "$lib/panels/journal/Weekly.svelte";
-	import type { StateMap } from "$lib/states/states/panel_states";
+	import type { StateMap } from "$lib/states/states/StatesTree.svelte";
 	import * as Y from "yjs";
 
 	let rootTask = db.userManager.rootTask;

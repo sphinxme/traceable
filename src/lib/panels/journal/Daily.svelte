@@ -5,8 +5,7 @@
     import dayjs, { Dayjs } from "dayjs";
     import Focusable from "$lib/components/ui/focusable/Focusable.svelte";
     import type { Store } from "$lib/states/meta/store.svelte";
-    import type { StateMap } from "$lib/states/states/panel_states";
-    import { PanelStateStore } from "$lib/states/states/StatesTree.svelte";
+    import { PanelStateStore, type StateMap } from "$lib/states/states/StatesTree.svelte";
     import { DailyJournalPanelController } from "./JournalPanelController.svelte";
 
     interface Props {

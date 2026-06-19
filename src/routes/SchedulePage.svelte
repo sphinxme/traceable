@@ -2,7 +2,7 @@
 	import { PaneGroup, Pane, PaneResizer } from "$lib/components/ui/resizable";
 	import Calendar from "$lib/panels/calendar/Calendar.svelte";
 	import { db } from "@/state";
-	import { type StateMap } from "$lib/states/states/panel_states";
+	import { type StateMap } from "$lib/states/states/StatesTree.svelte";
 	import * as Y from "yjs";
 	import Weekly from "$lib/panels/journal/Weekly.svelte";
 	let props = $props();

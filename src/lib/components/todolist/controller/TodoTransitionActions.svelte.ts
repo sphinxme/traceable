@@ -63,7 +63,7 @@ export class TodoTransitionActions implements TodoLifeCycle {
         eventbus.on('tab:beforeStart', this.onBeforeTabStart);
         eventbus.on('tab:afterTransitioned', this.onAfterTabTransitioned);
         eventbus.on('zoomout:beforeStart', this.onBeforeZoomOutStart);
-        eventbus.on('zoomout:afterTransitioned', this.onBeforeZoomOutStart);
+        eventbus.on('zoomout:afterTransitioned', this.onAfterZoomOutTransitioned);
         eventbus.on('zoominto:afterTransitioned', this.onAfterZoomIntoTransitioned);
     }
 
@@ -76,7 +76,7 @@ export class TodoTransitionActions implements TodoLifeCycle {
         eventbus.off('tab:beforeStart', this.onBeforeTabStart);
         eventbus.off('tab:afterTransitioned', this.onAfterTabTransitioned);
         eventbus.off('zoomout:beforeStart', this.onBeforeZoomOutStart);
-        eventbus.off('zoomout:afterTransitioned', this.onBeforeZoomOutStart);
+        eventbus.off('zoomout:afterTransitioned', this.onAfterZoomOutTransitioned);
         eventbus.off('zoominto:afterTransitioned', this.onAfterZoomIntoTransitioned);
     }
 
@@ -125,7 +125,7 @@ export class TodoTransitionActions implements TodoLifeCycle {
         }
     }
 
-    public onAfterZoomOutTransitioned = ({ homeNextViewId }: Events['zoomout:beforeStart']) => {
+    public onAfterZoomOutTransitioned = ({ homeNextViewId }: Events['zoomout:afterTransitioned']) => {
         if (homeNextViewId === this.host.viewId) {
             this.$titleViewTransitionName = "none";
             this.$todoListViewTransitionName = "none";

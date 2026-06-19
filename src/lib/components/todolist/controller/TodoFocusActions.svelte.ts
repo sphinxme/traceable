@@ -2,7 +2,7 @@ import { eventbus, type Events } from "./eventbus";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import type { TodoController } from "./TodoController.svelte";
 
-eventbus.on("enter:taskNextFoucs", (event) => {
+eventbus.on("enter:taskNextFocus", (event) => {
     focusOnInsertReadyViewId = event.newViewId;
     focusOnInsertReadyCursorIndex = event.cursorIndex;
 })
@@ -12,7 +12,7 @@ eventbus.on("enter:taskNextFoucs", (event) => {
 let focusOnInsertReadyViewId = "";
 let focusOnInsertReadyCursorIndex = 0;
 
-export class TodoFoucsActions implements TodoLifeCycle {
+export class TodoFocusActions implements TodoLifeCycle {
 
     constructor(
         public readonly host: TodoController

@@ -1,6 +1,8 @@
 import * as Y from "yjs";
 import type { Task } from "../meta/task.svelte";
 
+export type StateMap = Y.Map<boolean | StateMap>;
+
 /**
  * panel对应的Store
  */

@@ -1,6 +1,6 @@
 
 import type { Task } from "$lib/states/meta/task.svelte";
-import { TodoFoucsActions } from "./TodoFocusActions.svelte";
+import { TodoFocusActions } from "./TodoFocusActions.svelte";
 import { TodoKeyboardActions } from "./TodoKeyboardActions.svelte";
 import { TodoTransitionActions } from "./TodoTransitionActions.svelte";
 import { TodoChildrenActions } from "./TodoChildrenActions.svelte";
@@ -20,7 +20,7 @@ import { eventbus, type Events } from "./eventbus";
 export class TodoController implements TodoLifeCycle {
 
     // focus注册&触发
-    public readonly focusActions: TodoFoucsActions;
+    public readonly focusActions: TodoFocusActions;
     public readonly keyboardActions: TodoKeyboardActions;
     public readonly transitionActions: TodoTransitionActions;
     public readonly childrenActions: TodoChildrenActions;
@@ -36,7 +36,7 @@ export class TodoController implements TodoLifeCycle {
         public readonly statesTree: StateStore,
         public readonly parentController?: TodoController,
     ) {
-        this.focusActions = new TodoFoucsActions(this);
+        this.focusActions = new TodoFocusActions(this);
         this.keyboardActions = new TodoKeyboardActions(this);
         this.transitionActions = new TodoTransitionActions(this);
         this.childrenActions = new TodoChildrenActions(this);
