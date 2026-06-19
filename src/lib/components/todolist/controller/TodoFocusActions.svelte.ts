@@ -2,16 +2,6 @@ import { eventbus, type Events } from "./eventbus";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import type { TodoController } from "./TodoController.svelte";
 
-eventbus.on("enter:taskNextFocus", (event) => {
-    focusOnInsertReadyViewId = event.newViewId;
-    focusOnInsertReadyCursorIndex = event.cursorIndex;
-})
-
-// insert的时候用
-// ready的时候检查一下 是不是自己被插入了 要不要focus一下自己
-let focusOnInsertReadyViewId = "";
-let focusOnInsertReadyCursorIndex = 0;
-
 export class TodoFocusActions implements TodoLifeCycle {
 
     constructor(
@@ -19,10 +9,9 @@ export class TodoFocusActions implements TodoLifeCycle {
     ) { }
 
     public onTodoReady() {
-        if (this.host.viewId === focusOnInsertReadyViewId) {
-            this.onfocus(focusOnInsertReadyCursorIndex);
-            focusOnInsertReadyCursorIndex = 0;
-            focusOnInsertReadyViewId = "";
+        const cursorIndex = this.host.panel.interaction.cursor.consumeFocusInsert(this.host.viewId);
+        if (cursorIndex !== undefined) {
+            this.onfocus(cursorIndex);
         }
         eventbus.on('highlight', this.highlight);
     }

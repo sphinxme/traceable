@@ -143,13 +143,13 @@ export class TodoKeyboardActions implements TodoLifeCycle {
                 // 行为: 在自己下级孩子list里的首部 增加一个空的item, 光标跳转在新增的item上
                 const newChildTaskProxy = this.host.task.insertChild(0);
                 const newViewId = this.host.calculateChildViewId(newChildTaskProxy.id);
-                eventbus.emit('enter:taskNextFocus', { newViewId, cursorIndex: 0 });
+                this.host.panel.interaction.cursor.requestFocusInsert(newViewId, 0);
                 return true;
             } else {
                 // case 2.2: 当前未展开
                 // 行为: 在自己下面新增一个空的item, 光标跳转在新增新增的item上面
                 const newViewId = this.insertAfterMyself();
-                eventbus.emit('enter:taskNextFocus', { newViewId, cursorIndex: 0 });
+                this.host.panel.interaction.cursor.requestFocusInsert(newViewId, 0);
                 return true;
             }
         }
@@ -158,7 +158,7 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         // 行为: 在自己上面新增一个item, 然后光标跳转在新增的item上
         if (curContext.prefix.length === 0) {
             const newViewId = this.insertBeforeMyself();
-            eventbus.emit('enter:taskNextFocus', { newViewId, cursorIndex: 0 });
+            this.host.panel.interaction.cursor.requestFocusInsert(newViewId, 0);
             return true;
         }
 
@@ -166,7 +166,7 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         // 行为: 在自己上面新增一个item, 新item的值为光标前面截断(自己也要去掉光标前面的值), 然后光标还停留在自己item上
         this.insertBeforeMyself(quill.getText(new Range(0, cursorIndex))); // TODO:看下Range是否需要cursorIndex+1
         quill.editor.deleteText(0, cursorIndex);
-        eventbus.emit('enter:taskNextFocus', { newViewId: this.host.viewId, cursorIndex: 0 });
+        this.host.panel.interaction.cursor.requestFocusInsert(this.host.viewId, 0);
         return true;
     }
 
