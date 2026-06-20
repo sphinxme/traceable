@@ -165,9 +165,9 @@ export class TodoKeyboardActions implements TodoLifeCycle {
 
         // case 4: 光标在中间, cursorIndex不为0, 此时一定不是最后的位置(!==contentLength), 也一定不为空
         // 行为: 在自己上面新增一个item, 新item的值为光标前面截断(自己也要去掉光标前面的值), 然后光标还停留在自己item上
-        this.insertBeforeMyself(quill.getText(new Range(0, cursorIndex))); // TODO:看下Range是否需要cursorIndex+1
-        quill.editor.deleteText(0, cursorIndex);
-        this.host.panel.interaction.cursor.requestFocusInsert(this.host.viewId, 0);
+		this.insertBeforeMyself(quill.getText(new Range(0, cursorIndex))); // TODO:看下Range是否需要cursorIndex+1
+		quill.deleteText(0, cursorIndex);
+		this.host.panel.interaction.cursor.requestFocusInsert(this.host.viewId, 0);
         return true;
     }
 
