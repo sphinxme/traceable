@@ -1,9 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(.specify/scripts/bash/check-prerequisites.sh:*)",
-      "Bash(deno add:*)",
-      "Bash(deno run:*)"
-    ]
-  }
-}
