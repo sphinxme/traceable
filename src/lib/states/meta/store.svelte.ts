@@ -220,12 +220,23 @@ export class Store {
         return result;
     }
 
+    /**
+     * 查询与给定时间范围 [from, to) 有重叠的所有事件。
+     *
+     * 使用标准区间重叠判断：event.start < to && event.end > from。
+     * 这能正确捕获：
+     * - start 在范围内的事件
+     * - end 在范围内的事件
+     * - 跨越整个范围的事件（start < from 且 end > to）
+     * - 跨天事件的部分落在范围内的情况
+     */
     queryEventsByRange(from: number, to: number): Event[] {
         this.subscribeEventsMap();
         const result: Event[] = [];
         for (const [id, yEvent] of this.events) {
             const start = yEvent.get("start") as number;
-            if (from < start && start < to) {
+            const end = yEvent.get("end") as number;
+            if (start < to && end > from) {
                 const event = this.getEvent(id);
                 if (event) result.push(event);
             }

@@ -22,6 +22,7 @@
 	import DayGrid from "./DayGrid.svelte";
 	import DragPreview, { type DraggingTaskEvent } from "./DragPreview.svelte";
 	import WeekEvent from "./WeekEvent.svelte";
+	import { layoutEvents } from "./layout";
 	import type { Dayjs } from "dayjs";
 	import type { Store } from "$lib/states/meta/store.svelte";
 	import type { Task } from "$lib/states/meta/task.svelte";
@@ -52,6 +53,24 @@
 		store.queryEventsByRange(
 			displayStartDay.valueOf(),
 			displayEndDay.valueOf(),
+		),
+	);
+
+	/**
+	 * 布局引擎输出：将 events 切分为 per-day segments 并做重叠分列。
+	 *
+	 * 数据流：events → layoutEvents() → PositionedSegment[]
+	 * 每个 PositionedSegment 对应一个 WeekEvent 实例。
+	 * 跨天事件会产生多个 segment，重叠事件会分配到不同 lane。
+	 *
+	 * @see layout.ts
+	 */
+	const positionedSegments = $derived(
+		layoutEvents(
+			events.filter((e) => e.task),
+			displayStartDay,
+			displayEndDay,
+			offsetByHour,
 		),
 	);
 
@@ -167,15 +186,15 @@
 			onDragEnd={handleDragEnd}
 		/>
 
-		<!-- 事件 -->
-		{#each events.filter((e) => e.task) as event (event.id)}
+		<!-- 事件：每个 PositionedSegment 渲染一个 WeekEvent，跨天事件会有多个 -->
+		{#each positionedSegments as seg (seg.eventId + "-" + seg.dayIndex)}
 			<WeekEvent
 				{offsetByHour}
-				{event}
+				segment={seg}
 				{getColumnIndex}
 				{dayHeight}
 				dayWidth={Math.floor(containerWidth / displayDayNum)}
-				task={event.task!}
+				task={seg.event.task!}
 				{snapsOffset}
 			/>
 		{/each}

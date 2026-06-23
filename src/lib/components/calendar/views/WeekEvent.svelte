@@ -1,4 +1,15 @@
 <script lang="ts">
+	/**
+	 * 单个事件片段的渲染组件。
+	 *
+	 * 改造历史：原 WeekEvent 直接接收 Event 并自行计算位置（单列单段）。
+	 * 现在改为接收 PositionedSegment，定位信息（dayIndex / segStart / segEnd /
+	 * laneIndex / laneCount）由布局引擎 layout.ts 预先计算好。
+	 *
+	 * 一个跨天事件会渲染多个 WeekEvent 实例（每个 segment 一个），
+	 * 它们共享同一个 event 引用，操作任一 segment 的拖拽/resize 都
+	 * 作用于底层 Event 对象。
+	 */
 	import dayjs from "dayjs";
 
 	import * as ContextMenu from "$lib/components/ui/context-menu";
@@ -11,7 +22,7 @@
 		calculateTopOffset2,
 		calculateEventHeight,
 	} from "./geometry";
-	import type { Event } from "$lib/states/meta/event.svelte";
+	import type { PositionedSegment } from "./layout";
 	import type { Task } from "$lib/states/meta/task.svelte";
 	import { CornerLeftUp, Redo2 } from "@lucide/svelte";
 	import { fade } from "svelte/transition";
@@ -23,7 +34,7 @@
 	interface Props {
 		dayHeight: number;
 		dayWidth: number;
-		event: Event;
+		segment: PositionedSegment;
 		task: Task;
 		offsetByHour: number;
 		snapsOffset: number[];
@@ -33,7 +44,7 @@
 	let {
 		dayHeight,
 		dayWidth,
-		event,
+		segment,
 		task,
 		offsetByHour,
 		getColumnIndex,
@@ -44,6 +55,7 @@
 
 	let container: HTMLDivElement;
 
+	const event = $derived(segment.event);
 	const highlight = $derived(focus.highlight[event.id]);
 	const focusMe = $derived(focus.focusing[event.id] || false);
 	$effect(() => {
@@ -58,28 +70,54 @@
 	});
 	let parentTasks = task.parents;
 
-	// 定位坐标: 移动过程中会被即时值替换
-	// 如果外部改动了, 也会自动刷新
+	/**
+	 * 从 segment 获取定位参数。
+	 *
+	 * 注意：所有定位基于 segStart/segEnd（已裁剪到当天边界），
+	 * 而非 event.start/event.end（原始事件时间）。
+	 * 这样跨天事件的每个 segment 只在自己所属的日列内显示。
+	 *
+	 * 拖拽过程中 topOffset / eventHeight / columnIndex / previewStart /
+	 * previewEnd 会被 useEventInteract 的回调即时覆盖。
+	 */
 	let topOffset = $state(
-		calculateTopOffset2(event.start, offsetByHour, dayHeight),
-	); // 单位px
+		calculateTopOffset2(segment.segStart, offsetByHour, dayHeight),
+	);
 	let eventHeight = $state(
-		calculateEventHeight(event.start, event.end, dayHeight),
-	); // 单位px
-	let columnIndex = $state(getColumnIndex(event.start));
-	// 仅用于事件的展示, 在移动过程中会被offsetTop的即时值替换
-	let previewStart = $state(event.start);
-	let previewEnd = $state(event.end);
+		calculateEventHeight(segment.segStart, segment.segEnd, dayHeight),
+	);
+	let columnIndex = $state(segment.dayIndex);
+	let previewStart = $state(segment.segStart);
+	let previewEnd = $state(segment.segEnd);
 	let clickCount = $state(0);
 	let isResizing = $state(false);
 
 	$effect(() => {
-		topOffset = calculateTopOffset2(event.start, offsetByHour, dayHeight);
-		eventHeight = calculateEventHeight(event.start, event.end, dayHeight);
-		columnIndex = getColumnIndex(event.start);
-		previewStart = event.start;
-		previewEnd = event.end;
+		topOffset = calculateTopOffset2(
+			segment.segStart,
+			offsetByHour,
+			dayHeight,
+		);
+		eventHeight = calculateEventHeight(
+			segment.segStart,
+			segment.segEnd,
+			dayHeight,
+		);
+		columnIndex = segment.dayIndex;
+		previewStart = segment.segStart;
+		previewEnd = segment.segEnd;
 	});
+
+	/**
+	 * 重叠分列的宽度与左偏移。
+	 *
+	 * laneWidth = dayWidth / laneCount：同一重叠簇内所有 segment 等宽并排。
+	 * laneLeft = laneIndex * laneWidth：从左到右排列。
+	 */
+	let laneWidth = $derived(
+		Math.floor(dayWidth / segment.laneCount),
+	);
+	let laneLeft = $derived(segment.laneIndex * laneWidth);
 
 	function formatDuration(duration: number): string {
 		const hours = Math.floor(duration / (60 * 60 * 1000));
@@ -98,8 +136,14 @@
 		return `${hours}小时${minutes}分钟`;
 	}
 
-	const interactParams: UseEventInteractParams = {
-		event,
+	/**
+	 * 传给 useEventInteract action 的参数集。
+	 *
+	 * 使用 $derived 而非常量，确保 segment 变化时（如布局重算后 laneCount 改变）
+	 * interact.js 能拿到最新的 isLast / getSegStart 值。
+	 */
+	const interactParams: UseEventInteractParams = $derived({
+		event: segment.event,
 		task,
 		getDayHeight: () => dayHeight,
 		getSnapsOffset: () => snapsOffset,
@@ -113,7 +157,9 @@
 		setPreviewEnd: (v) => (previewEnd = v),
 		setIsResizing: (v) => (isResizing = v),
 		bumpClickCount: () => ++clickCount,
-	};
+		getSegStart: () => segment.segStart,
+		isLast: segment.isLast,
+	});
 </script>
 
 <div
@@ -121,13 +167,15 @@
 	use:useEventInteract={interactParams}
 	style:z-index="8"
 	style:padding="2px"
-	class="border-1 z-10 absolute w-full ease-out grow-0 hover:opacity-90 overflow-visible text-sm text-zinc-50 opacity-75"
+	class="border-1 z-10 absolute ease-out grow-0 hover:opacity-90 overflow-visible text-sm text-zinc-50 opacity-75"
 	style:grid-row="3"
 	style:transition-property="transform, opacity"
 	style:transition-duration="150ms"
 	style:grid-column="{columnIndex + 2} / {columnIndex + 2}"
 	style:transform="translateY({topOffset}px) {highlight ? 'scale(1.10)' : ''}"
 	style:height="{eventHeight}px"
+	style:width="{laneWidth}px"
+	style:left="{laneLeft}px"
 >
 	<Tooltip.Provider>
 		<Tooltip.Root delayDuration={0}>

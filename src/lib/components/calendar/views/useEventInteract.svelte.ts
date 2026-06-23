@@ -7,6 +7,17 @@ import type { Task } from "$lib/states/meta/task.svelte";
 import { eventbus } from "$lib/components/todolist/controller/eventbus";
 import { roundToNearest15MinutesPixels } from "./geometry";
 
+/**
+ * WeekEvent.svelte 传给 useEventInteract action 的参数集。
+ *
+ * 设计要点：
+ * - 通过 getter/setter 闭包而非直接传值，使 interact.js 回调
+ *   能实时读写 WeekEvent 的 $state（topOffset / eventHeight 等），
+ *   同时拖拽结束后能调用 event.moveTo / event.resizeTo 提交到 Yjs。
+ * - getSegStart / isLast 是跨天支持新增的字段：
+ *   getSegStart 返回当前 segment 的 segStart，用于计算 dragOffset。
+ *   isLast 控制是否允许底部 resize（只有事件最后一个 segment 可改 end）。
+ */
 export interface UseEventInteractParams {
 	event: Event;
 	task: Task;
@@ -22,6 +33,10 @@ export interface UseEventInteractParams {
 	setPreviewEnd: (v: number) => void;
 	setIsResizing: (v: boolean) => void;
 	bumpClickCount: () => number;
+	/** 当前 segment 的 segStart 时间戳，用于计算拖拽偏移 */
+	getSegStart: () => number;
+	/** 是否是事件的最后一个 segment，控制底部 resize 是否可用 */
+	isLast: boolean;
 }
 
 export const useEventInteract: Action<HTMLElement, UseEventInteractParams> = (
@@ -30,7 +45,20 @@ export const useEventInteract: Action<HTMLElement, UseEventInteractParams> = (
 ) => {
 	let preStart = p.event.start;
 	let preEnd = p.event.end;
-	let preDuration = preStart - preEnd;
+	let preDuration = preEnd - preStart;
+
+	/**
+	 * 拖拽偏移量：segment.segStart 与 event.start 的时间差。
+	 *
+	 * 跨天事件被切分为多个 segment 后，拖拽任意一个 segment 时，
+	 * 用户鼠标位置对应的是 segStart 而非 event.start。
+	 * 通过 dragOffset = segStart - event.start，可以将鼠标时间
+	 * 还原为事件实际应有的新 start：newEventStart = cursorTime - dragOffset。
+	 *
+	 * 这样 event.moveTo(newEventStart) 会整体平移整个事件，
+	 * 其他 segment 由布局引擎自动跟随重新计算。
+	 */
+	let dragOffset = 0;
 
 	let realTopOffset = p.getTopOffset();
 	let realHeight = p.getEventHeight();
@@ -41,12 +69,16 @@ export const useEventInteract: Action<HTMLElement, UseEventInteractParams> = (
 		preDuration = preEnd - preStart;
 		realTopOffset = p.getTopOffset();
 		realHeight = p.getEventHeight();
+		dragOffset = p.getSegStart() - preStart;
 	};
 
 	interact(node)
 		.resizable({
 			invert: "reposition",
 			autoScroll: false,
+			// 只有事件的最后一个 segment 才能从底部 resize（改变 event.end）。
+			// 中间 segment 不可 resize，否则会破坏事件的时间连续性。
+			enabled: p.isLast,
 			edges: {
 				bottom: true,
 			},
@@ -80,7 +112,8 @@ export const useEventInteract: Action<HTMLElement, UseEventInteractParams> = (
 					node.style.opacity = "50%";
 					refesh();
 				},
-				move(dragEvent) {
+			move(dragEvent) {
+					// 从 dropzone 的 dataset.dayts 获取当前悬停的日列起始时间戳
 					const targetDayStartTs = Number(
 						dragEvent.dropzone.target.dataset.dayts,
 					);
@@ -92,13 +125,16 @@ export const useEventInteract: Action<HTMLElement, UseEventInteractParams> = (
 					);
 					p.setTopOffset(newTopOffset);
 
-					const newPreviewStart =
+					// 鼠标位置对应的时间 = 当天列内偏移 + 日列起始
+					const cursorTime =
 						(newTopOffset / p.getDayHeight()) *
 							24 *
 							60 *
 							60 *
 							1000 +
 						targetDayStartTs;
+					// 还原为事件实际 start（整体平移，保持各 segment 相对关系）
+					const newPreviewStart = cursorTime - dragOffset;
 					p.setPreviewStart(newPreviewStart);
 					p.setPreviewEnd(newPreviewStart + preDuration);
 				},
@@ -107,13 +143,15 @@ export const useEventInteract: Action<HTMLElement, UseEventInteractParams> = (
 					const targetDayTs = Number(
 						dragEvent.dropzone.target.dataset.dayts,
 					);
-					const startTempTs =
+					// 计算鼠标最终位置对应的时间，减去 dragOffset 还原为事件 start
+					const cursorTime =
 						(p.getTopOffset() / p.getDayHeight()) *
 							(24 * 60 * 60 * 1000) +
 						targetDayTs;
-					const startTemp = dayjs(startTempTs)
+					const startTemp = dayjs(cursorTime - dragOffset)
 						.startOf("minute")
 						.valueOf();
+					// 整体平移事件，其他 segment 由布局引擎自动跟随
 					p.event.moveTo(startTemp);
 				},
 			},
@@ -126,4 +164,17 @@ export const useEventInteract: Action<HTMLElement, UseEventInteractParams> = (
 				clickCount,
 			});
 		});
+
+	/**
+	 * Svelte action 的 update 回调：当 segment 变化时重新同步参数。
+	 *
+	 * 关键：interact.js 的 resizable 需要 enabled 随 isLast 动态变化，
+	 * 否则跨天事件拖到新位置后 isLast 可能改变但 resize 权限不会更新。
+	 */
+	return {
+		update(newP: UseEventInteractParams) {
+			p = newP;
+			interact(node).resizable({ enabled: p.isLast });
+		},
+	};
 };
