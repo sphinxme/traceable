@@ -4,18 +4,15 @@
 	 *
 	 * 渲染星期 + 日期，高亮今天。使用 subgrid 与父网格的日列对齐。
 	 * sticky top-0 固定在顶部，滚动时不消失。
-	 * Focusable 组件用于首次加载时自动滚动到今天的位置。
 	 */
 	import dayjs, { type Dayjs } from "dayjs";
-	import Focusable from "$lib/components/ui/focusable/Focusable.svelte";
 
 	interface Props {
 		displayDays: Dayjs[];
 		offsetByHour: number;
-		scrollStates: Record<string, { scrollTop: number; scrollLeft: number }>;
 	}
 
-	let { displayDays, offsetByHour, scrollStates }: Props = $props();
+	let { displayDays, offsetByHour }: Props = $props();
 </script>
 
 <!--
@@ -53,19 +50,8 @@
 				)}
 			>
 				{day.format("ddd")}
-			</div>
-			<!-- 首次加载时自动滚动到今天（仅当无滚动记忆时触发） -->
-			<Focusable
-				focus={!scrollStates["weekPanel"] &&
-					day.isSame(
-						dayjs().add(-offsetByHour, "hour"),
-						"day",
-					)}
-				inline="center"
-				block="start"
-			/>
-
-			<!-- 日期：MM-DD 格式 -->
+		</div>
+		<!-- 日期：MM-DD 格式 -->
 			<div
 				style:font-size="0.7rem"
 				class=" text-xs font-extralight text-zinc-400"

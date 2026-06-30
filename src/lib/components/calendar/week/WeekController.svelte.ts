@@ -24,7 +24,7 @@ import {
 	roundToNearest15MinutesDayjs,
 } from "../shared/geometry";
 import { layoutEvents } from "../shared/layout";
-import { DEFAULT_DAY_NUM } from "./week-config";
+import { DEFAULT_DAY_NUM, SIDE_WIDTH, SIZE } from "./week-config";
 import { getInteractionContext } from "$lib/interaction/context.svelte";
 import type { Store } from "$lib/states/meta/store.svelte";
 import type { Task } from "$lib/states/meta/task.svelte";
@@ -178,6 +178,8 @@ export class WeekController {
 				left: this.scroll.weekPanel[key].scrollLeft,
 				behavior: "instant",
 			});
+		} else {
+			this.scrollToToday();
 		}
 
 		const update = () => {
@@ -189,6 +191,30 @@ export class WeekController {
 
 		ref.addEventListener("scroll", update);
 		this.scrollCleanup = () => ref.removeEventListener("scroll", update);
+	}
+
+	/**
+	 * 首次加载（无滚动记忆）时水平滚动到今天的日列并居中。
+	 * 使用网格几何常量（SIDE_WIDTH / SIZE）计算像素位置，不依赖 containerWidth。
+	 */
+	private scrollToToday() {
+		const ref = this.scrollAreaRef;
+		if (!ref) return;
+
+		requestAnimationFrame(() => {
+			const rem = parseFloat(
+				getComputedStyle(document.documentElement).fontSize,
+			);
+			const sideWidthPx = SIDE_WIDTH * rem;
+			const dayWidthPx = SIZE * rem;
+			const todayIndex = this.dayNum;
+			const todayLeft = sideWidthPx + todayIndex * dayWidthPx;
+			const scrollTarget = todayLeft - (ref.clientWidth - dayWidthPx) / 2;
+			ref.scrollTo({
+				left: Math.max(0, scrollTarget),
+				behavior: "smooth",
+			});
+		});
 	}
 
 	// ── 从 Todo 拖入：像素 → 时间转换 + 事件创建 ──

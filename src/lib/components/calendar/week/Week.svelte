@@ -28,7 +28,7 @@
 	let { store, dayNum }: Props = $props();
 
 	const controller = new WeekController(store, dayNum);
-	const { drag, scroll } = getInteractionContext();
+	const { drag } = getInteractionContext();
 
 	$effect(() => {
 		controller.onReady();
@@ -94,7 +94,6 @@
 		<DayHeader
 			displayDays={controller.displayRange.displayDays}
 			offsetByHour={controller.offsetByHour}
-			scrollStates={scroll.weekPanel}
 		/>
 
 		<!--
