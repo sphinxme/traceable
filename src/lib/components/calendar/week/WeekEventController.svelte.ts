@@ -1,0 +1,188 @@
+/**
+ * 事件块交互控制器
+ *
+ * 管理单个事件块（WeekEvent）的拖拽/缩放/点击交互状态。
+ * eventInteract.svelte.ts（Svelte Action）仅绑定 interactjs DOM 事件，
+ * 所有计算逻辑委托给本控制器，使其可脱离 DOM 进行单元测试。
+ *
+ * 使用方式：
+ *   WeekEvent.svelte 创建控制器实例，通过 $effect 同步 segment 变化，
+ *   eventInteract action 在 interactjs 回调中调用控制器方法。
+ */
+import dayjs from "dayjs";
+
+import { MS_PER_DAY } from "../shared/config";
+import {
+	calculateTopOffset,
+	calculateEventHeight,
+	roundToNearest15MinutesPixels,
+} from "../shared/geometry";
+import type { Event } from "$lib/states/meta/event.svelte";
+import type { Task } from "$lib/states/meta/task.svelte";
+import { eventbus } from "$lib/components/todolist/controller/eventbus";
+
+/**
+ * WeekEvent 的可变交互状态。
+ * 拖拽/缩放时由控制器的 onXxx 方法直接修改，视图通过 $state 响应式读取。
+ */
+export interface EventInteractState {
+	/** 事件块在日列内的垂直偏移（px） */
+	topOffset: number;
+	/** 事件块高度（px） */
+	eventHeight: number;
+	/** 当前所在日列索引（拖拽跨天时变化） */
+	columnIndex: number;
+	/** 预览起始时间戳（拖拽/缩放过程中实时更新） */
+	previewStart: number;
+	/** 预览结束时间戳（拖拽/缩放过程中实时更新） */
+	previewEnd: number;
+	/** 是否正在缩放（控制 UI 切换到缩放预览模式） */
+	isResizing: boolean;
+	/** 点击计数（用于区分单击/双击） */
+	clickCount: number;
+}
+
+export class WeekEventController {
+	/** 交互状态（$state，视图直接读取渲染） */
+	readonly state = $state<EventInteractState>({
+		topOffset: 0,
+		eventHeight: 0,
+		columnIndex: 0,
+		previewStart: 0,
+		previewEnd: 0,
+		isResizing: false,
+		clickCount: 0,
+	});
+
+	// ── 上下文参数（由视图通过 updateContext 同步） ──
+
+	private dayHeight = 0;
+	private snapsOffset: number[] = [];
+	private getColumnIndex: (t: number) => number = () => 0;
+	private segStart = 0;
+
+	// ── 拖拽/缩放缓存（refresh 时初始化，move 时使用） ──
+
+	/** 拖拽开始时的事件 start（用于计算 duration） */
+	private preStart = 0;
+	/** 事件原始时长（拖拽过程中保持不变） */
+	private preDuration = 0;
+	/**
+	 * 拖拽偏移量：segment.segStart 与 event.start 的时间差。
+	 * 跨天事件被切分为多个 segment 后，拖拽任意 segment 时，
+	 * 鼠标位置对应 segStart 而非 event.start。
+	 * 通过 dragOffset 可将鼠标时间还原为事件实际 start：
+	 *   newEventStart = cursorTime - dragOffset
+	 */
+	private dragOffset = 0;
+	/** 拖拽过程中的累积像素偏移（未经 snap 对齐） */
+	private realTopOffset = 0;
+
+	/**
+	 * 同步上下文参数（由视图在 $effect 中调用）。
+	 * 这些值随布局变化而更新，但不在 $state 中（无需触发渲染）。
+	 */
+	updateContext(
+		dayHeight: number,
+		snapsOffset: number[],
+		getColumnIndex: (t: number) => number,
+		segStart: number,
+	) {
+		this.dayHeight = dayHeight;
+		this.snapsOffset = snapsOffset;
+		this.getColumnIndex = getColumnIndex;
+		this.segStart = segStart;
+	}
+
+	/**
+	 * segment 变化时（布局重算/拖拽结束）重置交互状态到 segment 的初始位置。
+	 * 由视图在 $effect 中调用。
+	 */
+	syncToSegment(
+		segStart: number,
+		segEnd: number,
+		dayIndex: number,
+		offsetByHour: number,
+		dayHeight: number,
+	) {
+		this.state.topOffset = calculateTopOffset(segStart, offsetByHour, dayHeight);
+		this.state.eventHeight = calculateEventHeight(segStart, segEnd, dayHeight);
+		this.state.columnIndex = dayIndex;
+		this.state.previewStart = segStart;
+		this.state.previewEnd = segEnd;
+	}
+
+	/**
+	 * 拖拽/缩放开始时缓存事件时间和偏移量。
+	 * 由 eventInteract action 的 start 回调调用。
+	 */
+	refresh(event: Event) {
+		this.preStart = event.start;
+		this.preDuration = event.end - event.start;
+		this.realTopOffset = this.state.topOffset;
+		this.dragOffset = this.segStart - this.preStart;
+	}
+
+	// ── 缩放（仅 isLast 的 segment 可缩放，改变 event.end） ──
+
+	onResizeStart() {
+		this.state.isResizing = true;
+	}
+
+	/** 缩放移动：根据像素高度更新预览结束时间 */
+	onResizeMove(heightPx: number) {
+		this.state.eventHeight = heightPx;
+		this.state.previewEnd = this.preStart + (heightPx / this.dayHeight) * MS_PER_DAY;
+	}
+
+	/** 缩放结束：将新时长写入 Yjs */
+	onResizeEnd(event: Event) {
+		this.state.isResizing = false;
+		const duration = (MS_PER_DAY * this.state.eventHeight) / this.dayHeight;
+		event.resizeTo(duration);
+	}
+
+	// ── 拖拽移动（跨天拖拽 + 15 分钟对齐，改变 event.start） ──
+
+	/**
+	 * 拖拽移动：更新日列索引、垂直偏移、预览时间。
+	 * @param dy           interactjs 报告的 Y 方向增量（px）
+	 * @param targetDayTs  拖放目标日列的时间戳（从 dataset.dayts 读取）
+	 */
+	onDragMove(dy: number, targetDayTs: number) {
+		this.state.columnIndex = this.getColumnIndex(targetDayTs);
+		this.realTopOffset += dy;
+		const newTopOffset = roundToNearest15MinutesPixels(
+			this.snapsOffset,
+			this.realTopOffset,
+		);
+		this.state.topOffset = newTopOffset;
+
+		const cursorTime = (newTopOffset / this.dayHeight) * MS_PER_DAY + targetDayTs;
+		// 还原为事件实际 start（减去 dragOffset 保持各 segment 相对关系）
+		const newPreviewStart = cursorTime - this.dragOffset;
+		this.state.previewStart = newPreviewStart;
+		this.state.previewEnd = newPreviewStart + this.preDuration;
+	}
+
+	/** 拖拽结束：将新 start 写入 Yjs（event.moveTo 整体平移，其他 segment 自动跟随） */
+	onDragEnd(event: Event, targetDayTs: number) {
+		const cursorTime = (this.state.topOffset / this.dayHeight) * MS_PER_DAY + targetDayTs;
+		const startTemp = dayjs(cursorTime - this.dragOffset)
+			.startOf("minute")
+			.valueOf();
+		event.moveTo(startTemp);
+	}
+
+	// ── 点击 ──
+
+	/** 点击/双击：递增计数器并通过 eventbus 通知（双击跳转到对应 Task） */
+	onTap(event: Event, task: Task) {
+		this.state.clickCount++;
+		eventbus.emit("clickOnWeekEvent", {
+			event,
+			task,
+			clickCount: this.state.clickCount,
+		});
+	}
+}

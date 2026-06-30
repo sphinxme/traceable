@@ -18,8 +18,9 @@
  * @see Week.svelte 中的 positionedSegments $derived
  * @see WeekEvent.svelte 中的 laneWidth / laneLeft
  */
-import dayjs, { type Dayjs } from "dayjs";
+import { type Dayjs } from "dayjs";
 import type { Event } from "$lib/states/meta/event.svelte";
+import { getDayStart } from "./geometry";
 
 /**
  * 事件的一个日列片段。
@@ -52,22 +53,6 @@ export interface EventSegment {
 export interface PositionedSegment extends EventSegment {
 	laneIndex: number;
 	laneCount: number;
-}
-
-/**
- * 计算时间戳 t 所属"日"的起始时刻（考虑 offsetByHour 偏移）。
- *
- * 例如 offsetByHour=6 时：
- *   t = 2024-01-01 04:00 → 返回 2023-12-31 06:00（属于前一天）
- *   t = 2024-01-01 08:00 → 返回 2024-01-01 06:00（属于当天）
- *
- * 此逻辑与 geometry.ts 中 calculateTopOffset2 的日界计算保持一致。
- */
-function getDayStart(t: number, offsetByHour: number): Dayjs {
-	return dayjs(t)
-		.add(-offsetByHour, "hour")
-		.startOf("day")
-		.add(offsetByHour, "hour");
 }
 
 /**

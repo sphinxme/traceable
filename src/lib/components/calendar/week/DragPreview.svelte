@@ -1,11 +1,15 @@
 <script lang="ts">
+	/**
+	 * 从 Todo 列表拖入日历时的预览块
+	 *
+	 * 显示 30 分钟默认时长的事件预览（15 分钟对齐），
+	 * 仅在 draggingTaskEvent 非空时渲染。
+	 * pointer-events: none 确保不干扰拖拽操作。
+	 */
 	import dayjs from "dayjs";
-	import { calculateTopOffset } from "./geometry";
-
-	export interface DraggingTaskEvent {
-		start: number;
-		end: number;
-	}
+	import { calculateTopOffset } from "../shared/geometry";
+	import { DEFAULT_EVENT_DURATION_MS, MS_PER_DAY } from "../shared/config";
+	import type { DraggingTaskEvent } from "./WeekController.svelte";
 
 	interface Props {
 		draggingTaskEvent: DraggingTaskEvent | null;
@@ -19,6 +23,7 @@
 </script>
 
 {#if draggingTaskEvent}
+	<!-- 预览块：定位到拖拽悬停的日列和时间位置 -->
 	<div
 		style:pointer-events="none"
 		style:z-index="12"
@@ -31,7 +36,7 @@
 			offsetByHour,
 			dayHeight,
 		)}px"
-		style:height="{Math.floor((30 / (24 * 60)) * dayHeight)}px"
+		style:height="{Math.floor((DEFAULT_EVENT_DURATION_MS / MS_PER_DAY) * dayHeight)}px"
 	>
 		{dayjs(draggingTaskEvent.start).format("HH:mm")}-{dayjs(
 			draggingTaskEvent.end,

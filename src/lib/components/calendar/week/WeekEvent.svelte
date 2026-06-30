@@ -1,10 +1,9 @@
 <script lang="ts">
 	/**
-	 * 单个事件片段的渲染组件。
+	 * 单个事件片段的渲染组件（薄视图）
 	 *
-	 * 改造历史：原 WeekEvent 直接接收 Event 并自行计算位置（单列单段）。
-	 * 现在改为接收 PositionedSegment，定位信息（dayIndex / segStart / segEnd /
-	 * laneIndex / laneCount）由布局引擎 layout.ts 预先计算好。
+	 * 接收 PositionedSegment（由布局引擎预先计算好定位信息），
+	 * 创建 WeekEventController 管理交互状态，通过 eventInteract action 绑定 interactjs。
 	 *
 	 * 一个跨天事件会渲染多个 WeekEvent 实例（每个 segment 一个），
 	 * 它们共享同一个 event 引用，操作任一 segment 的拖拽/resize 都
@@ -15,21 +14,16 @@
 	import * as ContextMenu from "$lib/components/ui/context-menu";
 	import * as Tooltip from "$lib/components/ui/tooltip";
 
-	import {
-		getInteractionContext,
-	} from "$lib/interaction/context.svelte";
-	import {
-		calculateTopOffset2,
-		calculateEventHeight,
-	} from "./geometry";
-	import type { PositionedSegment } from "./layout";
+	import { getInteractionContext } from "$lib/interaction/context.svelte";
+	import { getLaneGeometry, type PositionedSegment } from "../shared/layout";
 	import type { Task } from "$lib/states/meta/task.svelte";
-	import { CornerLeftUp, Redo2 } from "@lucide/svelte";
+	import { Redo2 } from "@lucide/svelte";
 	import { fade } from "svelte/transition";
+	import { WeekEventController } from "./WeekEventController.svelte";
 	import {
-		useEventInteract,
-		type UseEventInteractParams,
-	} from "./useEventInteract.svelte";
+		eventInteract,
+		type EventInteractParams,
+	} from "./eventInteract.svelte";
 
 	interface Props {
 		dayHeight: number;
@@ -55,6 +49,8 @@
 
 	let container: HTMLDivElement;
 
+	// ── 视图特有的响应式状态（不属于控制器） ──
+
 	const event = $derived(segment.event);
 	const highlight = $derived(focus.highlight[event.id]);
 	const focusMe = $derived(focus.focusing[event.id] || false);
@@ -68,57 +64,41 @@
 			focus.focusing[event.id] = false;
 		}
 	});
-	let parentTasks = task.parents;
+	const parentTasks = $derived(task.parents);
 
-	/**
-	 * 从 segment 获取定位参数。
-	 *
-	 * 注意：所有定位基于 segStart/segEnd（已裁剪到当天边界），
-	 * 而非 event.start/event.end（原始事件时间）。
-	 * 这样跨天事件的每个 segment 只在自己所属的日列内显示。
-	 *
-	 * 拖拽过程中 topOffset / eventHeight / columnIndex / previewStart /
-	 * previewEnd 会被 useEventInteract 的回调即时覆盖。
-	 */
-	let topOffset = $state(
-		calculateTopOffset2(segment.segStart, offsetByHour, dayHeight),
-	);
-	let eventHeight = $state(
-		calculateEventHeight(segment.segStart, segment.segEnd, dayHeight),
-	);
-	let columnIndex = $state(segment.dayIndex);
-	let previewStart = $state(segment.segStart);
-	let previewEnd = $state(segment.segEnd);
-	let clickCount = $state(0);
-	let isResizing = $state(false);
+	// ── 交互控制器 ──
 
+	const controller = new WeekEventController();
+
+	/** segment 或上下文变化时同步控制器（布局重算/拖拽结束后触发） */
 	$effect(() => {
-		topOffset = calculateTopOffset2(
+		controller.updateContext(
+			dayHeight,
+			snapsOffset,
+			getColumnIndex,
 			segment.segStart,
+		);
+		controller.syncToSegment(
+			segment.segStart,
+			segment.segEnd,
+			segment.dayIndex,
 			offsetByHour,
 			dayHeight,
 		);
-		eventHeight = calculateEventHeight(
-			segment.segStart,
-			segment.segEnd,
-			dayHeight,
-		);
-		columnIndex = segment.dayIndex;
-		previewStart = segment.segStart;
-		previewEnd = segment.segEnd;
 	});
 
-	/**
-	 * 重叠分列的宽度与左偏移。
-	 *
-	 * laneWidth = dayWidth / laneCount：同一重叠簇内所有 segment 等宽并排。
-	 * laneLeft = laneIndex * laneWidth：从左到右排列。
-	 */
-	let laneWidth = $derived(
-		Math.floor(dayWidth / segment.laneCount),
-	);
-	let laneLeft = $derived(segment.laneIndex * laneWidth);
+	/** 重叠分列的宽度与左偏移 */
+	const laneGeometry = $derived(getLaneGeometry(segment, dayWidth));
 
+	/** eventInteract action 的参数（segment 变化时通过 $derived 更新） */
+	const interactParams = $derived<EventInteractParams>({
+		ctrl: controller,
+		event: segment.event,
+		task,
+		isLast: segment.isLast,
+	});
+
+	/** 将毫秒时长格式化为中文可读字符串（如 "1.5小时"、"30分钟"） */
 	function formatDuration(duration: number): string {
 		const hours = Math.floor(duration / (60 * 60 * 1000));
 		const minutes = Math.floor((duration % (60 * 60 * 1000)) / (60 * 1000));
@@ -135,47 +115,32 @@
 
 		return `${hours}小时${minutes}分钟`;
 	}
-
-	/**
-	 * 传给 useEventInteract action 的参数集。
-	 *
-	 * 使用 $derived 而非常量，确保 segment 变化时（如布局重算后 laneCount 改变）
-	 * interact.js 能拿到最新的 isLast / getSegStart 值。
-	 */
-	const interactParams: UseEventInteractParams = $derived({
-		event: segment.event,
-		task,
-		getDayHeight: () => dayHeight,
-		getSnapsOffset: () => snapsOffset,
-		getColumnIndex,
-		getTopOffset: () => topOffset,
-		getEventHeight: () => eventHeight,
-		setTopOffset: (v) => (topOffset = v),
-		setEventHeight: (v) => (eventHeight = v),
-		setColumnIndex: (v) => (columnIndex = v),
-		setPreviewStart: (v) => (previewStart = v),
-		setPreviewEnd: (v) => (previewEnd = v),
-		setIsResizing: (v) => (isResizing = v),
-		bumpClickCount: () => ++clickCount,
-		getSegStart: () => segment.segStart,
-		isLast: segment.isLast,
-	});
 </script>
 
+<!--
+	事件块根容器
+	通过 CSS Grid 定位（grid-row: 3, grid-column 由 columnIndex 决定），
+	absolute + translateY 实现垂直偏移。
+	宽度和左偏移由重叠分列（laneGeometry）计算。
+	use:eventInteract 绑定拖拽/缩放/点击交互。
+-->
 <div
 	bind:this={container}
-	use:useEventInteract={interactParams}
+	use:eventInteract={interactParams}
 	style:z-index="8"
 	style:padding="2px"
 	class="border-1 z-10 absolute ease-out grow-0 hover:opacity-90 overflow-visible text-sm text-zinc-50 opacity-75"
 	style:grid-row="3"
 	style:transition-property="transform, opacity"
 	style:transition-duration="150ms"
-	style:grid-column="{columnIndex + 2} / {columnIndex + 2}"
-	style:transform="translateY({topOffset}px) {highlight ? 'scale(1.10)' : ''}"
-	style:height="{eventHeight}px"
-	style:width="{laneWidth}px"
-	style:left="{laneLeft}px"
+	style:grid-column="{controller.state.columnIndex + 2} / {controller.state
+		.columnIndex + 2}"
+	style:transform="translateY({controller.state.topOffset}px) {highlight
+		? 'scale(1.10)'
+		: ''}"
+	style:height="{controller.state.eventHeight}px"
+	style:width="{laneGeometry.width}px"
+	style:left="{laneGeometry.left}px"
 >
 	<Tooltip.Provider>
 		<Tooltip.Root delayDuration={0}>
@@ -188,23 +153,31 @@
 							? ' shadow-2xl shadow-zinc-700'
 							: ''}"
 					>
-						{#if isResizing}
-							<!-- 垂直居中 -->
+						{#if controller.state.isResizing}
+							<!-- 缩放预览：显示起止时间和时长 -->
 							<div
 								transition:fade={{ duration: 300 }}
 								class=" pb-2 absolute flex-col flex items-start justify-between h-full text-xs font-light"
 							>
 								<div>
-									{dayjs(previewStart).format("HH:mm")}
+									{dayjs(
+										controller.state.previewStart,
+									).format("HH:mm")}
 								</div>
 								<div>
-									{formatDuration(previewEnd - previewStart)}
+									{formatDuration(
+										controller.state.previewEnd -
+											controller.state.previewStart,
+									)}
 								</div>
 								<div>
-									{dayjs(previewEnd).format("HH:mm")}
+									{dayjs(controller.state.previewEnd).format(
+										"HH:mm",
+									)}
 								</div>
 							</div>
 						{:else}
+							<!-- 默认状态：显示任务标题、时间、父任务 -->
 							<div
 								class=" absolute h-full"
 								transition:fade={{ duration: 300 }}
@@ -215,9 +188,13 @@
 									{task.$text}
 								</div>
 								<div class=" text-xs pb-3 font-extralight">
-									{dayjs(previewStart).format("HH:mm")}
+									{dayjs(
+										controller.state.previewStart,
+									).format("HH:mm")}
 									-
-									{dayjs(previewEnd).format("HH:mm")}
+									{dayjs(controller.state.previewEnd).format(
+										"HH:mm",
+									)}
 								</div>
 								{#each parentTasks as parentTask}
 									<p
@@ -230,6 +207,7 @@
 							</div>
 						{/if}
 					</ContextMenu.Trigger>
+					<!-- 右键菜单：删除事件 -->
 					<ContextMenu.Content>
 						<ContextMenu.Item onclick={() => event.delete()}>
 							删除
@@ -237,6 +215,7 @@
 					</ContextMenu.Content>
 				</ContextMenu.Root>
 			</Tooltip.Trigger>
+			<!-- 悬停 Tooltip：显示完整信息（父任务、标题、笔记、时间） -->
 			<Tooltip.Content class="p-2 z-20 max-w-60 " sideOffset={8}>
 				{#each parentTasks as parentTask}
 					<p class="text-xs inline">
@@ -256,9 +235,9 @@
 				</p>
 
 				<div class=" pt-2 text-xs font-extralight">
-					{dayjs(previewStart).format("HH:mm")}
+					{dayjs(controller.state.previewStart).format("HH:mm")}
 					-
-					{dayjs(previewEnd).format("HH:mm")}
+					{dayjs(controller.state.previewEnd).format("HH:mm")}
 				</div>
 			</Tooltip.Content>
 		</Tooltip.Root>
