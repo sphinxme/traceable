@@ -12,7 +12,10 @@
 	import dayjs from "dayjs";
 
 	import * as ContextMenu from "$lib/components/ui/context-menu";
-	import * as Tooltip from "$lib/components/ui/tooltip";
+	import {
+		PopoverTooltipController,
+		Content as PopoverTooltipContent,
+	} from "$lib/components/ui/popover-tooltip";
 
 	import { getInteractionContext } from "$lib/interaction/context.svelte";
 	import { getLaneGeometry, type PositionedSegment } from "../shared/layout";
@@ -65,6 +68,8 @@
 		}
 	});
 	const parentTasks = $derived(task.parents);
+
+	const tooltip = new PopoverTooltipController({ delayDuration: 0 });
 
 	// ── 交互控制器 ──
 
@@ -123,10 +128,12 @@
 	absolute + translateY 实现垂直偏移。
 	宽度和左偏移由重叠分列（laneGeometry）计算。
 	use:eventInteract 绑定拖拽/缩放/点击交互。
+	use:tooltipTrigger 绑定 hover 显隐 tooltip。
 -->
 <div
 	bind:this={container}
 	use:eventInteract={interactParams}
+	use:tooltip.trigger
 	style:z-index="8"
 	style:padding="2px"
 	class="border-1 z-10 absolute ease-out grow-0 hover:opacity-90 overflow-visible text-sm text-zinc-50 opacity-75"
@@ -142,104 +149,89 @@
 	style:width="{laneGeometry.width}px"
 	style:left="{laneGeometry.left}px"
 >
-	<Tooltip.Provider>
-		<Tooltip.Root delayDuration={0}>
-			<Tooltip.Trigger class="h-full w-full">
-				<ContextMenu.Root>
-					<ContextMenu.Trigger
-						class="flex h-full p-2  rounded-lg w-full relative flex-col text-left overflow-clip {task.isCompleted
-							? 'bg-zinc-400'
-							: 'bg-zinc-600'} {highlight
-							? ' shadow-2xl shadow-zinc-700'
-							: ''}"
-					>
-						{#if controller.state.isResizing}
-							<!-- 缩放预览：显示起止时间和时长 -->
-							<div
-								transition:fade={{ duration: 300 }}
-								class=" pb-2 absolute flex-col flex items-start justify-between h-full text-xs font-light"
-							>
-								<div>
-									{dayjs(
-										controller.state.previewStart,
-									).format("HH:mm")}
-								</div>
-								<div>
-									{formatDuration(
-										controller.state.previewEnd -
-											controller.state.previewStart,
-									)}
-								</div>
-								<div>
-									{dayjs(controller.state.previewEnd).format(
-										"HH:mm",
-									)}
-								</div>
-							</div>
-						{:else}
-							<!-- 默认状态：显示任务标题、时间、父任务 -->
-							<div
-								class=" absolute h-full"
-								transition:fade={{ duration: 300 }}
-							>
-								<div
-									class="break-words pb-1 text-wrap text-ellipsis"
-								>
-									{task.$text}
-								</div>
-								<div class=" text-xs pb-3 font-extralight">
-									{dayjs(
-										controller.state.previewStart,
-									).format("HH:mm")}
-									-
-									{dayjs(controller.state.previewEnd).format(
-										"HH:mm",
-									)}
-								</div>
-								{#each parentTasks as parentTask}
-									<p
-										class=" text-xs whitespace-nowrap overflow-hidden text-ellipsis font-extralight inline w-full"
-									>
-										<Redo2 class="inline" size="10" />
-										{parentTask.$text}
-									</p>
-								{/each}
-							</div>
-						{/if}
-					</ContextMenu.Trigger>
-					<!-- 右键菜单：删除事件 -->
-					<ContextMenu.Content>
-						<ContextMenu.Item onclick={() => event.delete()}>
-							删除
-						</ContextMenu.Item>
-					</ContextMenu.Content>
-				</ContextMenu.Root>
-			</Tooltip.Trigger>
-			<!-- 悬停 Tooltip：显示完整信息（父任务、标题、笔记、时间） -->
-			<Tooltip.Content class="p-2 z-20 max-w-60 " sideOffset={8}>
-				{#each parentTasks as parentTask}
-					<p class="text-xs inline">
-						<Redo2 class="inline" size="10" />
-						{parentTask.$text}
-					</p>
-				{/each}
-
-				<div class="break-words font-semibold">
-					{task.$text}
-				</div>
-
-				<p
-					class=" pt-2 text-nowrap text-zinc-500 whitespace-pre-line overflow-hidden overflow-ellipsis"
+	<ContextMenu.Root>
+		<ContextMenu.Trigger
+			class="flex h-full p-2  rounded-lg w-full relative flex-col text-left overflow-clip {task.isCompleted
+				? 'bg-zinc-400'
+				: 'bg-zinc-600'} {highlight
+				? ' shadow-2xl shadow-zinc-700'
+				: ''}"
+		>
+			{#if controller.state.isResizing}
+				<!-- 缩放预览：显示起止时间和时长 -->
+				<div
+					transition:fade={{ duration: 300 }}
+					class=" pb-2 absolute flex-col flex items-start justify-between h-full text-xs font-light"
 				>
-					{task.$note}
-				</p>
-
-				<div class=" pt-2 text-xs font-extralight">
-					{dayjs(controller.state.previewStart).format("HH:mm")}
-					-
-					{dayjs(controller.state.previewEnd).format("HH:mm")}
+					<div>
+						{dayjs(controller.state.previewStart).format("HH:mm")}
+					</div>
+					<div>
+						{formatDuration(
+							controller.state.previewEnd -
+								controller.state.previewStart,
+						)}
+					</div>
+					<div>
+						{dayjs(controller.state.previewEnd).format("HH:mm")}
+					</div>
 				</div>
-			</Tooltip.Content>
-		</Tooltip.Root>
-	</Tooltip.Provider>
+			{:else}
+				<!-- 默认状态：显示任务标题、时间、父任务 -->
+				<div
+					class=" absolute h-full"
+					transition:fade={{ duration: 300 }}
+				>
+					<div class="break-words pb-1 text-wrap text-ellipsis">
+						{task.$text}
+					</div>
+					<div class=" text-xs pb-3 font-extralight">
+						{dayjs(controller.state.previewStart).format("HH:mm")}
+						-
+						{dayjs(controller.state.previewEnd).format("HH:mm")}
+					</div>
+					{#each parentTasks as parentTask}
+						<p
+							class=" text-xs whitespace-nowrap overflow-hidden text-ellipsis font-extralight inline w-full"
+						>
+							<Redo2 class="inline" size="10" />
+							{parentTask.$text}
+						</p>
+					{/each}
+				</div>
+			{/if}
+		</ContextMenu.Trigger>
+		<!-- 右键菜单：删除事件 -->
+		<ContextMenu.Content>
+			<ContextMenu.Item onclick={() => event.delete()}>
+				删除
+			</ContextMenu.Item>
+		</ContextMenu.Content>
+	</ContextMenu.Root>
 </div>
+
+<!-- 悬停 Tooltip：显示完整信息（父任务、标题、笔记、时间） -->
+<PopoverTooltipContent {tooltip} class="p-2 max-w-60 " sideOffset={8}>
+	{#each parentTasks as parentTask}
+		<p class="text-xs inline">
+			<Redo2 class="inline" size="10" />
+			{parentTask.$text}
+		</p>
+	{/each}
+
+	<div class="break-words font-semibold">
+		{task.$text}
+	</div>
+
+	<p
+		class=" pt-2 text-nowrap text-zinc-500 whitespace-pre-line overflow-hidden overflow-ellipsis"
+	>
+		{task.$note}
+	</p>
+
+	<div class=" pt-2 text-xs font-extralight">
+		{dayjs(controller.state.previewStart).format("HH:mm")}
+		-
+		{dayjs(controller.state.previewEnd).format("HH:mm")}
+	</div>
+</PopoverTooltipContent>
