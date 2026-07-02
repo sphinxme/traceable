@@ -2,7 +2,7 @@
  * 周视图布局引擎
  *
  * 职责：将一组 Event 转换为带定位信息的 PositionedSegment[]，
- * 供 WeekEvent.svelte 直接渲染。
+ * 供 EventSegment.svelte 直接渲染。
  *
  * 处理流程：
  *   Event[] → segmentEvent (按日切分) → EventSegment[]
@@ -16,7 +16,7 @@
  * - 同一日列内时间重叠的 segments 会组成"簇"，簇内按 lane 并排显示。
  *
  * @see Week.svelte 中的 positionedSegments $derived
- * @see WeekEvent.svelte 中的 laneWidth / laneLeft
+ * @see EventSegment.svelte 中的 laneWidth / laneLeft
  */
 import { type Dayjs } from "dayjs";
 import type { Event } from "$lib/states/meta/event.svelte";
@@ -279,7 +279,7 @@ export function layoutEvents(
 /**
  * 根据 segment 的 lane 信息计算渲染时的像素宽度和左偏移。
  *
- * WeekEvent.svelte 中也可直接计算（laneWidth = dayWidth / laneCount），
+ * EventSegment.svelte 中也可直接计算（laneWidth = dayWidth / laneCount），
  * 此函数仅作为集中入口，方便未来调整间距/padding 等样式。
  */
 export function getLaneGeometry(

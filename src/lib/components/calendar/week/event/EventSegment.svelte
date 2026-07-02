@@ -3,7 +3,7 @@
 	 * 单个事件片段的渲染组件（薄视图）
 	 *
 	 * 接收 PositionedSegment（由布局引擎预先计算好定位信息），
-	 * 创建 WeekEventController 管理交互状态，通过 eventInteract action 绑定 interactjs。
+	 * 创建 EventSegmentController 管理交互状态，通过 controller.action 绑定 interactjs。
 	 *
 	 * 宏观定位（grid-row, grid-column）由 skeleton.eventSlot action 处理。
 	 * 微观定位（translateY, height, width, left）由控制器状态驱动。
@@ -26,11 +26,9 @@
 	import { Redo2 } from "@lucide/svelte";
 	import { fade } from "svelte/transition";
 	import { WeekSkeletonController } from "../skeleton/WeekSkeletonController.svelte";
-	import { WeekEventController } from "./WeekEventController.svelte";
 	import {
-		eventInteract,
-		type EventInteractParams,
-	} from "./eventInteract.svelte";
+		EventSegmentController,
+	} from "./EventSegmentController.svelte";
 
 	interface Props {
 		skeleton: WeekSkeletonController;
@@ -66,7 +64,7 @@
 
 	// ── 交互控制器 ──
 
-	const controller = new WeekEventController();
+	const controller = new EventSegmentController();
 
 	/** segment 或上下文变化时同步控制器（布局重算/拖拽结束后触发） */
 	$effect(() => {
@@ -75,6 +73,8 @@
 			snapsOffset,
 			skeleton.getColumnIndex,
 			segment.segStart,
+			segment.event,
+			task,
 		);
 		controller.syncToSegment(
 			segment.segStart,
@@ -87,28 +87,19 @@
 
 	/** 重叠分列的宽度与左偏移 */
 	const laneGeometry = $derived(getLaneGeometry(segment, skeleton.dayWidth));
-
-	/** eventInteract action 的参数（segment 变化时通过 $derived 更新） */
-	const interactParams = $derived<EventInteractParams>({
-		ctrl: controller,
-		event: segment.event,
-		task,
-		isLast: segment.isLast,
-	});
-
 </script>
 
 <!--
 	事件块根容器
 	skeleton.eventSlot 定位到 grid-row 3, grid-column = columnIndex+2, absolute。
 	微观定位通过 translateY / height / width / left 实现。
-	use:eventInteract 绑定拖拽/缩放/点击交互。
+	use:controller.action 绑定拖拽/缩放/点击交互。
 	use:tooltipTrigger 绑定 hover 显隐 tooltip。
 -->
 <div
 	bind:this={container}
 	use:skeleton.eventSlot={controller.state.columnIndex}
-	use:eventInteract={interactParams}
+	use:controller.action={segment.isLast}
 	use:tooltip.trigger
 	style:z-index={WeekSkeletonController.layers.events}
 	style:padding="2px"

@@ -3,7 +3,7 @@
 	 * 周视图网格外壳组件
 	 *
 	 * 薄容器，仅通过 skeleton.root action 应用 grid template + 固定尺寸。
-	 * 子内容（NowIndicator、DayHeader、DayGrid、WeekEvent、DragPreview 等）
+	 * 子内容（NowIndicator、DayHeader、DayGrid、EventSegment、DragPreview 等）
 	 * 由 Week.svelte 通过 children snippet 传入，保持模板可见性。
 	 */
 	import { type Snippet } from "svelte";

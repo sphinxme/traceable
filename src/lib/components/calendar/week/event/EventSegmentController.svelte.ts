@@ -1,13 +1,13 @@
 /**
  * 事件块交互控制器
  *
- * 管理单个事件块（WeekEvent）的拖拽/缩放/点击交互状态。
- * eventInteract.svelte.ts（Svelte Action）仅绑定 interactjs DOM 事件，
- * 所有计算逻辑委托给本控制器，使其可脱离 DOM 进行单元测试。
+ * 管理单个事件块（EventSegment）的拖拽/缩放/点击交互状态。
+ * 同时提供 `action` Svelte Action 绑定 interactjs DOM 事件，
+ * 所有计算逻辑在本控制器内处理，使其可脱离 DOM 进行单元测试。
  *
  * 使用方式：
- *   WeekEvent.svelte 创建控制器实例，通过 $effect 同步 segment 变化，
- *   eventInteract action 在 interactjs 回调中调用控制器方法。
+ *   EventSegment.svelte 创建控制器实例，通过 $effect 同步 segment 变化，
+ *   `use:controller.action` 绑定 interactjs 交互。
  *
  * 交互行为：
  * | 操作 | 行为 |
@@ -19,7 +19,9 @@
  * 跨天拖拽：通过 `dragOffset = segStart - event.start` 将鼠标位置还原为事件实际 start，
  * `event.moveTo()` 整体平移后其他 segment 由布局引擎自动跟随。
  */
+import type { Action } from "svelte/action";
 import dayjs from "dayjs";
+import interact from "interactjs";
 
 import { MS_PER_DAY } from "../segment_layout/config";
 import {
@@ -32,7 +34,7 @@ import type { Task } from "$lib/states/meta/task.svelte";
 import { eventbus } from "$lib/components/todolist/controller/eventbus";
 
 /**
- * WeekEvent 的可变交互状态。
+ * EventSegment 的可变交互状态。
  * 拖拽/缩放时由控制器的 onXxx 方法直接修改，视图通过 $state 响应式读取。
  */
 export interface EventInteractState {
@@ -52,7 +54,7 @@ export interface EventInteractState {
 	clickCount: number;
 }
 
-export class WeekEventController {
+export class EventSegmentController {
 	/** 交互状态（$state，视图直接读取渲染） */
 	readonly state = $state<EventInteractState>({
 		topOffset: 0,
@@ -70,6 +72,13 @@ export class WeekEventController {
 	private snapsOffset: number[] = [];
 	private getColumnIndex: (t: number) => number = () => 0;
 	private segStart = 0;
+
+	// ── 领域数据（由视图通过 updateContext 同步，供 interactjs 回调读取） ──
+
+	/** 底层 Event 对象（跨天事件的多个 segment 共享同一引用） */
+	private event: Event | null = null;
+	/** 关联的 Task（用于点击事件通知） */
+	private task: Task | null = null;
 
 	// ── 拖拽/缩放缓存（refresh 时初始化，move 时使用） ──
 
@@ -97,11 +106,15 @@ export class WeekEventController {
 		snapsOffset: number[],
 		getColumnIndex: (t: number) => number,
 		segStart: number,
+		event: Event,
+		task: Task,
 	) {
 		this.dayHeight = dayHeight;
 		this.snapsOffset = snapsOffset;
 		this.getColumnIndex = getColumnIndex;
 		this.segStart = segStart;
+		this.event = event;
+		this.task = task;
 	}
 
 	/**
@@ -195,4 +208,76 @@ export class WeekEventController {
 			clickCount: this.state.clickCount,
 		});
 	}
+
+	// ── Svelte Action：interactjs 绑定 ──
+
+	/**
+	 * Svelte Action：绑定 interactjs 拖拽/缩放/点击交互。
+	 * 挂载在 EventSegment.svelte 根 div 上，回调委托给控制器方法。
+	 * @param isLast 是否是事件的最后一个 segment（仅 last 可底部缩放）
+	 */
+	action: Action<HTMLElement, boolean> = (node, isLast) => {
+		interact(node)
+			// 底部缩放：只有事件的最后一个 segment 可缩放（改变 event.end）
+			.resizable({
+				invert: "reposition",
+				autoScroll: false,
+				enabled: isLast,
+				edges: { bottom: true },
+				listeners: {
+					start: () => {
+						this.onResizeStart();
+						node.style.opacity = "50%";
+					},
+					move: (dragEvent) => {
+						this.onResizeMove(dragEvent.rect.height);
+					},
+					end: () => {
+						this.onResizeEnd(this.event!);
+						node.style.opacity = "75%";
+					},
+				},
+			})
+			// 拖拽移动：实时更新预览位置，结束时调用 event.moveTo 整体平移
+			.draggable({
+				listeners: {
+					start: () => {
+						node.style.opacity = "50%";
+						this.refresh(this.event!);
+					},
+					move: (dragEvent) => {
+						// 从拖放目标日列的 dataset.dayts 读取时间戳
+						const targetDayTs = Number(
+							dragEvent.dropzone?.target?.dataset.dayts,
+						);
+						if (targetDayTs) {
+							this.onDragMove(dragEvent.dy, targetDayTs);
+						}
+					},
+					end: (dragEvent) => {
+						node.style.opacity = "75%";
+						const targetDayTs = Number(
+							dragEvent.dropzone?.target?.dataset.dayts,
+						);
+						if (targetDayTs) {
+							this.onDragEnd(this.event!, targetDayTs);
+						}
+					},
+				},
+			})
+			// 点击/双击：通过 eventbus 通知，双击跳转到对应 Task
+			.on("tap", () => {
+				this.onTap(this.event!, this.task!);
+			});
+
+		return {
+			/** segment 变化时更新 resize 权限（isLast 可能随拖拽位置变化） */
+			update: (newIsLast: boolean) => {
+				interact(node).resizable({ enabled: newIsLast });
+			},
+			destroy: () => {
+				interact(node).unset();
+			},
+		};
+	};
 }

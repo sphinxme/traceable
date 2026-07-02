@@ -10,7 +10,7 @@
  *   Store（Yjs，唯一事实来源）
  *     → events             $derived: queryEventsByRange(skeleton.displayRange)
  *     → positionedSegments $derived: layoutEvents() 按日界切分 + 重叠分列
- *     → Week.svelte {#each} 渲染 WeekEvent（由 skeleton.eventSlot 定位）
+ *     → Week.svelte {#each} 渲染 EventSegment（由 skeleton.eventSlot 定位）
  *
  *   用户交互（拖拽/缩放）产生的修改直接写回 Store（即 Yjs），
  *   Yjs 数据变更触发 Svelte 更新 → 筛选与布局引擎重新计算 → UI 自动刷新。
@@ -70,7 +70,7 @@ export class WeekController {
 
 	/**
 	 * 布局引擎输出：将 events 切分为 per-day segments 并做重叠分列。
-	 * 每个 PositionedSegment 对应一个 WeekEvent 实例。
+	 * 每个 PositionedSegment 对应一个 EventSegment 实例。
 	 */
 	readonly positionedSegments = $derived(
 		layoutEvents(

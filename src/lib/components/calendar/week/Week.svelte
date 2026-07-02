@@ -18,8 +18,8 @@
 	 * |----|------|------|----------|
 	 * | 纯逻辑 | `segment_layout/` | 几何计算、布局引擎，零 Svelte/DOM 依赖 | 纯函数直接测试 |
 	 * | 骨架 | `WeekSkeletonController.svelte.ts` | 网格定义、实测尺寸、定位 Actions | 实例化后断言状态 |
-	 * | 控制器 | `WeekController.svelte.ts`、`event/WeekEventController.svelte.ts` | 业务逻辑 + 交互状态，委托 skeleton 管理坐标 | 实例化后断言状态/调用方法 |
-	 * | Svelte Action | `dropZone.svelte.ts`、`event/eventInteract.svelte.ts` | DOM 适配器（interactjs 绑定），委托控制器 | 需 DOM 环境 |
+	 * | 控制器 | `WeekController.svelte.ts`、`event/EventSegmentController.svelte.ts` | 业务逻辑 + 交互状态 + interactjs 绑定，委托 skeleton 管理坐标 | 实例化后断言状态/调用方法 |
+	 * | Svelte Action | `dropZone.svelte.ts` | DOM 适配器（interactjs 拖放区），委托控制器 | 需 DOM 环境 |
 	 * | 视图 | `*.svelte` | 纯展示，通过 `use:skeleton.xxx` 定位，读控制器状态渲染 | Svelte 组件测试 |
 	 *
 	 * ### 视图与控制器的连接
@@ -46,7 +46,7 @@
 	import DayHeader from "./skeleton/DayHeader.svelte";
 	import DayGrid from "./skeleton/DayGrid.svelte";
 	import DragPreview from "./event/DragPreview.svelte";
-	import WeekEvent from "./event/WeekEvent.svelte";
+	import EventSegment from "./event/EventSegment.svelte";
 	import type { Store } from "$lib/states/meta/store.svelte";
 
 	interface Props {
@@ -93,9 +93,9 @@
 			onDragEnd={controller.handleDragEnd.bind(controller)}
 		/>
 
-		<!-- 事件块：每个 PositionedSegment 渲染一个 WeekEvent，跨天事件会有多个 -->
+		<!-- 事件块：每个 PositionedSegment 渲染一个 EventSegment，跨天事件会有多个 -->
 		{#each controller.positionedSegments as seg (seg.eventId + "-" + seg.dayIndex)}
-			<WeekEvent
+			<EventSegment
 				{skeleton}
 				segment={seg}
 				task={seg.event.task!}

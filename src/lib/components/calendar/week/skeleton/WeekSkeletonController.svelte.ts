@@ -13,9 +13,9 @@
  *   gridTemplateColumns/Rows ──→ root action ──→ 根容器 DOM
  *   dayHeight ($state) ←────── measure action ←── 拖放区 DOM (ResizeObserver)
  *   containerWidth ($state) ←── measure action ←── 拖放区 DOM
- *   dayWidth ($derived) ───────→ WeekEvent (lane geometry)
+ *   dayWidth ($derived) ───────→ EventSegment (lane geometry)
  *   displayDays ($derived) ────→ DayHeader / DayGrid ({#each})
- *   getColumnIndex ($derived) ─→ WeekEvent / DragPreview
+ *   getColumnIndex ($derived) ─→ EventSegment / DragPreview
  *   layers (static) ──────────→ 所有组件 (z-index)
  *
  * @see Week.svelte 中的 const skeleton = new WeekSkeletonController(dayNum)
