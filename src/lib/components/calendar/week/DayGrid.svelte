@@ -13,7 +13,7 @@
 	 */
 	import dayjs, { type Dayjs } from "dayjs";
 	import type { Task } from "$lib/states/meta/task.svelte";
-	import { range, isRestDay } from "../shared/geometry";
+	import { range, isRestDay } from "./layout/geometry";
 	import { dayDropZone, dayExternalDropZone } from "./dropZone.svelte";
 	import type { DragService } from "$lib/interaction/services/DragService.svelte";
 
@@ -120,9 +120,11 @@
 				style:flex="2"
 				class="relative flex items-center justify-end text-xs"
 			>
-			<p class=" pr-2">
-				{dayjs().hour(hour % 24).format("h A")}
-			</p>
+				<p class=" pr-2">
+					{dayjs()
+						.hour(hour % 24)
+						.format("h A")}
+				</p>
 			</div>
 		{/each}
 		<div style:flex="1"></div>
@@ -172,9 +174,7 @@
 >
 	{#each displayDays as day, i (day)}
 		<div
-			class="text-center {isRestDay(day)
-				? 'bg-zinc-300 opacity-30'
-				: ''}"
+			class="text-center {isRestDay(day) ? 'bg-zinc-300 opacity-30' : ''}"
 			style:grid-area="1 / {i + 1} / 1 / {i + 1}"
 			use:dayDropZone
 			use:dayExternalDropZone={{

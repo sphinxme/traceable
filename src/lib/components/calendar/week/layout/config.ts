@@ -1,5 +1,5 @@
 /**
- * 日历共享配置（周视图/月视图通用）
+ * 日历配置（周视图）
  */
 
 /** 日界偏移小时数：一天的边界不是 00:00 而是 06:00，04:00 属于前一天 */
@@ -18,10 +18,10 @@ export const NOT_WORK_HOUR_RANGES: ReadonlyArray<{
 	start: number;
 	end: number;
 }> = [
-	{ start: 6, end: 10 },
-	{ start: 12, end: 13.5 },
-	{ start: 18, end: 19.5 },
-	// end=30 表示次日 06:00。值可 >24，DayGrid 按 (end-offsetByHour)*2 计算 grid-row，
-	// 超出 48 行的部分会被 CSS Grid 自动截断。
-	{ start: 22, end: 30 },
-];
+		{ start: 6, end: 10 },
+		{ start: 12, end: 13.5 },
+		{ start: 18, end: 19.5 },
+		// end=30 表示次日 06:00。值可 >24，DayGrid 按 (end-offsetByHour)*2 计算 grid-row，
+		// 超出 48 行的部分会被 CSS Grid 自动截断。
+		{ start: 22, end: 30 },
+	];

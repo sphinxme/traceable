@@ -10,14 +10,14 @@
 	import { ScrollArea } from "$lib/components/ui/scroll-area";
 	import { getInteractionContext } from "$lib/interaction/context.svelte";
 
-	import { NOT_WORK_HOUR_RANGES } from "../shared/config";
+	import { NOT_WORK_HOUR_RANGES } from "./layout/config";
 	import { DAY_HEIGHT_PX, SIDE_WIDTH, SIZE } from "./week-config";
 	import { WeekController } from "./WeekController.svelte";
 
 	import DayHeader from "./DayHeader.svelte";
 	import DayGrid from "./DayGrid.svelte";
 	import DragPreview from "./DragPreview.svelte";
-	import WeekEvent from "./WeekEvent.svelte";
+	import WeekEvent from "./event/WeekEvent.svelte";
 	import type { Store } from "$lib/states/meta/store.svelte";
 
 	interface Props {
@@ -51,7 +51,7 @@
 	-->
 	<div
 		data-tauri-drag-region
-		class=" calendar relative grid rounded-lg"
+		class="relative grid rounded-lg"
 		style:height="{DAY_HEIGHT_PX}px"
 		style:grid-template-columns="{SIDE_WIDTH}rem repeat({controller
 			.displayRange.displayDayNum}, 1fr)"

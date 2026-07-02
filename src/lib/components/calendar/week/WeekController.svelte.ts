@@ -17,13 +17,13 @@ import {
 	OFFSET_BY_HOUR,
 	MS_PER_DAY,
 	DEFAULT_EVENT_DURATION_MS,
-} from "../shared/config";
+} from "./layout/config";
 import {
 	calculateDisplayRange,
 	makeGetColumnIndex,
 	roundToNearest15MinutesDayjs,
-} from "../shared/geometry";
-import { layoutEvents } from "../shared/layout";
+} from "./layout/geometry";
+import { layoutEvents } from "./layout/layout";
 import { DEFAULT_DAY_NUM, SIDE_WIDTH, SIZE } from "./week-config";
 import { getInteractionContext } from "$lib/interaction/context.svelte";
 import type { Store } from "$lib/states/meta/store.svelte";

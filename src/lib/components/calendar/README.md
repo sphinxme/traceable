@@ -10,11 +10,6 @@
 calendar/
 ├── Calendar.svelte                        # 入口，接收 Store + view prop，渲染对应视图
 │
-├── shared/                                # 跨视图共享基础设施（周/月视图通用）
-│   ├── config.ts                          #   共享常量（日界偏移、时间常量、非工作时段等）
-│   ├── geometry.ts                        #   几何计算（时间↔像素、日界计算、列索引、显示范围）
-│   └── layout.ts                          #   布局引擎（事件切分 + 重叠分列）
-│
 └── week/                                  # 周视图：一个完整业务单元
     ├── WeekController.svelte.ts           #   周视图控制器（状态 + 逻辑，可单元测试）
     ├── Week.svelte                        #   周视图主组件（薄视图，读 controller 渲染）
@@ -23,28 +18,33 @@ calendar/
     ├── DayHeader.svelte                   #   日期表头（星期 + 日期，高亮今天）
     ├── DayGrid.svelte                     #   时间网格（小时刻度 + 非工作时段 + 拖放区域）
     ├── dropZone.svelte.ts                 #   DayGrid 的拖放 Action（interactjs + HTML5 DnD）
+    ├── DragPreview.svelte                 #   从 Todo 拖入时的预览块
     │
-    ├── WeekEvent.svelte                   #   事件块渲染（定位 + Tooltip + 右键菜单）
-    ├── WeekEventController.svelte.ts      #   事件拖拽/缩放控制器（可单元测试）
-    ├── eventInteract.svelte.ts            #   WeekEvent 的交互 Action（薄包装，委托 controller）
+    ├── layout/                            #   布局基础设施（几何计算 + 布局引擎）
+    │   ├── config.ts                      #     常量（日界偏移、时间常量、非工作时段等）
+    │   ├── geometry.ts                    #     几何计算（时间↔像素、日界计算、列索引、显示范围）
+    │   └── layout.ts                      #     布局引擎（事件切分 + 重叠分列）
     │
-    └── DragPreview.svelte                 #   从 Todo 拖入时的预览块
+    └── event/                             #   事件块子模块（渲染 + 交互）
+        ├── WeekEvent.svelte               #     事件块渲染（定位 + Tooltip + 右键菜单）
+        ├── WeekEventController.svelte.ts  #     事件拖拽/缩放控制器（可单元测试）
+        └── eventInteract.svelte.ts        #     WeekEvent 的交互 Action（薄包装，委托 controller）
 ```
 
 ### 分层原则
 
 | 层 | 目录 | 职责 | 可测试性 |
 |----|------|------|----------|
-| 纯逻辑 | `shared/` | 几何计算、布局引擎，零 Svelte/DOM 依赖 | 纯函数直接测试 |
-| 控制器 | `week/*Controller.svelte.ts` | 状态管理 + 业务逻辑，使用 `$state`/`$derived` | 实例化后断言状态/调用方法 |
-| Svelte Action | `week/*.svelte.ts` | DOM 适配器（interactjs 绑定），委托控制器 | 需 DOM 环境 |
-| 视图 | `week/*.svelte` | 纯展示，读控制器状态，渲染子组件 | Svelte 组件测试 |
+| 纯逻辑 | `week/layout/` | 几何计算、布局引擎，零 Svelte/DOM 依赖 | 纯函数直接测试 |
+| 控制器 | `week/WeekController.svelte.ts`、`week/event/WeekEventController.svelte.ts` | 状态管理 + 业务逻辑，使用 `$state`/`$derived` | 实例化后断言状态/调用方法 |
+| Svelte Action | `week/dropZone.svelte.ts`、`week/event/eventInteract.svelte.ts` | DOM 适配器（interactjs 绑定），委托控制器 | 需 DOM 环境 |
+| 视图 | `week/*.svelte`、`week/event/*.svelte` | 纯展示，读控制器状态，渲染子组件 | Svelte 组件测试 |
 
 ### 配置分层
 
 | 文件 | 职责 | 主要常量 |
 |------|------|----------|
-| `shared/config.ts` | 各视图共享 | `OFFSET_BY_HOUR`、`MS_PER_DAY`、`DEFAULT_EVENT_DURATION_MS`、`SNAP_THRESHOLD_PX`、`NOT_WORK_HOUR_RANGES` |
+| `week/layout/config.ts` | 周视图布局常量 | `OFFSET_BY_HOUR`、`MS_PER_DAY`、`DEFAULT_EVENT_DURATION_MS`、`SNAP_THRESHOLD_PX`、`NOT_WORK_HOUR_RANGES` |
 | `week/week-config.ts` | 周视图特有 | `DEFAULT_DAY_NUM`、`SIDE_WIDTH`、`SIZE`、`DAY_HEIGHT_PX` |
 
 ## Controller-Svelte 架构
@@ -56,12 +56,14 @@ calendar/
 ```
 WeekController
   ├── displayRange          $derived  显示范围（今天为中心，前后各 dayNum 天）
+  ├── getColumnIndex        $derived  时间戳→日列索引函数（相对于 displayStartDay）
   ├── events                $derived  从 Store 查询范围内事件
   ├── positionedSegments    $derived  布局引擎输出（事件切分 + 重叠分列）
   ├── dayWidth              $derived  每列像素宽度
   ├── snapsOffset           $derived  15分钟 snap 点的像素偏移数组
   ├── dayHeight             $state    日列高度（由 DayGrid bind 回传）
   ├── containerWidth        $state    容器宽度（由 DayGrid bind 回传）
+  ├── scrollAreaRef         $state    滚动容器引用（由 ScrollArea bind 回传）
   ├── draggingTaskEvent     $state    从 Todo 拖入时的预览事件
   ├── nowPercentage         $state    当前时间指示线百分比位置
   │
@@ -80,6 +82,7 @@ WeekController
 WeekEventController
   ├── state                $state  交互状态（topOffset, eventHeight, previewStart/End, ...）
   │
+  ├── updateContext()              同步上下文参数（dayHeight, snapsOffset, getColumnIndex, segStart）
   ├── syncToSegment()              segment 变化时重置状态到初始位置
   ├── refresh()                    拖拽/缩放开始时缓存事件时间和偏移量
   ├── onResizeStart/Move/End()     缩放逻辑（仅 isLast 的 segment 可缩放）
@@ -93,17 +96,17 @@ WeekEventController
 
 ```svelte
 <script lang="ts">
-    const ctrl = new WeekController(store, dayNum);
+    const controller = new WeekController(store, dayNum);
 
     $effect(() => {
-        ctrl.onReady();
-        return () => ctrl.destroy();
+        controller.onReady();
+        return () => controller.destroy();
     });
 </script>
 
-<!-- 模板中直接读 ctrl 的状态 -->
-<DayGrid bind:dayHeight={ctrl.dayHeight} ... />
-{#each ctrl.positionedSegments as seg}
+<!-- 模板中直接读 controller 的状态 -->
+<DayGrid bind:dayHeight={controller.dayHeight} ... />
+{#each controller.positionedSegments as seg}
     <WeekEvent segment={seg} ... />
 {/each}
 ```
@@ -127,9 +130,9 @@ Store（Yjs，唯一事实来源）
 
 - 04:00 的事件属于**前一天**的尾部
 - 06:00 的事件属于**当天**的头部
-- 所有日界计算统一使用 `getDayStart(t, offsetByHour)`（定义在 `shared/geometry.ts`），先减偏移再 `startOf("day")` 再加回，确保 00:00~06:00 的事件归到前一日
+- 所有日界计算统一使用 `getDayStart(t, offsetByHour)`（定义在 `week/layout/geometry.ts`），先减偏移再 `startOf("day")` 再加回，确保 00:00~06:00 的事件归到前一日
 
-## 几何计算（shared/geometry.ts）
+## 几何计算（week/layout/geometry.ts）
 
 | 函数 | 说明 |
 |------|------|
@@ -140,9 +143,10 @@ Store（Yjs，唯一事实来源）
 | `calculateDisplayRange(dayNum, offsetByHour)` | 计算显示范围（today、displayDays 等） |
 | `makeGetColumnIndex(displayStartDay)` | 构造时间戳→日列索引的函数 |
 | `roundToNearest15MinutesDayjs` / `roundToNearest15MinutesPixels` | 15 分钟对齐 |
-| `getLaneGeometry(segment, dayWidth)` | 重叠分列的宽度与左偏移 |
+| `range(start, stop)` | 生成闭区间整数序列（用于刻度迭代） |
+| `isRestDay(day)` | 判断是否为休息日（仅周六） |
 
-## 布局引擎（shared/layout.ts）
+## 布局引擎（week/layout/layout.ts）
 
 ### 处理流程
 
@@ -178,9 +182,9 @@ Event[] → segmentEvent()  按日界切分为日列片段
 
 ## 交互
 
-### 事件拖拽与缩放（WeekEventController + eventInteract）
+### 事件拖拽与缩放（week/event/）
 
-基于 interactjs 的 Svelte Action，挂载在 `WeekEvent` 上。Action 仅处理 DOM 事件绑定，逻辑由 `WeekEventController` 处理：
+基于 interactjs 的 Svelte Action（`eventInteract.svelte.ts`），挂载在 `WeekEvent` 上。Action 仅处理 DOM 事件绑定，逻辑由 `WeekEventController` 处理：
 
 | 操作 | 行为 |
 |------|------|

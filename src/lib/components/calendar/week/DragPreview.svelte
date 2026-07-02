@@ -7,8 +7,8 @@
 	 * pointer-events: none 确保不干扰拖拽操作。
 	 */
 	import dayjs from "dayjs";
-	import { calculateTopOffset } from "../shared/geometry";
-	import { DEFAULT_EVENT_DURATION_MS, MS_PER_DAY } from "../shared/config";
+	import { calculateTopOffset } from "./layout/geometry";
+	import { DEFAULT_EVENT_DURATION_MS, MS_PER_DAY } from "./layout/config";
 	import type { DraggingTaskEvent } from "./WeekController.svelte";
 
 	interface Props {
@@ -36,7 +36,9 @@
 			offsetByHour,
 			dayHeight,
 		)}px"
-		style:height="{Math.floor((DEFAULT_EVENT_DURATION_MS / MS_PER_DAY) * dayHeight)}px"
+		style:height="{Math.floor(
+			(DEFAULT_EVENT_DURATION_MS / MS_PER_DAY) * dayHeight,
+		)}px"
 	>
 		{dayjs(draggingTaskEvent.start).format("HH:mm")}-{dayjs(
 			draggingTaskEvent.end,

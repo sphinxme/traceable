@@ -18,7 +18,7 @@
 	} from "$lib/components/ui/popover-tooltip";
 
 	import { getInteractionContext } from "$lib/interaction/context.svelte";
-	import { getLaneGeometry, type PositionedSegment } from "../shared/layout";
+	import { getLaneGeometry, type PositionedSegment } from "../layout/layout";
 	import type { Task } from "$lib/states/meta/task.svelte";
 	import { Redo2 } from "@lucide/svelte";
 	import { fade } from "svelte/transition";

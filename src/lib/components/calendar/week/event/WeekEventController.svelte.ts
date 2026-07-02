@@ -11,12 +11,12 @@
  */
 import dayjs from "dayjs";
 
-import { MS_PER_DAY } from "../shared/config";
+import { MS_PER_DAY } from "../layout/config";
 import {
 	calculateTopOffset,
 	calculateEventHeight,
 	roundToNearest15MinutesPixels,
-} from "../shared/geometry";
+} from "../layout/geometry";
 import type { Event } from "$lib/states/meta/event.svelte";
 import type { Task } from "$lib/states/meta/task.svelte";
 import { eventbus } from "$lib/components/todolist/controller/eventbus";

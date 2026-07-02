@@ -10,9 +10,9 @@ import interact from "interactjs";
 
 import type { Event } from "$lib/states/meta/event.svelte";
 import type { Task } from "$lib/states/meta/task.svelte";
-import type { WeekEventController } from "./WeekEventController.svelte";
+import type { WeekEventController } from "./WeekEventController.svelte"
 
-/** eventInteract action 的参数 */
+/* eventInteract action 的参数 */
 export interface EventInteractParams {
 	/** 交互控制器（持有状态和计算逻辑） */
 	ctrl: WeekEventController;
