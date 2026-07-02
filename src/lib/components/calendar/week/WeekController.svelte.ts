@@ -2,25 +2,33 @@
  * 周视图控制器
  *
  * 持有周视图的业务逻辑（事件查询、布局、交互），Week.svelte 仅负责渲染。
- * 坐标系相关状态（网格定义、实测尺寸、显示范围）委托给 WeekSkeleton。
+ * 坐标系相关状态（网格定义、实测尺寸、显示范围）委托给 WeekSkeletonController。
+ * 定时器逻辑（当前时间指示线）委托给 NowIndicatorTimer。
+ * 滚动位置记忆委托给 ScrollRestoreService。
  *
- * 通过 $derived 响应式驱动：Yjs 数据变更 → Store 触发 Svelte 更新 →
- * 筛选与布局引擎重新计算 → UI 自动刷新。
+ * 数据流：
+ *   Store（Yjs，唯一事实来源）
+ *     → events             $derived: queryEventsByRange(skeleton.displayRange)
+ *     → positionedSegments $derived: layoutEvents() 按日界切分 + 重叠分列
+ *     → Week.svelte {#each} 渲染 WeekEvent（由 skeleton.eventSlot 定位）
+ *
+ *   用户交互（拖拽/缩放）产生的修改直接写回 Store（即 Yjs），
+ *   Yjs 数据变更触发 Svelte 更新 → 筛选与布局引擎重新计算 → UI 自动刷新。
  *
  * 生命周期：
  *   Week.svelte 在 $effect 中调用 onReady() / destroy()
  *   onReady  → 启动 now indicator 定时器 + 恢复滚动位置
  *   destroy  → 停止定时器 + 移除 scroll 监听器
  */
-import dayjs, { type Dayjs } from "dayjs";
+import type { Dayjs } from "dayjs";
 import { list } from "radash";
 
-import { MS_PER_DAY, DEFAULT_EVENT_DURATION_MS } from "./layout/config";
-import { roundToNearest15MinutesDayjs } from "./layout/geometry";
-import { layoutEvents } from "./layout/layout";
-import { SIDE_WIDTH, SIZE } from "./week-config";
-import type { WeekSkeleton } from "./WeekSkeleton.svelte";
-import { getInteractionContext } from "$lib/interaction/context.svelte";
+import { MS_PER_DAY, DEFAULT_EVENT_DURATION_MS } from "./segment_layout/config";
+import { roundToNearest15MinutesDayjs } from "./segment_layout/geometry";
+import { layoutEvents } from "./segment_layout/layout";
+import type { WeekSkeletonController } from "./skeleton/WeekSkeletonController.svelte";
+import { NowIndicatorTimer } from "./skeleton/now_indicator/NowIndicatorTimer.svelte";
+import { ScrollRestoreService } from "./ScrollRestoreService.svelte";
 import type { Store } from "$lib/states/meta/store.svelte";
 import type { Task } from "$lib/states/meta/task.svelte";
 
@@ -36,7 +44,12 @@ export class WeekController {
 	/** Yjs 数据层，唯一事实来源 */
 	readonly store!: Store;
 	/** 网格骨架控制器（坐标系唯一事实来源） */
-	readonly skeleton!: WeekSkeleton;
+	readonly skeleton!: WeekSkeletonController;
+
+	// ── 委托服务 ──
+
+	private readonly nowIndicator: NowIndicatorTimer;
+	private readonly scrollRestore: ScrollRestoreService;
 
 	// ── 可变状态（$state，由视图通过 bind 回传或交互更新）──
 
@@ -44,8 +57,6 @@ export class WeekController {
 	scrollAreaRef = $state<HTMLElement | null>(null);
 	/** 从 Todo 拖入时的预览事件（null 表示无拖入） */
 	draggingTaskEvent = $state<DraggingTaskEvent | null>(null);
-	/** 当前时间指示线的百分比位置（0~100，基于 offsetByHour 日界） */
-	nowPercentage = $state(0);
 
 	// ── 派生状态（$derived，依赖变化时自动重算）──
 
@@ -80,115 +91,30 @@ export class WeekController {
 		return list(0, pieceNum, (i) => i * piece);
 	});
 
-	// ── 私有：定时器与清理 ──
+	/** 当前时间指示线的百分比位置（委托给 NowIndicatorTimer） */
+	get nowPercentage() {
+		return this.nowIndicator.nowPercentage;
+	}
 
-	private nowTimerId: ReturnType<typeof setTimeout> | undefined;
-	private nowRafId = 0;
-	private scrollCleanup: (() => void) | null = null;
-	private readonly scroll: ReturnType<typeof getInteractionContext>["scroll"];
-
-	constructor(store: Store, skeleton: WeekSkeleton) {
+	constructor(store: Store, skeleton: WeekSkeletonController) {
 		this.store = store;
 		this.skeleton = skeleton;
-		this.scroll = getInteractionContext().scroll;
+		this.nowIndicator = new NowIndicatorTimer(skeleton.offsetByHour);
+		this.scrollRestore = new ScrollRestoreService(skeleton);
 	}
 
 	// ── 生命周期 ──
 
 	/** 组件就绪后调用：启动 now indicator + 恢复滚动位置 */
 	onReady() {
-		this.startNowIndicator();
-		this.setupScrollRestore();
+		this.nowIndicator.start();
+		this.scrollRestore.setup(this.scrollAreaRef);
 	}
 
 	/** 组件卸载时调用：停止定时器 + 移除监听器 */
 	destroy() {
-		this.stopNowIndicator();
-		this.scrollCleanup?.();
-	}
-
-	// ── 当前时间指示线 ──
-
-	/** 计算当前时间在"日"内的百分比位置（06:00 = 0%, 次日 06:00 = 100%） */
-	private updateNowPercentage() {
-		const now = dayjs();
-		const startOfDay = now
-			.startOf("day")
-			.add(this.skeleton.offsetByHour, "hour");
-		this.nowPercentage = (now.diff(startOfDay) / MS_PER_DAY) * 100;
-	}
-
-	/** 每 10 秒更新一次位置（setTimeout + requestAnimationFrame） */
-	private startNowIndicator() {
-		const animate = () => {
-			this.updateNowPercentage();
-			this.nowTimerId = setTimeout(() => {
-				this.nowRafId = requestAnimationFrame(animate);
-			}, 10000);
-		};
-		animate();
-	}
-
-	/** 停止更新，清除 setTimeout 和 requestAnimationFrame */
-	private stopNowIndicator() {
-		cancelAnimationFrame(this.nowRafId);
-		clearTimeout(this.nowTimerId);
-	}
-
-	// ── 滚动位置记忆 ──
-
-	/**
-	 * 恢复上次滚动位置，并监听 scroll 事件持续持久化。
-	 * 通过 InteractionContext 的 ScrollMemoryService 存储。
-	 */
-	private setupScrollRestore() {
-		if (!this.scrollAreaRef) return;
-		const ref = this.scrollAreaRef;
-		const key = "weekPanel";
-
-		if (this.scroll.weekPanel[key]) {
-			ref.scrollTo({
-				top: this.scroll.weekPanel[key].scrollTop,
-				left: this.scroll.weekPanel[key].scrollLeft,
-				behavior: "instant",
-			});
-		} else {
-			this.scrollToToday();
-		}
-
-		const update = () => {
-			this.scroll.weekPanel[key] = {
-				scrollTop: ref.scrollTop,
-				scrollLeft: ref.scrollLeft,
-			};
-		};
-
-		ref.addEventListener("scroll", update);
-		this.scrollCleanup = () => ref.removeEventListener("scroll", update);
-	}
-
-	/**
-	 * 首次加载（无滚动记忆）时水平滚动到今天的日列并居中。
-	 * 使用网格几何常量（SIDE_WIDTH / SIZE）计算像素位置，不依赖 containerWidth。
-	 */
-	private scrollToToday() {
-		const ref = this.scrollAreaRef;
-		if (!ref) return;
-
-		requestAnimationFrame(() => {
-			const rem = parseFloat(
-				getComputedStyle(document.documentElement).fontSize,
-			);
-			const sideWidthPx = SIDE_WIDTH * rem;
-			const dayWidthPx = SIZE * rem;
-			const todayIndex = this.skeleton.dayNum;
-			const todayLeft = sideWidthPx + todayIndex * dayWidthPx;
-			const scrollTarget = todayLeft - (ref.clientWidth - dayWidthPx) / 2;
-			ref.scrollTo({
-				left: Math.max(0, scrollTarget),
-				behavior: "smooth",
-			});
-		});
+		this.nowIndicator.stop();
+		this.scrollRestore.destroy();
 	}
 
 	// ── 从 Todo 拖入：像素 → 时间转换 + 事件创建 ──

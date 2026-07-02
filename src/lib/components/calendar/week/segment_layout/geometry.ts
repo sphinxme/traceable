@@ -1,3 +1,25 @@
+/**
+ * 周视图几何计算
+ *
+ * 核心概念——日界偏移（offsetByHour）：
+ *   "一天"的边界不是自然日 00:00，而是 OFFSET_BY_HOUR（默认 6，即 06:00）。
+ *   - 04:00 的事件属于前一天的尾部
+ *   - 06:00 的事件属于当天的头部
+ *   所有日界计算统一使用 getDayStart(t, offsetByHour)：
+ *   先减偏移 → startOf("day") → 加回，确保 00:00~06:00 的事件归到前一日。
+ *
+ * 函数总览：
+ * | 函数 | 说明 |
+ * |------|------|
+ * | `getDayStart(t, offsetByHour)` | 计算时间戳所属"日"的起始时刻（考虑偏移） |
+ * | `fractionOfDay(start, end)` | 时间段占一天的比例（可 >1 用于跨天） |
+ * | `calculateTopOffset(start, offsetByHour, dayHeight)` | 事件在日列内的垂直偏移（px） |
+ * | `calculateEventHeight(start, end, dayHeight)` | 事件块像素高度 |
+ * | `calculateDisplayRange(dayNum, offsetByHour)` | 计算显示范围（today、displayDays 等） |
+ * | `makeGetColumnIndex(displayStartDay)` | 构造时间戳→日列索引的函数 |
+ * | `roundToNearest15MinutesDayjs` / `roundToNearest15MinutesPixels` | 15 分钟对齐 |
+ * | `range(start, stop)` | 生成闭区间整数序列（用于刻度迭代） |
+ */
 import dayjs, { Dayjs } from "dayjs";
 import { MS_PER_DAY, SNAP_THRESHOLD_PX } from "./config";
 
@@ -21,11 +43,6 @@ export function range(start: number, stop: number, step: number = 1) {
 		{ length: Math.floor((stop - start) / step + 1) },
 		(_, i) => start + i * step,
 	);
-}
-
-/** 判断是否为休息日（仅周六，周日不标记） */
-export function isRestDay(day: Dayjs) {
-	return day.day() == 6;
 }
 
 /** 将时间戳对齐到最近的 15 分钟整点 */

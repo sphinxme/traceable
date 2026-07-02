@@ -13,13 +13,14 @@
 	 */
 	import dayjs, { type Dayjs } from "dayjs";
 	import type { Task } from "$lib/states/meta/task.svelte";
-	import { range, isRestDay } from "./layout/geometry";
-	import { dayDropZone, dayExternalDropZone } from "./dropZone.svelte";
-	import { WeekSkeleton } from "./WeekSkeleton.svelte";
+	import { range } from "../segment_layout/geometry";
+	import { isRestDay } from "../segment_layout/config";
+	import { dayDropZone, dayExternalDropZone } from "../dropZone.svelte";
+	import { WeekSkeletonController } from "./WeekSkeletonController.svelte";
 	import type { DragService } from "$lib/interaction/services/DragService.svelte";
 
 	interface Props {
-		skeleton: WeekSkeleton;
+		skeleton: WeekSkeletonController;
 		notWorkHourRange: ReadonlyArray<{ start: number; end: number }>;
 		drag: DragService;
 		onDragOver: (day: Dayjs, task: Task, topPx: number) => void;
@@ -46,7 +47,7 @@
 	data-tauri-drag-region
 	use:skeleton.timeAxis
 	class="rounded-lg"
-	style:z-index={WeekSkeleton.layers.gridLines}
+	style:z-index={WeekSkeletonController.layers.gridLines}
 >
 	<div class=" flex flex-col" style:grid-area="3 / 1 ">
 		<div style:flex="1"></div>
@@ -76,7 +77,7 @@
 	data-tauri-drag-region
 	use:skeleton.timeAxis
 	class="bg-background shadow-xl rounded-tl-lg"
-	style:z-index={WeekSkeleton.layers.labels}
+	style:z-index={WeekSkeletonController.layers.labels}
 >
 	<!-- "全天"标签 + 上下分割线 -->
 	<div
@@ -124,7 +125,7 @@
 <div
 	use:skeleton.timeGridArea
 	class="grid"
-	style:z-index={WeekSkeleton.layers.nonWorkHours}
+	style:z-index={WeekSkeletonController.layers.nonWorkHours}
 	style:grid-template-rows="repeat(48, 1fr)"
 >
 	{#each notWorkHourRange as range}
@@ -147,7 +148,7 @@
 <div
 	use:skeleton.timeGrid
 	use:skeleton.measure
-	style:z-index={WeekSkeleton.layers.dropZone}
+	style:z-index={WeekSkeletonController.layers.dropZone}
 >
 	{#each skeleton.displayDays as day, i (day)}
 		<div

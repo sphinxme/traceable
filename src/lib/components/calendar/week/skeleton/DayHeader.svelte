@@ -6,13 +6,15 @@
 	 * 由 skeleton.header 定位到 cols 2+, row 1, sticky, subgrid。
 	 */
 	import dayjs from "dayjs";
-	import { WeekSkeleton } from "./WeekSkeleton.svelte";
+	import { WeekSkeletonController } from "./WeekSkeletonController.svelte";
 
 	interface Props {
-		skeleton: WeekSkeleton;
+		skeleton: WeekSkeletonController;
 	}
 
 	let { skeleton }: Props = $props();
+
+	const todayAdjusted = $derived(dayjs().add(-skeleton.offsetByHour, "hour"));
 </script>
 
 <!--
@@ -34,18 +36,12 @@
 			<!-- 星期：今天加粗红色，非今天细体 -->
 			<div
 				class="text-base font-medium"
-				class:font-light={!day.isSame(
-					dayjs().add(-skeleton.offsetByHour, "hour"),
-					"day",
-				)}
-				class:text-red-500={day.isSame(
-					dayjs().add(-skeleton.offsetByHour, "hour"),
-					"day",
-				)}
+				class:font-light={!day.isSame(todayAdjusted, "day")}
+				class:text-red-500={day.isSame(todayAdjusted, "day")}
 			>
 				{day.format("ddd")}
-		</div>
-		<!-- 日期：MM-DD 格式 -->
+			</div>
+			<!-- 日期：MM-DD 格式 -->
 			<div
 				style:font-size="0.7rem"
 				class=" text-xs font-extralight text-zinc-400"

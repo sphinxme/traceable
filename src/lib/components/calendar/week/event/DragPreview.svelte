@@ -9,13 +9,12 @@
 	 * 宏观定位由 skeleton.eventSlot 处理，微观定位（top, height）由时间计算驱动。
 	 */
 	import dayjs from "dayjs";
-	import { calculateTopOffset } from "./layout/geometry";
-	import { DEFAULT_EVENT_DURATION_MS, MS_PER_DAY } from "./layout/config";
-	import { WeekSkeleton } from "./WeekSkeleton.svelte";
-	import type { DraggingTaskEvent } from "./WeekController.svelte";
+	import { calculateTopOffset, calculateEventHeight } from "../segment_layout/geometry";
+	import { WeekSkeletonController } from "../skeleton/WeekSkeletonController.svelte";
+	import type { DraggingTaskEvent } from "../WeekController.svelte";
 
 	interface Props {
-		skeleton: WeekSkeleton;
+		skeleton: WeekSkeletonController;
 		draggingTaskEvent: DraggingTaskEvent | null;
 	}
 
@@ -25,9 +24,11 @@
 {#if draggingTaskEvent}
 	<!-- 预览块：定位到拖拽悬停的日列和时间位置 -->
 	<div
-		use:skeleton.eventSlot={skeleton.getColumnIndex(draggingTaskEvent.start)}
+		use:skeleton.eventSlot={skeleton.getColumnIndex(
+			draggingTaskEvent.start,
+		)}
 		style:pointer-events="none"
-		style:z-index={WeekSkeleton.layers.dragPreview}
+		style:z-index={WeekSkeletonController.layers.dragPreview}
 		style:box-shadow="0px 0px 16px 0px rgb(212,212,216,0.8) inset"
 		class=" relative text-zinc-700 rounded-lg shadow-inner text-center font-extralight"
 		style:top="{calculateTopOffset(
@@ -35,8 +36,10 @@
 			skeleton.offsetByHour,
 			skeleton.dayHeight,
 		)}px"
-		style:height="{Math.floor(
-			(DEFAULT_EVENT_DURATION_MS / MS_PER_DAY) * skeleton.dayHeight,
+		style:height="{calculateEventHeight(
+			draggingTaskEvent.start,
+			draggingTaskEvent.end,
+			skeleton.dayHeight,
 		)}px"
 	>
 		{dayjs(draggingTaskEvent.start).format("HH:mm")}-{dayjs(

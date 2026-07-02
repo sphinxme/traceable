@@ -17,11 +17,15 @@
 	} from "$lib/components/ui/popover-tooltip";
 
 	import { getInteractionContext } from "$lib/interaction/context.svelte";
-	import { getLaneGeometry, type PositionedSegment } from "../layout/layout";
+	import {
+		getLaneGeometry,
+		type PositionedSegment,
+	} from "../segment_layout/layout";
+	import { formatDuration } from "../format";
 	import type { Task } from "$lib/states/meta/task.svelte";
 	import { Redo2 } from "@lucide/svelte";
 	import { fade } from "svelte/transition";
-	import { WeekSkeleton } from "../WeekSkeleton.svelte";
+	import { WeekSkeletonController } from "../skeleton/WeekSkeletonController.svelte";
 	import { WeekEventController } from "./WeekEventController.svelte";
 	import {
 		eventInteract,
@@ -29,7 +33,7 @@
 	} from "./eventInteract.svelte";
 
 	interface Props {
-		skeleton: WeekSkeleton;
+		skeleton: WeekSkeletonController;
 		segment: PositionedSegment;
 		task: Task;
 		snapsOffset: number[];
@@ -92,23 +96,6 @@
 		isLast: segment.isLast,
 	});
 
-	/** 将毫秒时长格式化为中文可读字符串（如 "1.5小时"、"30分钟"） */
-	function formatDuration(duration: number): string {
-		const hours = Math.floor(duration / (60 * 60 * 1000));
-		const minutes = Math.floor((duration % (60 * 60 * 1000)) / (60 * 1000));
-
-		if (hours === 0) {
-			return `${minutes}分钟`;
-		}
-		if (minutes === 0) {
-			return `${hours}小时`;
-		}
-		if (minutes === 30) {
-			return `${hours}.5小时`;
-		}
-
-		return `${hours}小时${minutes}分钟`;
-	}
 </script>
 
 <!--
@@ -123,7 +110,7 @@
 	use:skeleton.eventSlot={controller.state.columnIndex}
 	use:eventInteract={interactParams}
 	use:tooltip.trigger
-	style:z-index={WeekSkeleton.layers.events}
+	style:z-index={WeekSkeletonController.layers.events}
 	style:padding="2px"
 	class="border-1 ease-out grow-0 hover:opacity-90 overflow-visible text-sm text-zinc-50 opacity-75"
 	style:transition-property="transform, opacity"

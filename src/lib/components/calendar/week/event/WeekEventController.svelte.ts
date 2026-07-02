@@ -8,15 +8,25 @@
  * 使用方式：
  *   WeekEvent.svelte 创建控制器实例，通过 $effect 同步 segment 变化，
  *   eventInteract action 在 interactjs 回调中调用控制器方法。
+ *
+ * 交互行为：
+ * | 操作 | 行为 |
+ * |------|------|
+ * | 拖拽移动 | 实时更新预览位置，15 分钟对齐，结束时调用 `event.moveTo(newStart)` 整体平移 |
+ * | 底部缩放 | 仅 `isLast` 的 segment 可缩放，结束时调用 `event.resizeTo(duration)` |
+ * | 点击 | 通过 `eventbus.emit("clickOnWeekEvent")` 通知（双击跳转到对应 Task） |
+ *
+ * 跨天拖拽：通过 `dragOffset = segStart - event.start` 将鼠标位置还原为事件实际 start，
+ * `event.moveTo()` 整体平移后其他 segment 由布局引擎自动跟随。
  */
 import dayjs from "dayjs";
 
-import { MS_PER_DAY } from "../layout/config";
+import { MS_PER_DAY } from "../segment_layout/config";
 import {
 	calculateTopOffset,
 	calculateEventHeight,
 	roundToNearest15MinutesPixels,
-} from "../layout/geometry";
+} from "../segment_layout/geometry";
 import type { Event } from "$lib/states/meta/event.svelte";
 import type { Task } from "$lib/states/meta/task.svelte";
 import { eventbus } from "$lib/components/todolist/controller/eventbus";

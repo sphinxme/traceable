@@ -2,21 +2,50 @@
 	/**
 	 * 周视图主组件（薄视图）
 	 *
-	 * 创建 WeekSkeleton（坐标系）和 WeekController（业务逻辑），
+	 * 创建 WeekSkeletonController（坐标系）和 WeekController（业务逻辑），
 	 * 通过 $effect 驱动生命周期，模板中直接读取状态渲染子组件。
+	 *
+	 * ## Skeleton-Controller-Svelte 三层架构
+	 *
+	 * 周视图采用三层架构：
+	 * - **Skeleton** 管坐标（"在哪里"）— WeekSkeletonController，网格定义 + 定位 Actions
+	 * - **Controller** 管业务（"是什么"）— WeekController，事件查询 + 布局 + 交互状态
+	 * - **Svelte** 管渲染（"长什么样"）— 本组件及子组件，纯展示
+	 *
+	 * ### 分层原则
+	 *
+	 * | 层 | 目录 | 职责 | 可测试性 |
+	 * |----|------|------|----------|
+	 * | 纯逻辑 | `segment_layout/` | 几何计算、布局引擎，零 Svelte/DOM 依赖 | 纯函数直接测试 |
+	 * | 骨架 | `WeekSkeletonController.svelte.ts` | 网格定义、实测尺寸、定位 Actions | 实例化后断言状态 |
+	 * | 控制器 | `WeekController.svelte.ts`、`event/WeekEventController.svelte.ts` | 业务逻辑 + 交互状态，委托 skeleton 管理坐标 | 实例化后断言状态/调用方法 |
+	 * | Svelte Action | `dropZone.svelte.ts`、`event/eventInteract.svelte.ts` | DOM 适配器（interactjs 绑定），委托控制器 | 需 DOM 环境 |
+	 * | 视图 | `*.svelte` | 纯展示，通过 `use:skeleton.xxx` 定位，读控制器状态渲染 | Svelte 组件测试 |
+	 *
+	 * ### 视图与控制器的连接
+	 *
+	 * 本组件在 `<script>` 顶部创建 skeleton 和 controller，
+	 * 通过 `$effect` 驱动生命周期：
+	 * ```svelte
+	 * const skeleton = new WeekSkeletonController(dayNum);
+	 * const controller = new WeekController(store, skeleton);
+	 * $effect(() => { controller.onReady(); return () => controller.destroy(); });
+	 * ```
+	 * 模板中根容器由 WeekSkeleton 组件（外壳）承载 `skeleton.root`，
+	 * 各子组件通过 `use:skeleton.xxx` 声明语义角色。
 	 */
-	import dayjs from "dayjs";
-
 	import { ScrollArea } from "$lib/components/ui/scroll-area";
 	import { getInteractionContext } from "$lib/interaction/context.svelte";
 
-	import { NOT_WORK_HOUR_RANGES } from "./layout/config";
-	import { WeekSkeleton } from "./WeekSkeleton.svelte";
+	import { NOT_WORK_HOUR_RANGES } from "./segment_layout/config";
+	import { WeekSkeletonController } from "./skeleton/WeekSkeletonController.svelte";
 	import { WeekController } from "./WeekController.svelte";
 
-	import DayHeader from "./DayHeader.svelte";
-	import DayGrid from "./DayGrid.svelte";
-	import DragPreview from "./DragPreview.svelte";
+	import WeekSkeleton from "./skeleton/WeekSkeleton.svelte";
+	import NowIndicator from "./skeleton/now_indicator/NowIndicator.svelte";
+	import DayHeader from "./skeleton/DayHeader.svelte";
+	import DayGrid from "./skeleton/DayGrid.svelte";
+	import DragPreview from "./event/DragPreview.svelte";
 	import WeekEvent from "./event/WeekEvent.svelte";
 	import type { Store } from "$lib/states/meta/store.svelte";
 
@@ -27,7 +56,7 @@
 
 	let { store, dayNum }: Props = $props();
 
-	const skeleton = new WeekSkeleton(dayNum);
+	const skeleton = new WeekSkeletonController(dayNum);
 	const controller = new WeekController(store, skeleton);
 	const { drag } = getInteractionContext();
 
@@ -43,31 +72,10 @@
 	scrollbarYClasses="hidden"
 	orientation="both"
 >
-	<div data-tauri-drag-region use:skeleton.root class="relative rounded-lg">
-		<!--
-			当前时间指示线层
-			由 skeleton.nowIndicator 定位到 grid-row 3, cols 1/-1, subgrid。
-			红线和时间标签按 nowPercentage 定位。
-		-->
-		<div use:skeleton.nowIndicator class="relative">
-			<!-- 红色横线：贯穿全宽 -->
-			<div
-				style:z-index={WeekSkeleton.layers.nowIndicator}
-				style:top="{controller.nowPercentage}%"
-				style:height="1px"
-				class=" w-full absolute bg-red-400"
-			></div>
-			<!-- 时间标签：显示当前 HH:mm -->
-			<div
-				style:z-index="12"
-				style:grid-column="3 / 3"
-				style:top="{controller.nowPercentage}%"
-				style:transform="translateY(-50%)"
-				class="absolute text-xs text-red-400 font-light pl-6"
-			>
-				{dayjs().format("HH:mm")}
-			</div>
-		</div>
+	<!-- skeleton:基于grid layout的定位系统 -->
+	<WeekSkeleton {skeleton}>
+		<!-- 当前时间指示线层 -->
+		<NowIndicator {skeleton} nowPercentage={controller.nowPercentage} />
 
 		<!-- 日期表头：由 skeleton.header 定位 -->
 		<DayHeader {skeleton} />
@@ -100,5 +108,5 @@
 			{skeleton}
 			draggingTaskEvent={controller.draggingTaskEvent}
 		/>
-	</div>
+	</WeekSkeleton>
 </ScrollArea>

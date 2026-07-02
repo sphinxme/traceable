@@ -15,6 +15,11 @@ import type { DragService } from "$lib/interaction/services/DragService.svelte";
  * interactjs 拖放区：使日列可被 eventInteract 的 draggable 检测为放置目标。
  * 本身不处理 drop 逻辑（由 eventInteract 的 dragend 回调处理），
  * 仅用于 interactjs 的 dropzone 检测机制。
+ *
+ * 注意：ondrop 回调必须存在但留空——interactjs 要求 dropzone 至少注册一个
+ * drop 回调才会激活检测。实际的 drop 处理在 eventInteract.svelte.ts 的
+ * draggable.end 回调中通过 dragEvent.dropzone 读取目标日列。
+ * 删除此空回调会导致拖拽时无法检测目标日列。
  */
 export const dayDropZone: Action<HTMLDivElement> = (node) => {
 	interact(node).dropzone({
