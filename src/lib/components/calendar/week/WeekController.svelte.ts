@@ -1,7 +1,9 @@
 /**
  * 周视图控制器
  *
- * 持有周视图的全部状态和业务逻辑，Week.svelte 仅负责渲染。
+ * 持有周视图的业务逻辑（事件查询、布局、交互），Week.svelte 仅负责渲染。
+ * 坐标系相关状态（网格定义、实测尺寸、显示范围）委托给 WeekSkeleton。
+ *
  * 通过 $derived 响应式驱动：Yjs 数据变更 → Store 触发 Svelte 更新 →
  * 筛选与布局引擎重新计算 → UI 自动刷新。
  *
@@ -13,18 +15,11 @@
 import dayjs, { type Dayjs } from "dayjs";
 import { list } from "radash";
 
-import {
-	OFFSET_BY_HOUR,
-	MS_PER_DAY,
-	DEFAULT_EVENT_DURATION_MS,
-} from "./layout/config";
-import {
-	calculateDisplayRange,
-	makeGetColumnIndex,
-	roundToNearest15MinutesDayjs,
-} from "./layout/geometry";
+import { MS_PER_DAY, DEFAULT_EVENT_DURATION_MS } from "./layout/config";
+import { roundToNearest15MinutesDayjs } from "./layout/geometry";
 import { layoutEvents } from "./layout/layout";
-import { DEFAULT_DAY_NUM, SIDE_WIDTH, SIZE } from "./week-config";
+import { SIDE_WIDTH, SIZE } from "./week-config";
+import type { WeekSkeleton } from "./WeekSkeleton.svelte";
 import { getInteractionContext } from "$lib/interaction/context.svelte";
 import type { Store } from "$lib/states/meta/store.svelte";
 import type { Task } from "$lib/states/meta/task.svelte";
@@ -36,22 +31,15 @@ export interface DraggingTaskEvent {
 }
 
 export class WeekController {
-	// ── 依赖注入（构造器赋值，! 表示确定赋值断言） ──
+	// ── 依赖注入 ──
 
 	/** Yjs 数据层，唯一事实来源 */
 	readonly store!: Store;
-	/** 前后各展示 dayNum 天 + 今天，默认 10 → 共 21 天 */
-	readonly dayNum!: number;
-	/** 日界偏移小时数（06:00 为日界） */
-	readonly offsetByHour = OFFSET_BY_HOUR;
+	/** 网格骨架控制器（坐标系唯一事实来源） */
+	readonly skeleton!: WeekSkeleton;
 
-	// ── 可变状态（$state，由视图通过 bind 回传或交互更新） ──
-	// 注意：必须在引用它们的 $derived 字段之前声明
+	// ── 可变状态（$state，由视图通过 bind 回传或交互更新）──
 
-	/** 日列高度（px），由 DayGrid 通过 bind:offsetHeight 回传 */
-	dayHeight = $state(0);
-	/** 容器宽度（px），由 DayGrid 通过 bind:offsetWidth 回传 */
-	containerWidth = $state(0);
 	/** 滚动容器引用，由 ScrollArea 通过 bind:ref 回传 */
 	scrollAreaRef = $state<HTMLElement | null>(null);
 	/** 从 Todo 拖入时的预览事件（null 表示无拖入） */
@@ -59,43 +47,27 @@ export class WeekController {
 	/** 当前时间指示线的百分比位置（0~100，基于 offsetByHour 日界） */
 	nowPercentage = $state(0);
 
-	// ── 派生状态（$derived，依赖变化时自动重算） ──
-
-	/** 显示范围：以今天为中心，前后各 dayNum 天 */
-	readonly displayRange = $derived(
-		calculateDisplayRange(this.dayNum, this.offsetByHour),
-	);
-
-	/** 时间戳 → 日列索引的函数（相对于 displayStartDay，0-based） */
-	readonly getColumnIndex = $derived(
-		makeGetColumnIndex(this.displayRange.displayStartDay),
-	);
+	// ── 派生状态（$derived，依赖变化时自动重算）──
 
 	/** 从 Store 查询显示范围内的事件（Yjs 数据变更时自动重新查询） */
 	readonly events = $derived(
 		this.store.queryEventsByRange(
-			this.displayRange.displayStartDay.valueOf(),
-			this.displayRange.displayEndDay.valueOf(),
+			this.skeleton.displayRange.displayStartDay.valueOf(),
+			this.skeleton.displayRange.displayEndDay.valueOf(),
 		),
 	);
 
 	/**
 	 * 布局引擎输出：将 events 切分为 per-day segments 并做重叠分列。
 	 * 每个 PositionedSegment 对应一个 WeekEvent 实例。
-	 * 跨天事件会产生多个 segment，重叠事件会分配到不同 lane。
 	 */
 	readonly positionedSegments = $derived(
 		layoutEvents(
 			this.events.filter((e) => e.task),
-			this.displayRange.displayStartDay,
-			this.displayRange.displayEndDay,
-			this.offsetByHour,
+			this.skeleton.displayRange.displayStartDay,
+			this.skeleton.displayRange.displayEndDay,
+			this.skeleton.offsetByHour,
 		),
-	);
-
-	/** 每列像素宽度（用于事件块定位） */
-	readonly dayWidth = $derived(
-		Math.floor(this.containerWidth / this.displayRange.displayDayNum),
 	);
 
 	/**
@@ -104,7 +76,7 @@ export class WeekController {
 	 */
 	readonly snapsOffset = $derived.by(() => {
 		const pieceNum = 24 * 4;
-		const piece = this.dayHeight / pieceNum;
+		const piece = this.skeleton.dayHeight / pieceNum;
 		return list(0, pieceNum, (i) => i * piece);
 	});
 
@@ -115,9 +87,9 @@ export class WeekController {
 	private scrollCleanup: (() => void) | null = null;
 	private readonly scroll: ReturnType<typeof getInteractionContext>["scroll"];
 
-	constructor(store: Store, dayNum: number = DEFAULT_DAY_NUM) {
+	constructor(store: Store, skeleton: WeekSkeleton) {
 		this.store = store;
-		this.dayNum = dayNum;
+		this.skeleton = skeleton;
 		this.scroll = getInteractionContext().scroll;
 	}
 
@@ -140,7 +112,9 @@ export class WeekController {
 	/** 计算当前时间在"日"内的百分比位置（06:00 = 0%, 次日 06:00 = 100%） */
 	private updateNowPercentage() {
 		const now = dayjs();
-		const startOfDay = now.startOf("day").add(this.offsetByHour, "hour");
+		const startOfDay = now
+			.startOf("day")
+			.add(this.skeleton.offsetByHour, "hour");
 		this.nowPercentage = (now.diff(startOfDay) / MS_PER_DAY) * 100;
 	}
 
@@ -207,7 +181,7 @@ export class WeekController {
 			);
 			const sideWidthPx = SIDE_WIDTH * rem;
 			const dayWidthPx = SIZE * rem;
-			const todayIndex = this.dayNum;
+			const todayIndex = this.skeleton.dayNum;
 			const todayLeft = sideWidthPx + todayIndex * dayWidthPx;
 			const scrollTarget = todayLeft - (ref.clientWidth - dayWidthPx) / 2;
 			ref.scrollTo({
@@ -226,8 +200,11 @@ export class WeekController {
 	private pixelsToTime(day: Dayjs, topPx: number): Dayjs {
 		return day
 			.startOf("day")
-			.add(this.offsetByHour, "hour")
-			.add((topPx / this.dayHeight) * MS_PER_DAY, "milliseconds");
+			.add(this.skeleton.offsetByHour, "hour")
+			.add(
+				(topPx / this.skeleton.dayHeight) * MS_PER_DAY,
+				"milliseconds",
+			);
 	}
 
 	/** 从 Todo 拖入：拖拽悬停时更新预览块位置（30 分钟默认时长，15 分钟对齐） */

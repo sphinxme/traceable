@@ -2,8 +2,8 @@
 	/**
 	 * 周视图主组件（薄视图）
 	 *
-	 * 创建 WeekController 并通过 $effect 驱动生命周期，
-	 * 模板中直接读取 controller 的状态渲染子组件。
+	 * 创建 WeekSkeleton（坐标系）和 WeekController（业务逻辑），
+	 * 通过 $effect 驱动生命周期，模板中直接读取状态渲染子组件。
 	 */
 	import dayjs from "dayjs";
 
@@ -11,7 +11,7 @@
 	import { getInteractionContext } from "$lib/interaction/context.svelte";
 
 	import { NOT_WORK_HOUR_RANGES } from "./layout/config";
-	import { DAY_HEIGHT_PX, SIDE_WIDTH, SIZE } from "./week-config";
+	import { WeekSkeleton } from "./WeekSkeleton.svelte";
 	import { WeekController } from "./WeekController.svelte";
 
 	import DayHeader from "./DayHeader.svelte";
@@ -27,7 +27,8 @@
 
 	let { store, dayNum }: Props = $props();
 
-	const controller = new WeekController(store, dayNum);
+	const skeleton = new WeekSkeleton(dayNum);
+	const controller = new WeekController(store, skeleton);
 	const { drag } = getInteractionContext();
 
 	$effect(() => {
@@ -42,38 +43,16 @@
 	scrollbarYClasses="hidden"
 	orientation="both"
 >
-	<!--
-		日历主网格容器
-		CSS Grid 布局：
-		  列: [左侧时间轴 SIDE_WIDTH rem] [日列 × displayDayNum, 每列 1fr]
-		  行: [auto 表头] [auto 全天标签] [1fr 时间网格]
-		固定高度 DAY_HEIGHT_PX(1800px)，宽度 = SIDE_WIDTH + SIZE × displayDayNum
-	-->
-	<div
-		data-tauri-drag-region
-		class="relative grid rounded-lg"
-		style:height="{DAY_HEIGHT_PX}px"
-		style:grid-template-columns="{SIDE_WIDTH}rem repeat({controller
-			.displayRange.displayDayNum}, 1fr)"
-		style:grid-template-rows="auto auto 1fr"
-		style:width="{SIDE_WIDTH +
-			SIZE * controller.displayRange.displayDayNum}rem"
-	>
+	<div data-tauri-drag-region use:skeleton.root class="relative rounded-lg">
 		<!--
 			当前时间指示线层
-			跨全部列（grid-column: 1 / -1），占据时间网格行（grid-row: 3 / -1）
-			使用 subgrid 与父网格对齐，红线和时间标签按 nowPercentage 定位
+			由 skeleton.nowIndicator 定位到 grid-row 3, cols 1/-1, subgrid。
+			红线和时间标签按 nowPercentage 定位。
 		-->
-		<div
-			style:grid-template-columns="subgrid"
-			style:grid-template-rows="subgrid"
-			style:grid-column="1 / -1"
-			style:grid-row="3 / -1"
-			class="relative"
-		>
+		<div use:skeleton.nowIndicator class="relative">
 			<!-- 红色横线：贯穿全宽 -->
 			<div
-				style:z-index="10"
+				style:z-index={WeekSkeleton.layers.nowIndicator}
 				style:top="{controller.nowPercentage}%"
 				style:height="1px"
 				class=" w-full absolute bg-red-400"
@@ -90,23 +69,17 @@
 			</div>
 		</div>
 
-		<!-- 日期表头：星期 + 日期，高亮今天（grid-row: 1） -->
-		<DayHeader
-			displayDays={controller.displayRange.displayDays}
-			offsetByHour={controller.offsetByHour}
-		/>
+		<!-- 日期表头：由 skeleton.header 定位 -->
+		<DayHeader {skeleton} />
 
 		<!--
-			时间网格：小时刻度 + 非工作时段背景 + 拖放区域（grid-row: 3）
-			通过 bind 回传 dayHeight 和 containerWidth 给 controller
+			时间网格：小时刻度 + 非工作时段背景 + 拖放区域
+			由 skeleton 的 timeAxis / timeGridArea / timeGrid + measure 定位
 		-->
 		<DayGrid
-			displayDays={controller.displayRange.displayDays}
-			offsetByHour={controller.offsetByHour}
+			{skeleton}
 			notWorkHourRange={NOT_WORK_HOUR_RANGES}
 			{drag}
-			bind:dayHeight={controller.dayHeight}
-			bind:containerWidth={controller.containerWidth}
 			onDragOver={controller.handleDragOver.bind(controller)}
 			onDrop={controller.handleDrop.bind(controller)}
 			onDragEnd={controller.handleDragEnd.bind(controller)}
@@ -115,22 +88,17 @@
 		<!-- 事件块：每个 PositionedSegment 渲染一个 WeekEvent，跨天事件会有多个 -->
 		{#each controller.positionedSegments as seg (seg.eventId + "-" + seg.dayIndex)}
 			<WeekEvent
-				offsetByHour={controller.offsetByHour}
+				{skeleton}
 				segment={seg}
 				task={seg.event.task!}
-				dayHeight={controller.dayHeight}
-				dayWidth={controller.dayWidth}
-				getColumnIndex={controller.getColumnIndex}
 				snapsOffset={controller.snapsOffset}
 			/>
 		{/each}
 
 		<!-- 从 Todo 拖入时的预览块（仅 draggingTaskEvent 非空时显示） -->
 		<DragPreview
+			{skeleton}
 			draggingTaskEvent={controller.draggingTaskEvent}
-			getColumnIndex={controller.getColumnIndex}
-			offsetByHour={controller.offsetByHour}
-			dayHeight={controller.dayHeight}
 		/>
 	</div>
 </ScrollArea>

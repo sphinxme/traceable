@@ -5,9 +5,8 @@
 	 * 接收 PositionedSegment（由布局引擎预先计算好定位信息），
 	 * 创建 WeekEventController 管理交互状态，通过 eventInteract action 绑定 interactjs。
 	 *
-	 * 一个跨天事件会渲染多个 WeekEvent 实例（每个 segment 一个），
-	 * 它们共享同一个 event 引用，操作任一 segment 的拖拽/resize 都
-	 * 作用于底层 Event 对象。
+	 * 宏观定位（grid-row, grid-column）由 skeleton.eventSlot action 处理。
+	 * 微观定位（translateY, height, width, left）由控制器状态驱动。
 	 */
 	import dayjs from "dayjs";
 
@@ -22,6 +21,7 @@
 	import type { Task } from "$lib/states/meta/task.svelte";
 	import { Redo2 } from "@lucide/svelte";
 	import { fade } from "svelte/transition";
+	import { WeekSkeleton } from "../WeekSkeleton.svelte";
 	import { WeekEventController } from "./WeekEventController.svelte";
 	import {
 		eventInteract,
@@ -29,24 +29,13 @@
 	} from "./eventInteract.svelte";
 
 	interface Props {
-		dayHeight: number;
-		dayWidth: number;
+		skeleton: WeekSkeleton;
 		segment: PositionedSegment;
 		task: Task;
-		offsetByHour: number;
 		snapsOffset: number[];
-		getColumnIndex: (t: number) => number;
 	}
 
-	let {
-		dayHeight,
-		dayWidth,
-		segment,
-		task,
-		offsetByHour,
-		getColumnIndex,
-		snapsOffset,
-	}: Props = $props();
+	let { skeleton, segment, task, snapsOffset }: Props = $props();
 
 	const { focus } = getInteractionContext();
 
@@ -78,22 +67,22 @@
 	/** segment 或上下文变化时同步控制器（布局重算/拖拽结束后触发） */
 	$effect(() => {
 		controller.updateContext(
-			dayHeight,
+			skeleton.dayHeight,
 			snapsOffset,
-			getColumnIndex,
+			skeleton.getColumnIndex,
 			segment.segStart,
 		);
 		controller.syncToSegment(
 			segment.segStart,
 			segment.segEnd,
 			segment.dayIndex,
-			offsetByHour,
-			dayHeight,
+			skeleton.offsetByHour,
+			skeleton.dayHeight,
 		);
 	});
 
 	/** 重叠分列的宽度与左偏移 */
-	const laneGeometry = $derived(getLaneGeometry(segment, dayWidth));
+	const laneGeometry = $derived(getLaneGeometry(segment, skeleton.dayWidth));
 
 	/** eventInteract action 的参数（segment 变化时通过 $derived 更新） */
 	const interactParams = $derived<EventInteractParams>({
@@ -124,24 +113,21 @@
 
 <!--
 	事件块根容器
-	通过 CSS Grid 定位（grid-row: 3, grid-column 由 columnIndex 决定），
-	absolute + translateY 实现垂直偏移。
-	宽度和左偏移由重叠分列（laneGeometry）计算。
+	skeleton.eventSlot 定位到 grid-row 3, grid-column = columnIndex+2, absolute。
+	微观定位通过 translateY / height / width / left 实现。
 	use:eventInteract 绑定拖拽/缩放/点击交互。
 	use:tooltipTrigger 绑定 hover 显隐 tooltip。
 -->
 <div
 	bind:this={container}
+	use:skeleton.eventSlot={controller.state.columnIndex}
 	use:eventInteract={interactParams}
 	use:tooltip.trigger
-	style:z-index="8"
+	style:z-index={WeekSkeleton.layers.events}
 	style:padding="2px"
-	class="border-1 z-10 absolute ease-out grow-0 hover:opacity-90 overflow-visible text-sm text-zinc-50 opacity-75"
-	style:grid-row="3"
+	class="border-1 ease-out grow-0 hover:opacity-90 overflow-visible text-sm text-zinc-50 opacity-75"
 	style:transition-property="transform, opacity"
 	style:transition-duration="150ms"
-	style:grid-column="{controller.state.columnIndex + 2} / {controller.state
-		.columnIndex + 2}"
 	style:transform="translateY({controller.state.topOffset}px) {highlight
 		? 'scale(1.10)'
 		: ''}"

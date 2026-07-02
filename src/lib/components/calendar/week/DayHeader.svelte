@@ -2,50 +2,44 @@
 	/**
 	 * 日期表头组件
 	 *
-	 * 渲染星期 + 日期，高亮今天。使用 subgrid 与父网格的日列对齐。
-	 * sticky top-0 固定在顶部，滚动时不消失。
+	 * 渲染星期 + 日期，高亮今天。
+	 * 由 skeleton.header 定位到 cols 2+, row 1, sticky, subgrid。
 	 */
-	import dayjs, { type Dayjs } from "dayjs";
+	import dayjs from "dayjs";
+	import { WeekSkeleton } from "./WeekSkeleton.svelte";
 
 	interface Props {
-		displayDays: Dayjs[];
-		offsetByHour: number;
+		skeleton: WeekSkeleton;
 	}
 
-	let { displayDays, offsetByHour }: Props = $props();
+	let { skeleton }: Props = $props();
 </script>
 
 <!--
-	日期表头（grid-row: 1）
-	占据日列区域（grid-column: 2 / -1），使用 subgrid 与父网格对齐。
-	sticky top-0 固定，z:11 确保覆盖事件块和网格线。
+	日期表头
+	skeleton.header 定位到 grid-column 2/-1, grid-row 1, sticky, subgrid, z:header。
 	header-shadow::after 伪元素提供底部渐变阴影。
 -->
 <div
 	data-tauri-drag-region
-	style:display="grid"
-	style:grid-column="2 / -1"
-	style:grid-row="1 / 1"
-	style:grid-template-columns="subgrid"
-	style:grid-template-rows="subgrid"
-	class=" header-shadow sticky top-0 bg-background py-3 text-center text-zinc-700"
-	style:z-index="11"
+	use:skeleton.header
+	class=" header-shadow bg-background py-3 text-center text-zinc-700"
 >
-	{#each displayDays as day, i (day)}
+	{#each skeleton.displayDays as day, i (day)}
 		<div
 			data-tauri-drag-region
+			use:skeleton.dayColumn={i}
 			class=" flex flex-col items-center justify-between"
-			style:grid-area="1 / {i + 1} / 1 / {i + 1}"
 		>
 			<!-- 星期：今天加粗红色，非今天细体 -->
 			<div
 				class="text-base font-medium"
 				class:font-light={!day.isSame(
-					dayjs().add(-offsetByHour, "hour"),
+					dayjs().add(-skeleton.offsetByHour, "hour"),
 					"day",
 				)}
 				class:text-red-500={day.isSame(
-					dayjs().add(-offsetByHour, "hour"),
+					dayjs().add(-skeleton.offsetByHour, "hour"),
 					"day",
 				)}
 			>
