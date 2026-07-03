@@ -5,8 +5,12 @@
 	 * 接收 PositionedSegment（由布局引擎预先计算好定位信息），
 	 * 创建 EventSegmentController 管理交互状态，通过 controller.action 绑定 interactjs。
 	 *
-	 * 宏观定位（grid-row, grid-column）由 skeleton.eventSlot action 处理。
-	 * 微观定位（translateY, height, width, left）由控制器状态驱动。
+	 * 三层定位模型（详见 WeekSkeletonController）：
+	 * | 层 | 机制 | 数据来源 | 样式属性 |
+	 * |----|------|---------|---------|
+	 * | 1. Grid 定位 | eventSlot action | segment.dayIndex | grid-column, grid-row, position:absolute |
+	 * | 2. 垂直像素 | controller.state | segStart/segEnd → fractionOfDay × dayHeight | translateY, height |
+	 * | 3. 水平分列 | getLaneGeometry | laneIndex/laneCount → dayWidth / laneCount | width, left |
 	 */
 	import dayjs from "dayjs";
 

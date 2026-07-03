@@ -1,6 +1,6 @@
 <script lang="ts">
 	/**
-	 * 周视图主组件（薄视图）
+	 * 周视图主组件————一个类似 Google Calendar周视图的组件
 	 *
 	 * 创建 WeekSkeletonController（坐标系）和 WeekController（业务逻辑），
 	 * 通过 $effect 驱动生命周期，模板中直接读取状态渲染子组件。

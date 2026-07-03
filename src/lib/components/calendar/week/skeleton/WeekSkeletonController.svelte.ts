@@ -9,6 +9,50 @@
  * - 所有 grid-column / grid-row / subgrid / z-index 值集中在此文件
  * - 组件通过 use:skeleton.xxx 声明语义角色，无需知道具体坐标值
  *
+ * ## 宏观网格结构
+ *
+ * 根容器是一个 (1+displayDayNum) 列 × 3 行的 CSS Grid：
+ *
+ * | 行 \ 列       | Col 1 (4rem)  | Col 2~N+1 (1fr × N) |
+ * |--------------|--------------|---------------------|
+ * | Row 1 (auto) | —            | 日期表头 (DayHeader) |
+ * | Row 2 (auto) | "全天" 标签   | —                   |
+ * | Row 3 (1fr)  | 左侧时间轴    | 时间网格 (DayGrid)   |
+ *
+ * - Col 1 固定 4rem（SIDE_WIDTH）为左侧时间轴
+ * - Col 2+ 等分为 N 个日列（默认 N=21，前后各 10 天 + 今天）
+ * - Row 3 占满剩余高度（固定 DAY_HEIGHT_PX=1800px），24h 纵向展开
+ *
+ * ## 三层定位模型
+ *
+ * 事件块的定位分三层，从宏观到微观，每层回答一个问题：
+ *
+ * | 层 | 回答的问题 | 机制 | 负责人 | 样式属性 |
+ * |----|-----------|------|--------|---------|
+ * | 1  | 在哪一天   | CSS Grid | eventSlot action | grid-column, grid-row, position:absolute |
+ * | 2  | 在什么时间 | 像素偏移 | EventSegmentController | translateY, height |
+ * | 3  | 重叠并排   | lane 几何 | getLaneGeometry | width, left |
+ *
+ * 第 1 层由本控制器的 `eventSlot` action 完成，将事件块放到正确的日列（grid cell）。
+ * `position:absolute` 使事件块脱离 grid 流，允许第 2~3 层在 cell 内自由偏移。
+ * 第 2 层通过 `fractionOfDay × dayHeight` 将时间比例转为像素，第 3 层通过
+ * `dayWidth / laneCount` 计算并排宽度。dayHeight/dayWidth 均由 `measure` action 实测。
+ *
+ * ## Subgrid 机制
+ *
+ * 子容器通过 `grid-template-columns: subgrid`（和/或 `rows: subgrid`）继承父网格的
+ * 轨道定义，使得跨越多列的子容器内部仍能精确对齐到父网格的列线，无需重复声明列宽。
+ *
+ * | Action | subgrid 用途 |
+ * |--------|-------------|
+ * | timeAxis | col 1 全行，时间标签按行对齐 |
+ * | header | col 2+，日期表头每天对齐到一列 |
+ * | timeGrid | col 2+ row 3，拖放区日列对齐到父网格列 |
+ * | nowIndicator | col 1/-1 row 3，时间线贯穿全宽 |
+ *
+ * 例外：`timeGridArea` 不使用 subgrid，而是自定义 48 行子网格（30 分钟粒度），
+ * 供非工作时段背景按 `(hour - offsetByHour) * 2 + 1` 计算 grid-row 精确定位。
+ *
  * 坐标系数据流：
  *   gridTemplateColumns/Rows ──→ root action ──→ 根容器 DOM
  *   dayHeight ($state) ←────── measure action ←── 拖放区 DOM (ResizeObserver)
@@ -159,7 +203,9 @@ export class WeekSkeletonController {
 		node.style.gridRow = "2";
 	};
 
-	/** 时间网格区域（带 subgrid）：cols 2+, row 3 */
+	/** 时间网格区域（带 subgrid）：cols 2+, row 3
+	 *  继承父网格列轨道，内部日列通过 dayColumn action 对齐到各列。
+	 *  skeleton.measure 挂载于此以实测 dayHeight / containerWidth。 */
 	timeGrid = (node: HTMLElement) => {
 		$effect(() => {
 			node.style.gridColumn = "2 / -1";
@@ -170,7 +216,9 @@ export class WeekSkeletonController {
 		});
 	};
 
-	/** 时间网格区域（无 subgrid，供非工作时段等自定义行网格使用） */
+	/** 时间网格区域（无 subgrid）：cols 2+, row 3
+	 *  不继承父网格行轨道，自定义 48 行子网格（30 分钟粒度）。
+	 *  供非工作时段背景按 (hour-offsetByHour)*2 计算的 grid-row 精确定位。 */
 	timeGridArea = (node: HTMLElement) => {
 		$effect(() => {
 			node.style.gridColumn = "2 / -1";
@@ -190,7 +238,8 @@ export class WeekSkeletonController {
 		return { destroy: () => ro.disconnect() };
 	};
 
-	/** 日列（在 subgrid 时间网格内，index 0-based） */
+	/** 日列（在 subgrid 容器内，index 0-based）
+	 *  通过 grid-area 定位到 subgrid 继承的第 index+1 列，确保与父网格列线对齐。 */
 	dayColumn = (node: HTMLElement, index: number) => {
 		const apply = (idx: number) => {
 			node.style.gridArea = `1 / ${idx + 1} / 1 / ${idx + 1}`;
@@ -199,7 +248,10 @@ export class WeekSkeletonController {
 		return { update: apply };
 	};
 
-	/** 事件块槽位：grid-row 3, grid-column = dayIndex+2, absolute */
+	/** 事件块槽位：grid-row 3, grid-column = dayIndex+2, position:absolute
+	 *  三层定位模型的第 1 层（Grid 定位）：将事件块放到正确的日列。
+	 *  position:absolute 使事件块脱离 grid 流，允许第 2~3 层的像素级定位
+	 *  （translateY/height/width/left）在 grid cell 内自由偏移。 */
 	eventSlot = (node: HTMLElement, dayIndex: number) => {
 		node.style.gridRow = "3";
 		node.style.position = "absolute";

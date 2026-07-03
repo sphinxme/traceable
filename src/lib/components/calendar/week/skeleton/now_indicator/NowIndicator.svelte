@@ -3,7 +3,8 @@
 	 * 当前时间指示线组件
 	 *
 	 * 由 skeleton.nowIndicator 定位到 grid-row 3, cols 1/-1, subgrid。
-	 * 红色横线和时间标签按 nowPercentage 定位。
+	 * subgrid 继承父网格列轨道，使时间线贯穿全宽且标签可精确定位到某一日列。
+	 * nowPercentage 基于 offsetByHour 日界计算（06:00 = 0%, 次日 06:00 = 100%）。
 	 */
 	import dayjs from "dayjs";
 	import { WeekSkeletonController } from "../WeekSkeletonController.svelte";

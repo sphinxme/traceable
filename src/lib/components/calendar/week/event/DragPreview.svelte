@@ -6,7 +6,9 @@
 	 * 仅在 draggingTaskEvent 非空时渲染。
 	 * pointer-events: none 确保不干扰拖拽操作。
 	 *
-	 * 宏观定位由 skeleton.eventSlot 处理，微观定位（top, height）由时间计算驱动。
+	 * 复用三层定位模型：第 1 层由 skeleton.eventSlot 处理（Grid 定位到日列），
+	 * 第 2 层由 calculateTopOffset/calculateEventHeight 计算（像素级垂直定位）。
+	 * 与 EventSegment 不同，预览块无需第 3 层（不涉及重叠分列）。
 	 */
 	import dayjs from "dayjs";
 	import { calculateTopOffset, calculateEventHeight } from "../segment_layout/geometry";

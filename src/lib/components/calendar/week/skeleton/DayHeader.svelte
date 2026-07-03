@@ -4,6 +4,7 @@
 	 *
 	 * 渲染星期 + 日期，高亮今天。
 	 * 由 skeleton.header 定位到 cols 2+, row 1, sticky, subgrid。
+	 * subgrid 继承父网格列轨道，确保表头日期与时间网格日列严格对齐。
 	 */
 	import dayjs from "dayjs";
 	import { WeekSkeletonController } from "./WeekSkeletonController.svelte";

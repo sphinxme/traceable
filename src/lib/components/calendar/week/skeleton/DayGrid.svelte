@@ -119,7 +119,9 @@
 
 <!--
 	层 3：非工作时段背景（z:nonWorkHours）
-	skeleton.timeGridArea 定位到 cols 2+, row 3（无 subgrid，使用自定义 48 行网格）。
+	skeleton.timeGridArea 定位到 cols 2+, row 3。
+	故意不使用 subgrid，而是自定义 48 行子网格（30 分钟粒度 = 24h × 2），
+	因为非工作时段需要按半小时精度定位，而非父网格的 3 行结构。
 	grid-row 计算公式：(hour - offsetByHour) * 2 + 1，值可 >48 由 CSS 自动截断。
 -->
 <div
@@ -141,8 +143,9 @@
 
 <!--
 	层 4：拖放区（z:dropZone）
-	skeleton.timeGrid 定位到 cols 2+, row 3, subgrid。
-	skeleton.measure 通过 ResizeObserver 回传 dayHeight / containerWidth。
+	skeleton.timeGrid 定位到 cols 2+, row 3, subgrid（继承父网格列轨道）。
+	skeleton.measure 通过 ResizeObserver 回传 dayHeight / containerWidth，
+	这两个实测值驱动三层定位模型的第 2~3 层（像素级定位）。
 	每个日列注册为 interactjs + HTML5 DnD 双拖放目标。
 -->
 <div

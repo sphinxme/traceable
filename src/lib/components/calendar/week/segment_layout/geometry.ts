@@ -8,6 +8,10 @@
  *   所有日界计算统一使用 getDayStart(t, offsetByHour)：
  *   先减偏移 → startOf("day") → 加回，确保 00:00~06:00 的事件归到前一日。
  *
+ * 这些函数服务于三层定位模型的第 2 层（垂直像素定位）：
+ *   calculateTopOffset → translateY, calculateEventHeight → height。
+ *   两者均通过 fractionOfDay × dayHeight 将时间比例转为像素偏移。
+ *
  * 函数总览：
  * | 函数 | 说明 |
  * |------|------|

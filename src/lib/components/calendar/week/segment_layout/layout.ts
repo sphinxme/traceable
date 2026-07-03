@@ -279,6 +279,9 @@ export function layoutEvents(
 /**
  * 根据 segment 的 lane 信息计算渲染时的像素宽度和左偏移。
  *
+ * 实现三层定位模型的第 3 层（水平分列）：将 laneIndex/laneCount 转换为
+ * 像素宽度和左偏移，EventSegment.svelte 通过 style:width/left 应用。
+ *
  * EventSegment.svelte 中也可直接计算（laneWidth = dayWidth / laneCount），
  * 此函数仅作为集中入口，方便未来调整间距/padding 等样式。
  */
