@@ -31,8 +31,12 @@
 
 	const MIN_SIZE = 50;
 
-	let imgElement: HTMLImageElement;
+	let imgElement: HTMLImageElement | undefined;
 	let isNodeSelected = $state(false);
+
+	function ref(node: HTMLImageElement) {
+		imgElement = node;
+	}
 
 	export function updateNode(newNode: any) {
 		myNode = newNode;
@@ -43,6 +47,7 @@
 	}
 
 	function handleResizeStart(event: MouseEvent | TouchEvent) {
+		if (!imgElement) return;
 		event.preventDefault();
 		event.stopPropagation();
 
@@ -63,7 +68,7 @@
 	}
 
 	function handleResizeMove(event: MouseEvent | TouchEvent) {
-		if (!isResizing) return;
+		if (!isResizing || !imgElement) return;
 
 		const clientX =
 			"touches" in event ? event.touches[0].clientX : event.clientX;
@@ -77,7 +82,7 @@
 	}
 
 	function handleResizeEnd() {
-		if (!isResizing) return;
+		if (!isResizing || !imgElement) return;
 
 		const newWidth = imgElement.offsetWidth;
 		const newHeight = imgElement.offsetHeight;
@@ -116,7 +121,7 @@
 <div class="group relative mx-auto w-fit">
 	{#if src}
 		<img
-			bind:this={imgElement}
+			use:ref
 			{src}
 			{alt}
 			{title}

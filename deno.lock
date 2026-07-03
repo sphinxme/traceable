@@ -7,7 +7,7 @@
     "npm:@liveblocks/client@^2.11.0": "2.24.3",
     "npm:@liveblocks/yjs@^2.11.0": "2.24.3_yjs@13.6.29",
     "npm:@lucide/svelte@0.539": "0.539.0_svelte@5.36.13__acorn@8.15.0",
-    "npm:@sveltejs/vite-plugin-svelte@^6.1.0": "6.1.0_svelte@5.36.13__acorn@8.15.0_vite@7.0.5__picomatch@4.0.3",
+    "npm:@sveltejs/vite-plugin-svelte@^6.1.0": "6.1.0_svelte@5.36.13__acorn@8.15.0_vite@7.0.5__@types+node@26.1.0_@types+node@26.1.0",
     "npm:@tailwindcss/aspect-ratio@~0.4.2": "0.4.2_tailwindcss@3.4.17__postcss@8.5.6",
     "npm:@tailwindcss/container-queries@~0.1.1": "0.1.1_tailwindcss@3.4.17__postcss@8.5.6",
     "npm:@tailwindcss/forms@~0.5.9": "0.5.10_tailwindcss@3.4.17__postcss@8.5.6",
@@ -25,6 +25,7 @@
     "npm:@tiptap/pm@^3.14.0": "3.14.0_prosemirror-model@1.25.4_prosemirror-state@1.4.4_prosemirror-view@1.41.4",
     "npm:@tiptap/starter-kit@^3.14.0": "3.14.0_@tiptap+pm@3.14.0__prosemirror-model@1.25.4__prosemirror-state@1.4.4__prosemirror-view@1.41.4_@tiptap+core@3.14.0__@tiptap+pm@3.14.0___prosemirror-model@1.25.4___prosemirror-state@1.4.4___prosemirror-view@1.41.4_@tiptap+extension-list@3.14.0__@tiptap+core@3.14.0___@tiptap+pm@3.14.0____prosemirror-model@1.25.4____prosemirror-state@1.4.4____prosemirror-view@1.41.4__@tiptap+pm@3.14.0___prosemirror-model@1.25.4___prosemirror-state@1.4.4___prosemirror-view@1.41.4_@tiptap+extensions@3.14.0__@tiptap+core@3.14.0___@tiptap+pm@3.14.0____prosemirror-model@1.25.4____prosemirror-state@1.4.4____prosemirror-view@1.41.4__@tiptap+pm@3.14.0___prosemirror-model@1.25.4___prosemirror-state@1.4.4___prosemirror-view@1.41.4",
     "npm:@tsconfig/svelte@^5.0.4": "5.0.4",
+    "npm:@types/node@^26.1.0": "26.1.0",
     "npm:autoprefixer@^10.4.20": "10.4.21_postcss@8.5.6",
     "npm:bits-ui@^1.0.0-next.46": "1.8.0_svelte@5.36.13__acorn@8.15.0",
     "npm:bson-objectid@^2.0.4": "2.0.4",
@@ -53,8 +54,8 @@
     "npm:tailwindcss@^3.4.9": "3.4.17_postcss@8.5.6",
     "npm:tslib@^2.8.0": "2.8.1",
     "npm:typescript@~5.6.2": "5.6.3",
-    "npm:vite@7.0.5": "7.0.5_picomatch@4.0.3",
-    "npm:vite@^7.0.5": "7.0.5_picomatch@4.0.3",
+    "npm:vite@7.0.5": "7.0.5_@types+node@26.1.0",
+    "npm:vite@^7.0.5": "7.0.5_@types+node@26.1.0",
     "npm:y-indexeddb@^9.0.12": "9.0.12_yjs@13.6.29",
     "npm:y-prosemirror@^1.3.7": "1.3.7_prosemirror-model@1.25.4_prosemirror-state@1.4.4_prosemirror-view@1.41.4_y-protocols@1.0.6__yjs@13.6.29_yjs@13.6.29",
     "npm:y-quill@1": "1.0.0_quill@2.0.3_quill-cursors@4.0.4_yjs@13.6.29",
@@ -487,7 +488,7 @@
       ],
       "tarball": "https://registry.npmmirror.com/@sveltejs/acorn-typescript/-/acorn-typescript-1.0.5.tgz"
     },
-    "@sveltejs/vite-plugin-svelte-inspector@5.0.0_@sveltejs+vite-plugin-svelte@6.1.0__svelte@5.36.13___acorn@8.15.0__vite@7.0.5___picomatch@4.0.3_svelte@5.36.13__acorn@8.15.0_vite@7.0.5__picomatch@4.0.3": {
+    "@sveltejs/vite-plugin-svelte-inspector@5.0.0_@sveltejs+vite-plugin-svelte@6.1.0__svelte@5.36.13___acorn@8.15.0__vite@7.0.5___@types+node@26.1.0__@types+node@26.1.0_svelte@5.36.13__acorn@8.15.0_vite@7.0.5__@types+node@26.1.0_@types+node@26.1.0": {
       "integrity": "sha512-iwQ8Z4ET6ZFSt/gC+tVfcsSBHwsqc6RumSaiLUkAurW3BCpJam65cmHw0oOlDMTO0u+PZi9hilBRYN+LZNHTUQ==",
       "dependencies": [
         "@sveltejs/vite-plugin-svelte",
@@ -497,7 +498,7 @@
       ],
       "tarball": "https://registry.npmmirror.com/@sveltejs/vite-plugin-svelte-inspector/-/vite-plugin-svelte-inspector-5.0.0.tgz"
     },
-    "@sveltejs/vite-plugin-svelte@6.1.0_svelte@5.36.13__acorn@8.15.0_vite@7.0.5__picomatch@4.0.3": {
+    "@sveltejs/vite-plugin-svelte@6.1.0_svelte@5.36.13__acorn@8.15.0_vite@7.0.5__@types+node@26.1.0_@types+node@26.1.0": {
       "integrity": "sha512-+U6lz1wvGEG/BvQyL4z/flyNdQ9xDNv5vrh+vWBWTHaebqT0c9RNggpZTo/XSPoHsSCWBlYaTlRX8pZ9GATXCw==",
       "dependencies": [
         "@sveltejs/vite-plugin-svelte-inspector",
@@ -881,6 +882,13 @@
     "@types/mdurl@2.0.0": {
       "integrity": "sha512-RGdgjQUZba5p6QEFAVx2OGb8rQDL/cPRG7GiedRzMcJ1tYnUANBncjbSB1NRGwbvjcPeikRABz2nshyPk1bhWg==",
       "tarball": "https://registry.npmmirror.com/@types/mdurl/-/mdurl-2.0.0.tgz"
+    },
+    "@types/node@26.1.0": {
+      "integrity": "sha512-O0A1G3xPGy4w7AgQdAQYUlQ+BKk2Oovw8eRpofyp5KdBZULnbe+WqaOVNrm705SHphCiG4XHsACrSmPu1f+Kgw==",
+      "dependencies": [
+        "undici-types"
+      ],
+      "tarball": "https://registry.npmmirror.com/@types/node/-/node-26.1.0.tgz"
     },
     "acorn@8.15.0": {
       "integrity": "sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==",
@@ -2247,6 +2255,10 @@
       "integrity": "sha512-ARDJmphmdvUk6Glw7y9DQ2bFkKBHwQHLi2lsaH6PPmz/Ka9sFOBsBluozhDltWmnv9u/cF6Rt87znRTPV+yp/A==",
       "tarball": "https://registry.npmmirror.com/uc.micro/-/uc.micro-2.1.0.tgz"
     },
+    "undici-types@8.3.0": {
+      "integrity": "sha512-j375ScV60dom+YkPFIfTLcOiPxkN/buHz5GobjLhixFuANaNs3C9l4GmrWqejgXWJ7BbJcFYpTEUkS1Ge8bpZQ==",
+      "tarball": "https://registry.npmmirror.com/undici-types/-/undici-types-8.3.0.tgz"
+    },
     "update-browserslist-db@1.1.3_browserslist@4.25.1": {
       "integrity": "sha512-UxhIZQ+QInVdunkDAaiazvvT/+fXL5Osr0JZlJulepYu6Jd7qJtDZjlur0emRlT71EN3ScPoE7gvsuIKKNavKw==",
       "dependencies": [
@@ -2261,9 +2273,10 @@
       "integrity": "sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==",
       "tarball": "https://registry.npmmirror.com/util-deprecate/-/util-deprecate-1.0.2.tgz"
     },
-    "vite@7.0.5_picomatch@4.0.3": {
+    "vite@7.0.5_@types+node@26.1.0": {
       "integrity": "sha512-1mncVwJxy2C9ThLwz0+2GKZyEXuC3MyWtAAlNftlZZXZDP3AJt5FmwcMit/IGGaNZ8ZOB2BNO/HFUB+CpN0NQw==",
       "dependencies": [
+        "@types/node",
         "esbuild",
         "fdir",
         "picomatch@4.0.3",
@@ -2274,10 +2287,13 @@
       "optionalDependencies": [
         "fsevents"
       ],
+      "optionalPeers": [
+        "@types/node"
+      ],
       "bin": true,
       "tarball": "https://registry.npmmirror.com/vite/-/vite-7.0.5.tgz"
     },
-    "vitefu@1.1.1_vite@7.0.5__picomatch@4.0.3": {
+    "vitefu@1.1.1_vite@7.0.5__@types+node@26.1.0_@types+node@26.1.0": {
       "integrity": "sha512-B/Fegf3i8zh0yFbpzZ21amWzHmuNlLlmJT6n7bu5e+pCHUKQIfXSYokrqOBGEMMe9UG2sostKQF9mml/vYaWJQ==",
       "dependencies": [
         "vite"
@@ -2442,6 +2458,7 @@
         "npm:@tiptap/pm@^3.14.0",
         "npm:@tiptap/starter-kit@^3.14.0",
         "npm:@tsconfig/svelte@^5.0.4",
+        "npm:@types/node@^26.1.0",
         "npm:autoprefixer@^10.4.20",
         "npm:bits-ui@^1.0.0-next.46",
         "npm:bson-objectid@^2.0.4",
