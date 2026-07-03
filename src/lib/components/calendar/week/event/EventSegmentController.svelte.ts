@@ -131,8 +131,8 @@ export class EventSegmentController {
 		this.state.topOffset = calculateTopOffset(segStart, offsetByHour, dayHeight);
 		this.state.eventHeight = calculateEventHeight(segStart, segEnd, dayHeight);
 		this.state.columnIndex = dayIndex;
-		this.state.previewStart = segStart;
-		this.state.previewEnd = segEnd;
+		this.state.previewStart = this.event?.start ?? segStart;
+		this.state.previewEnd = this.event?.end ?? segEnd;
 	}
 
 	/**
