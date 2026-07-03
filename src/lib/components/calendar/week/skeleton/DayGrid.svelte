@@ -2,12 +2,13 @@
 	/**
 	 * 时间网格组件
 	 *
-	 * 由四层叠加组成（通过 z-index 分层），全部由 skeleton actions 定位：
+	 * 由四层叠加组成（通过 z-index 分层），全部由 skeleton actions 定位，
+	 * 组件内不含任何手写 grid-column / grid-row / grid-template 值：
 	 *
-	 * 层 1 (z:gridLines)    网格线层   — skeleton.timeAxis，col 1 全行，sticky
-	 * 层 2 (z:labels)       标签层     — skeleton.timeAxis，覆盖在网格线上方
-	 * 层 3 (z:nonWorkHours) 非工作时段  — skeleton.timeGridArea，48 行子网格
-	 * 层 4 (z:dropZone)     拖放区     — skeleton.timeGrid + skeleton.measure，subgrid
+	 * 层 1 (z:gridLines)    网格线层   — skeleton.timeAxis + skeleton.timeAxisRow
+	 * 层 2 (z:labels)       标签层     — skeleton.timeAxis + skeleton.timeAxisRow，覆盖在网格线上方
+	 * 层 3 (z:nonWorkHours) 非工作时段  — skeleton.timeGridArea + skeleton.nonWorkHourSlot
+	 * 层 4 (z:dropZone)     拖放区     — skeleton.timeGrid + skeleton.measure + skeleton.dayColumn
 	 *
 	 * skeleton.measure 通过 ResizeObserver 将实际尺寸回传给 skeleton。
 	 */
@@ -49,7 +50,7 @@
 	class="rounded-lg"
 	style:z-index={WeekSkeletonController.layers.gridLines}
 >
-	<div class=" flex flex-col" style:grid-area="3 / 1 ">
+	<div class=" flex flex-col" use:skeleton.timeAxisRow={WeekSkeletonController.rows.timeGrid}>
 		<div style:flex="1"></div>
 		{#each range(1, 23)}
 			<div
@@ -70,7 +71,7 @@
 <!--
 	层 2：标签层（z:labels）
 	同样使用 skeleton.timeAxis，覆盖在网格线上方。
-	包含"全天"标签（grid-area: 2 / 1）和小时刻度（grid-area: 3 / 1）。
+	"全天"标签和小时刻度通过 skeleton.timeAxisRow 放入对应行。
 	hour 范围为 [1+offset, 23+offset]，hour % 24 处理 >24 的情况。
 -->
 <div
@@ -82,7 +83,7 @@
 	<!-- "全天"标签 + 上下分割线 -->
 	<div
 		class="z-10 relative flex items-center justify-end text-xs font-extralight text-zinc-500"
-		style:grid-area="2 / 1 "
+		use:skeleton.timeAxisRow={WeekSkeletonController.rows.allDay}
 	>
 		<div
 			style:z-index="7"
@@ -98,7 +99,7 @@
 	<!-- 小时刻度：07:00 ~ 29:00（offsetByHour=6 时），格式化为 12 小时制 -->
 	<div
 		class=" z-10 flex flex-col font-extralight text-zinc-400"
-		style:grid-area="3 / 1 "
+		use:skeleton.timeAxisRow={WeekSkeletonController.rows.timeGrid}
 	>
 		<div style:flex="1"></div>
 		{#each range(1 + skeleton.offsetByHour, 23 + skeleton.offsetByHour) as hour}
@@ -119,23 +120,16 @@
 
 <!--
 	层 3：非工作时段背景（z:nonWorkHours）
-	skeleton.timeGridArea 定位到 cols 2+, row 3。
-	故意不使用 subgrid，而是自定义 48 行子网格（30 分钟粒度 = 24h × 2），
-	因为非工作时段需要按半小时精度定位，而非父网格的 3 行结构。
-	grid-row 计算公式：(hour - offsetByHour) * 2 + 1，值可 >48 由 CSS 自动截断。
+	skeleton.timeGridArea 定位到 cols 2+, row 3，并定义 48 行子网格（30 分钟粒度）。
+	skeleton.nonWorkHourSlot 按 (hour-offsetByHour)*2+1 计算 grid-row 精确定位。
 -->
 <div
 	use:skeleton.timeGridArea
-	class="grid"
 	style:z-index={WeekSkeletonController.layers.nonWorkHours}
-	style:grid-template-rows="repeat(48, 1fr)"
 >
 	{#each notWorkHourRange as range}
 		<div
-			style:grid-row="{(range.start - skeleton.offsetByHour) * 2 + 1} / {(range.end -
-				skeleton.offsetByHour) *
-				2 +
-				1}"
+			use:skeleton.nonWorkHourSlot={range}
 			class="relative flex items-center justify-end text-xs bg-zinc-100"
 		></div>
 	{/each}

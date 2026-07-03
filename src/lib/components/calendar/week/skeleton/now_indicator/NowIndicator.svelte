@@ -5,6 +5,7 @@
 	 * 由 skeleton.nowIndicator 定位到 grid-row 3, cols 1/-1, subgrid。
 	 * subgrid 继承父网格列轨道，使时间线贯穿全宽且标签可精确定位到某一日列。
 	 * nowPercentage 基于 offsetByHour 日界计算（06:00 = 0%, 次日 06:00 = 100%）。
+	 * 时间标签通过 skeleton.nowIndicatorLabel 定位到今天的列。
 	 */
 	import dayjs from "dayjs";
 	import { WeekSkeletonController } from "../WeekSkeletonController.svelte";
@@ -15,6 +16,8 @@
 	}
 
 	let { skeleton, nowPercentage }: Props = $props();
+
+	const todayColumnIndex = $derived(skeleton.getColumnIndex(Date.now()));
 </script>
 
 <div use:skeleton.nowIndicator class="relative">
@@ -25,10 +28,10 @@
 		style:height="1px"
 		class=" w-full absolute bg-red-400"
 	></div>
-	<!-- 时间标签：显示当前 HH:mm -->
+	<!-- 时间标签：显示当前 HH:mm，定位到今天的列 -->
 	<div
+		use:skeleton.nowIndicatorLabel={todayColumnIndex}
 		style:z-index={WeekSkeletonController.layers.nowIndicatorLabel}
-		style:grid-column="3 / 3"
 		style:top="{nowPercentage}%"
 		style:transform="translateY(-50%)"
 		class="absolute text-xs text-red-400 font-light pl-6"

@@ -42,16 +42,16 @@
  *
  * 子容器通过 `grid-template-columns: subgrid`（和/或 `rows: subgrid`）继承父网格的
  * 轨道定义，使得跨越多列的子容器内部仍能精确对齐到父网格的列线，无需重复声明列宽。
+ * 子元素通过配套的行/列放置 action（timeAxisRow / dayColumn / nonWorkHourSlot /
+ * nowIndicatorLabel）定位到 subgrid 内的具体位置，组件无需知道坐标值。
  *
- * | Action | subgrid 用途 |
- * |--------|-------------|
- * | timeAxis | col 1 全行，时间标签按行对齐 |
- * | header | col 2+，日期表头每天对齐到一列 |
- * | timeGrid | col 2+ row 3，拖放区日列对齐到父网格列 |
- * | nowIndicator | col 1/-1 row 3，时间线贯穿全宽 |
- *
- * 例外：`timeGridArea` 不使用 subgrid，而是自定义 48 行子网格（30 分钟粒度），
- * 供非工作时段背景按 `(hour - offsetByHour) * 2 + 1` 计算 grid-row 精确定位。
+ * | 容器 Action | 子元素放置 Action | subgrid 用途 |
+ * |-------------|-------------------|-------------|
+ * | timeAxis | timeAxisRow | col 1 全行，子元素按行对齐（全天标签/小时刻度） |
+ * | header | dayColumn | col 2+，日期表头每天对齐到一列 |
+ * | timeGrid | dayColumn | col 2+ row 3，拖放区日列对齐到父网格列 |
+ * | nowIndicator | nowIndicatorLabel | col 1/-1 row 3，时间线贯穿全宽，标签定位到日列 |
+ * | timeGridArea | nonWorkHourSlot | cols 2+ row 3，自定义 48 行子网格（30 分钟粒度） |
  *
  * 坐标系数据流：
  *   gridTemplateColumns/Rows ──→ root action ──→ 根容器 DOM
@@ -59,8 +59,9 @@
  *   containerWidth ($state) ←── measure action ←── 拖放区 DOM
  *   dayWidth ($derived) ───────→ EventSegment (lane geometry)
  *   displayDays ($derived) ────→ DayHeader / DayGrid ({#each})
- *   getColumnIndex ($derived) ─→ EventSegment / DragPreview
+ *   getColumnIndex ($derived) ─→ EventSegment / DragPreview / NowIndicator
  *   layers (static) ──────────→ 所有组件 (z-index)
+ *   rows (static) ────────────→ DayGrid (timeAxisRow 行号)
  *
  * @see Week.svelte 中的 const skeleton = new WeekSkeletonController(dayNum)
  */
@@ -93,6 +94,21 @@ const LAYERS = {
 	labels: 10,
 	header: 11,
 	dragPreview: 12,
+} as const;
+
+/**
+ * 父网格行号定义（集中管理，消除组件中的行号魔法数字）。
+ *
+ * | 行名 | 值 | 用途 |
+ * |------|----|------|
+ * | `header` | 1 | 日期表头 |
+ * | `allDay` | 2 | "全天" 标签 |
+ * | `timeGrid` | 3 | 时间网格 |
+ */
+const ROWS = {
+	header: 1,
+	allDay: 2,
+	timeGrid: 3,
 } as const;
 
 export class WeekSkeletonController {
@@ -148,6 +164,7 @@ export class WeekSkeletonController {
 	);
 
 	static readonly layers = LAYERS;
+	static readonly rows = ROWS;
 
 	constructor(dayNum: number = DEFAULT_DAY_NUM) {
 		this.dayNum = dayNum;
@@ -183,6 +200,17 @@ export class WeekSkeletonController {
 		});
 	};
 
+	/** 时间轴行（在 timeAxis subgrid 内，按行号定位子元素）
+	 *  timeAxis 通过 subgrid 继承父网格行轨道，本 action 将子元素放到指定行。
+	 *  行号使用 WeekSkeletonController.rows 常量，消除魔法数字。 */
+	timeAxisRow = (node: HTMLElement, rowIndex: number) => {
+		const apply = (idx: number) => {
+			node.style.gridArea = `${idx} / 1`;
+		};
+		apply(rowIndex);
+		return { update: apply };
+	};
+
 	/** 日期表头：cols 2+, row 1, sticky, subgrid */
 	header = (node: HTMLElement) => {
 		$effect(() => {
@@ -216,14 +244,28 @@ export class WeekSkeletonController {
 		});
 	};
 
-	/** 时间网格区域（无 subgrid）：cols 2+, row 3
-	 *  不继承父网格行轨道，自定义 48 行子网格（30 分钟粒度）。
-	 *  供非工作时段背景按 (hour-offsetByHour)*2 计算的 grid-row 精确定位。 */
+	/** 时间网格区域（无 subgrid）：cols 2+, row 3, 自定义 48 行子网格
+	 *  不继承父网格行轨道，而是定义 48 行（30 分钟粒度 = 24h × 2）子网格，
+	 *  供非工作时段背景通过 nonWorkHourSlot action 精确定位。 */
 	timeGridArea = (node: HTMLElement) => {
 		$effect(() => {
 			node.style.gridColumn = "2 / -1";
 			node.style.gridRow = "3";
+			node.style.display = "grid";
+			node.style.gridTemplateRows = "repeat(48, 1fr)";
 		});
+	};
+
+	/** 非工作时段槽位：在 timeGridArea 的 48 行子网格内按小时计算 grid-row
+	 *  行号公式：(hour - offsetByHour) * 2 + 1，值可 >48 由 CSS 自动截断。 */
+	nonWorkHourSlot = (node: HTMLElement, range: { start: number; end: number }) => {
+		const apply = (r: { start: number; end: number }) => {
+			const startRow = (r.start - this.offsetByHour) * 2 + 1;
+			const endRow = (r.end - this.offsetByHour) * 2 + 1;
+			node.style.gridRow = `${startRow} / ${endRow}`;
+		};
+		apply(range);
+		return { update: apply };
 	};
 
 	/** 测量元素尺寸 → 回传 dayHeight / containerWidth */
@@ -271,5 +313,16 @@ export class WeekSkeletonController {
 			node.style.gridTemplateColumns = "subgrid";
 			node.style.gridTemplateRows = "subgrid";
 		});
+	};
+
+	/** 当前时间指示线标签：在 nowIndicator subgrid 内定位到指定日列
+	 *  nowIndicator 继承所有父列（含 col 1 时间轴），日列从 col 2 开始，
+	 *  因此 grid-column = dayIndex + 2。 */
+	nowIndicatorLabel = (node: HTMLElement, dayIndex: number) => {
+		const apply = (idx: number) => {
+			node.style.gridColumn = `${idx + 2} / ${idx + 2}`;
+		};
+		apply(dayIndex);
+		return { update: apply };
 	};
 }
