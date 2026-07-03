@@ -158,11 +158,10 @@ export class EventSegmentController {
 		this.state.previewEnd = this.segStart + (heightPx / this.dayHeight) * MS_PER_DAY;
 	}
 
-	/** 缩放结束：将新时长写入 Yjs */
+	/** 缩放结束：将新结束时间写入 Yjs */
 	onResizeEnd(event: Event) {
 		this.state.isResizing = false;
-		const duration = (MS_PER_DAY * this.state.eventHeight) / this.dayHeight;
-		event.resizeTo(duration);
+		event.end = this.state.previewEnd;
 	}
 
 	// ── 拖拽移动（跨天拖拽 + 15 分钟对齐，改变 event.start） ──
