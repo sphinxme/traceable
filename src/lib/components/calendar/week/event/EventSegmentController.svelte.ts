@@ -155,7 +155,7 @@ export class EventSegmentController {
 	/** 缩放移动：根据像素高度更新预览结束时间 */
 	onResizeMove(heightPx: number) {
 		this.state.eventHeight = heightPx;
-		this.state.previewEnd = this.preStart + (heightPx / this.dayHeight) * MS_PER_DAY;
+		this.state.previewEnd = this.segStart + (heightPx / this.dayHeight) * MS_PER_DAY;
 	}
 
 	/** 缩放结束：将新时长写入 Yjs */
