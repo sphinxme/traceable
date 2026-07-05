@@ -1,14 +1,34 @@
+/**
+ * Insert 协议的 pending 状态 — Enter 创建新 Todo 后聚焦到新行。
+ */
 interface PendingInsert {
 	viewId: string;
 	cursorIndex: number;
 }
 
+/**
+ * Tab 协议的 pending 状态 — Tab/Untab 移动 Todo 后聚焦到移动后的行。
+ */
 interface PendingTab {
 	originViewId: string;
 	nextViewId: string;
 	cursorIndex: number;
 }
 
+/**
+ * 光标恢复服务 — 在结构性变更（插入 / Tab 移动 / 缩放过渡）后恢复光标位置。
+ *
+ * 三套独立的协议，各自维护 pending 状态：
+ *
+ * | 协议 | 触发场景 | 方法 |
+ * |------|----------|------|
+ * | Insert | Enter 创建新 Todo → 聚焦到新行 | {@link requestFocusInsert} / {@link consumeFocusInsert} |
+ * | Tab | Tab/Untab 移动 Todo → 聚焦到移动后的行 | {@link startTab} / {@link endTab} / {@link isTabbing} / {@link consumeTabCursor} |
+ * | Zoom | 缩放过渡（zoom-out / zoom-in） | {@link startZoomout} / {@link endZoomout} / {@link startZoominto} / {@link endZoominto} / {@link isZoomingOut} |
+ *
+ * Insert / Tab 协议采用"命中即消费"模式：匹配 viewId 时返回 cursorIndex 并清空 pending。
+ * Zoom 协议仅做状态存储，实际的 transition-name 广播由事件驱动。
+ */
 export class CursorRestorationService {
 	private pendingInsert: PendingInsert | undefined;
 	private pendingTab: PendingTab | undefined;
