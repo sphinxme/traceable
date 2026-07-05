@@ -21,7 +21,7 @@
 	} from "$lib/components/ui/popover-tooltip";
 
 	import { getInteractionContext } from "$lib/interaction/context.svelte";
-	import { interactionBus$listen as _$listen } from "$lib/interaction/eventbus";
+	import { interactionBus$listen } from "$lib/interaction/eventbus.svelte";
 	import {
 		getLaneGeometry,
 		type PositionedSegment,
@@ -52,7 +52,7 @@
 	const highlight = $derived(eventHighlight.isHighlighted(event.id));
 
 	/** 一次性聚焦: 通过 mitt 事件监听, 替代旧 $effect + $state 方案 */
-	_$listen("focus:eventSegment", ({ eventId }) => {
+	interactionBus$listen("focus:eventSegment", ({ eventId }) => {
 		if (eventId === event.id) {
 			container.scrollIntoView({
 				behavior: "smooth",

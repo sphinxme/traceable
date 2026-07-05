@@ -1,5 +1,5 @@
 import { tick } from "svelte";
-import { eventbus, type Events } from "./eventbus";
+import { eventbus, type Events } from "./eventbus.svelte";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import type { TodoController } from "./TodoController.svelte";
 import { makeViewId } from "./utils";

@@ -4,7 +4,7 @@ import { TodoController } from "../components/todolist/controller/TodoController
 import { makeViewIdByPaths } from "../components/todolist/controller/utils";
 import type { TodoLifeCycle } from "../components/todolist/controller/ILifeCycle.svelte";
 import { PanelStateStore } from "$lib/states/states/StatesTree.svelte";
-import { eventbus } from "../components/todolist/controller/eventbus";
+import { eventbus } from "../components/todolist/controller/eventbus.svelte";
 import { tick } from "svelte";
 import type { PanelController } from "../components/todolist/controller/IPanelController.svelte";
 import { getInteractionContext, type InteractionContext } from "$lib/interaction/context.svelte";

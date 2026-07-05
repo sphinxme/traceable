@@ -1,7 +1,7 @@
 <script lang="ts">
 	import hotkeys from "hotkeys-js";
 	import type { TodoController } from "../controller/TodoController.svelte";
-	import { eventbus } from "../controller/eventbus";
+	import { eventbus } from "../controller/eventbus.svelte";
 	import { getInteractionContext } from "$lib/interaction/context.svelte";
 
 	interface Props {

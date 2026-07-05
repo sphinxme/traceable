@@ -9,7 +9,7 @@ import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import { makeViewId } from "./utils";
 import { DragDropActions } from "./DragDropActions.svelte";
 import type { PanelController } from "./IPanelController.svelte";
-import { eventbus, type Events } from "./eventbus";
+import { eventbus, type Events } from "./eventbus.svelte";
 
 
 /**

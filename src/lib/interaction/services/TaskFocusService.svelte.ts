@@ -1,6 +1,6 @@
 import type { Task } from "$lib/states/meta/task.svelte";
 import { findAllOccurrences } from "$lib/components/graph/graph";
-import { interactionBus, type FocusTarget } from "../eventbus";
+import { interactionBus, type FocusTarget } from "../eventbus.svelte";
 
 /**
  * Week → Todo 方向的焦点服务。

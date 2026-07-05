@@ -1,4 +1,4 @@
-import { interactionBus } from "../eventbus";
+import { interactionBus } from "../eventbus.svelte";
 
 /**
  * Todo → Week 方向的事件高亮服务。

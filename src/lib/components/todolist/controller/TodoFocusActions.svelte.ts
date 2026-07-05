@@ -1,7 +1,7 @@
 import { untrack } from "svelte";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import type { TodoController } from "./TodoController.svelte";
-import { interactionBus, type FocusTarget } from "$lib/interaction/eventbus";
+import { interactionBus, type FocusTarget } from "$lib/interaction/eventbus.svelte";
 
 /**
  * Todo 焦点 Action — 管理与单个 TodoController 关联的焦点行为。

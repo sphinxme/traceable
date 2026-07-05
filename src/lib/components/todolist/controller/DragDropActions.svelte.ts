@@ -1,5 +1,5 @@
 import type { Task } from "$lib/states/meta/task.svelte";
-import { eventbus } from "./eventbus";
+import { eventbus } from "./eventbus.svelte";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import type { TodoController } from "./TodoController.svelte";
 import { willCreateCycle } from "$lib/components/graph/graph";
