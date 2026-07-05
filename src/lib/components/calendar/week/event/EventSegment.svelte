@@ -21,6 +21,7 @@
 	} from "$lib/components/ui/popover-tooltip";
 
 	import { getInteractionContext } from "$lib/interaction/context.svelte";
+	import { interactionBus$listen as _$listen } from "$lib/interaction/eventbus";
 	import {
 		getLaneGeometry,
 		type PositionedSegment,
@@ -30,9 +31,7 @@
 	import { Redo2 } from "@lucide/svelte";
 	import { fade } from "svelte/transition";
 	import { WeekSkeletonController } from "../skeleton/WeekSkeletonController.svelte";
-	import {
-		EventSegmentController,
-	} from "./EventSegmentController.svelte";
+	import { EventSegmentController } from "./EventSegmentController.svelte";
 
 	interface Props {
 		skeleton: WeekSkeletonController;
@@ -52,10 +51,9 @@
 	const event = $derived(segment.event);
 	const highlight = $derived(eventHighlight.isHighlighted(event.id));
 
-	/** 一次性聚焦请求: 只读不写, 消除 $effect 内自写状态问题 */
-	$effect(() => {
-		const req = eventHighlight.focusRequest;
-		if (req && req.eventId === event.id) {
+	/** 一次性聚焦: 通过 mitt 事件监听, 替代旧 $effect + $state 方案 */
+	_$listen("focus:eventSegment", ({ eventId }) => {
+		if (eventId === event.id) {
 			container.scrollIntoView({
 				behavior: "smooth",
 				inline: "center",

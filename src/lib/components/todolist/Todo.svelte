@@ -7,7 +7,6 @@
 	import type { TodoController } from "./controller/TodoController.svelte";
 	import type { Task } from "$lib/states/meta/task.svelte";
 	import { eventbus, type Events } from "./controller/eventbus";
-	import { getInteractionContext } from "$lib/interaction/context.svelte";
 
 	interface Props {
 		task: Task;
@@ -21,8 +20,6 @@
 		// controller
 	}: Props = $props();
 	const controller = parentController.makeChild(task);
-
-	const { taskFocus } = getInteractionContext();
 
 	let rootElement: HTMLDivElement;
 
@@ -63,13 +60,6 @@
 		controller.dragDropActions.$isMeDragging || sameTaskIdOtherTaskDragging,
 	);
 
-	/** 薄 $effect: 读取 target → 委托 focusActions 处理高亮+滚动 */
-	$effect(() => {
-		const t = taskFocus.target;
-		if (t) {
-			controller.focusActions.handleFocusTarget(t);
-		}
-	});
 	const children = controller.task.children;
 	const hasChildren = $derived(children.size > 0);
 

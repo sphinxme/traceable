@@ -1,7 +1,7 @@
 import { untrack } from "svelte";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import type { TodoController } from "./TodoController.svelte";
-import type { FocusTarget } from "$lib/interaction/services/TaskFocusService.svelte";
+import { interactionBus, type FocusTarget } from "$lib/interaction/eventbus";
 
 /**
  * Todo 焦点 Action — 管理与单个 TodoController 关联的焦点行为。
@@ -13,18 +13,20 @@ import type { FocusTarget } from "$lib/interaction/services/TaskFocusService.sve
  *    `focusBottom` / `focusNext` 在控制器树中递归导航。
  *
  * 2. **Week→Todo Highlight（新增）** — 当用户点击 Week Event 时，
- *    响应 {@link TaskFocusService.target} 变化，执行：
+ *    响应 `'focus:todo'` 事件（由 `TaskFocusService.focusTask` 发射），
+ *    执行：
  *    - **Root controller**: 注册视图 + 沿路径展开祖先 (`handleRootFocusTarget`)
  *    - **Child controller**: 滚动到视图 + 金色闪烁高亮 (`handleFocusTarget`)
  *
  * **生命周期：**
- * - `onTodoReady()`: 消费待处理的 cursor focus + 注册 root 视图
- * - `destroy()`: 清理高亮定时器 + 注销 root 视图
+ * - `onTodoReady()`: 消费待处理的 cursor focus + 注册 root 视图 + 订阅 `'focus:todo'` 事件
+ * - `destroy()`: 清理高亮定时器 + 注销 root 视图 + 退订事件
  *
- * **$effect 约束：**
- * Svelte 5 的 `$effect` 只能在组件初始化阶段注册，不能在 `onTodoReady()`
- * （运行于 `$effect` 回调内）中嵌套调用。因此响应 `target` 变化的 `$effect`
- * 留在组件中作为薄包装，仅读取 `target` 并委托本类的 `handleXxx` 方法。
+ * **事件订阅 vs 旧 $effect 方案：**
+ * 旧方案中 `Todo.svelte` / `TodoView.svelte` 各有一个薄 `$effect` 读取
+ * `taskFocus.target` 并委托本类。现在改为在 `onTodoReady`/`destroy` 中
+ * 直接通过 `interactionBus.on`/`off` 订阅 `'focus:todo'` 事件，
+ * 组件无需感知服务状态，订阅逻辑完全内聚到本类生命周期。
  */
 export class TodoFocusActions implements TodoLifeCycle {
     constructor(
@@ -114,7 +116,14 @@ export class TodoFocusActions implements TodoLifeCycle {
     private highlightTimer: ReturnType<typeof setTimeout> | null = null;
 
     /**
-     * 处理焦点目标 — 由 `Todo.svelte` 的薄 `$effect` 调用。
+     * `'focus:todo'` 事件处理器引用 — 用于在 `destroy` 时精确退订。
+     *
+     * `null` 表示尚未订阅或已退订。
+     */
+    private focusHandler: ((target: FocusTarget) => void) | null = null;
+
+    /**
+     * 处理焦点目标 — 由 `onTodoReady` 中注册的 `'focus:todo'` 事件监听器调用。
      *
      * 精确匹配 `viewId` 后执行滚动 + 高亮。
      * 不匹配时直接返回，不做任何操作。
@@ -128,7 +137,7 @@ export class TodoFocusActions implements TodoLifeCycle {
     }
 
     /**
-     * 处理根焦点目标 — 由 `TodoView.svelte` 的薄 `$effect` 调用。
+     * 处理根焦点目标 — 由 `onTodoReady` 中注册的 `'focus:todo'` 事件监听器调用。
      *
      * 匹配 `rootViewId` 后沿路径展开祖先（使目标 Todo 可见）。
      * 使用 `untrack` 避免在展开过程中触发额外的响应式更新。
@@ -165,6 +174,7 @@ export class TodoFocusActions implements TodoLifeCycle {
      * 1. 消费待处理的 cursor focus 请求（键盘导航 / 新建 Todo）
      * 2. 如果是 root controller，注册视图到 `TaskFocusService`
      *    （使 `focusTask` 能搜索到此视图的子树）
+     * 3. 订阅 `'focus:todo'` 事件 — 响应 Week→Todo 焦点定位命令
      */
     public onTodoReady() {
         const cursorIndex = this.host.panel.interaction.cursor.consumeFocusInsert(this.host.viewId);
@@ -179,6 +189,12 @@ export class TodoFocusActions implements TodoLifeCycle {
                 this.host.task,
             );
         }
+
+        this.focusHandler = (target) => {
+            this.handleRootFocusTarget(target);
+            this.handleFocusTarget(target);
+        };
+        interactionBus.on("focus:todo", this.focusHandler);
     }
 
     /**
@@ -186,6 +202,7 @@ export class TodoFocusActions implements TodoLifeCycle {
      *
      * 1. 清理高亮定时器（防止组件卸载后定时器仍执行）
      * 2. 如果是 root controller，从 `TaskFocusService` 注销视图
+     * 3. 退订 `'focus:todo'` 事件
      */
     public destroy() {
         if (this.highlightTimer) {
@@ -197,6 +214,11 @@ export class TodoFocusActions implements TodoLifeCycle {
             this.host.panel.interaction.taskFocus.unregisterView(
                 this.host.viewId,
             );
+        }
+
+        if (this.focusHandler) {
+            interactionBus.off("focus:todo", this.focusHandler);
+            this.focusHandler = null;
         }
     }
 }

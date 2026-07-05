@@ -2,7 +2,6 @@
 	import TodoList from "$lib/components/todolist/TodoList.svelte";
 	import Title from "$lib/panels/todo/Title.svelte";
 	import { CirclePlus } from "@lucide/svelte";
-	import { getInteractionContext } from "$lib/interaction/context.svelte";
 	import type { TodoController } from "./controller/TodoController.svelte";
 
 	interface Props {
@@ -13,8 +12,6 @@
 
 	let { controller, showTitle = true, highlightTitle }: Props = $props();
 
-	const { taskFocus } = getInteractionContext();
-
 	// 不用onMount而是用effect是因为controller可能在运行中被替换
 	// 视图注册已移入 focusActions.onTodoReady/destroy
 	$effect(() => {
@@ -22,14 +19,6 @@
 		return () => {
 			controller.destroy();
 		};
-	});
-
-	/** 薄 $effect: 读取 target → 委托 focusActions 展开祖先 */
-	$effect(() => {
-		const t = taskFocus.target;
-		if (t) {
-			controller.focusActions.handleRootFocusTarget(t);
-		}
 	});
 </script>
 
