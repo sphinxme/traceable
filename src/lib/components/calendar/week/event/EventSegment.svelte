@@ -43,23 +43,24 @@
 
 	let { skeleton, segment, task, snapsOffset }: Props = $props();
 
-	const { focus } = getInteractionContext();
+	const { taskFocus, eventHighlight } = getInteractionContext();
 
 	let container: HTMLDivElement;
 
 	// ── 视图特有的响应式状态（不属于控制器） ──
 
 	const event = $derived(segment.event);
-	const highlight = $derived(focus.highlight[event.id]);
-	const focusMe = $derived(focus.focusing[event.id] || false);
+	const highlight = $derived(eventHighlight.isHighlighted(event.id));
+
+	/** 一次性聚焦请求: 只读不写, 消除 $effect 内自写状态问题 */
 	$effect(() => {
-		if (focusMe) {
+		const req = eventHighlight.focusRequest;
+		if (req && req.eventId === event.id) {
 			container.scrollIntoView({
 				behavior: "smooth",
 				inline: "center",
 				block: "center",
 			});
-			focus.focusing[event.id] = false;
 		}
 	});
 	const parentTasks = $derived(task.parents);
@@ -69,7 +70,7 @@
 	// ── 交互控制器 ──
 
 	const controller = new EventSegmentController();
-	controller.onTapAction = (task) => focus.focusTask(task);
+	controller.onTapAction = (task) => taskFocus.focusTask(task);
 
 	/** segment 或上下文变化时同步控制器（布局重算/拖拽结束后触发） */
 	$effect(() => {

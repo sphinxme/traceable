@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { untrack } from "svelte";
 	import TodoList from "$lib/components/todolist/TodoList.svelte";
 	import Title from "$lib/panels/todo/Title.svelte";
 	import { CirclePlus } from "@lucide/svelte";
@@ -14,9 +13,10 @@
 
 	let { controller, showTitle = true, highlightTitle }: Props = $props();
 
-	const { focus } = getInteractionContext();
+	const { taskFocus } = getInteractionContext();
 
 	// 不用onMount而是用effect是因为controller可能在运行中被替换
+	// 视图注册已移入 focusActions.onTodoReady/destroy
 	$effect(() => {
 		controller.onTodoReady();
 		return () => {
@@ -24,22 +24,11 @@
 		};
 	});
 
-	// 注册视图: Map<rootViewId, { panelId, rootTask }>
+	/** 薄 $effect: 读取 target → 委托 focusActions 展开祖先 */
 	$effect(() => {
-		focus.registerView(
-			controller.viewId,
-			controller.panel.id,
-			controller.task,
-		);
-		return () => focus.unregisterView(controller.viewId);
-	});
-
-	// 响应: 本视图被选中时, 沿路径展开祖先
-	$effect(() => {
-		const nonce = focus.focusNonce;
-		const targetRoot = focus.targetRootViewId;
-		if (nonce > 0 && targetRoot === controller.viewId) {
-			untrack(() => controller.unfoldByPath(focus.targetPath!));
+		const t = taskFocus.target;
+		if (t) {
+			controller.focusActions.handleRootFocusTarget(t);
 		}
 	});
 </script>

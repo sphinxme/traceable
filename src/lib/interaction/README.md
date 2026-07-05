@@ -8,7 +8,8 @@
 |------|------|
 | `context.svelte.ts` | `InteractionContext` 定义与 Context API 注入 |
 | `services/DragService.svelte.ts` | 拖拽 |
-| `services/FocusService.svelte.ts` | 焦点管理 |
+| `services/TaskFocusService.svelte.ts` | Week→Todo 焦点定位（点击 Week Event → 搜索 DAG → 展开/滚动/高亮 Todo） |
+| `services/EventHighlightService.svelte.ts` | Todo→Week 事件高亮（悬停/点击 EventIndicator → 高亮/滚动 EventSegment） |
 | `services/CursorRestorationService.svelte.ts` | 光标恢复（缩放过渡后） |
 | `services/ScrollMemoryService.svelte.ts` | 滚动位置记忆 |
 | `services/KeyboardService.svelte.ts` | 键盘快捷键 |
@@ -34,7 +35,8 @@ interaction.drag.start(...);
 | 服务 | 职责 |
 |------|------|
 | `DragService` | 管理拖拽状态，协调跨面板拖放 |
-| `FocusService` | 管理焦点位置，支持在 Todo 条目间导航 |
+| `TaskFocusService` | 点击 Week Event → 搜索 DAG 定位 Todo → 展开/滚动/高亮 |
+| `EventHighlightService` | 悬停/点击 Todo EventIndicator → 高亮/滚动 Week EventSegment |
 | `CursorRestorationService` | 在缩放过渡（View Transition）后恢复光标位置 |
 | `ScrollMemoryService` | 记忆各面板的滚动位置，切换时恢复 |
 | `KeyboardService` | 全局键盘快捷键 |

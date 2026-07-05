@@ -12,7 +12,7 @@
 	let { data, isCompleted }: Props = $props();
 	let length = $derived((data.end - data.start) / (1000 * 60 * 2)); // 10分钟5px
 
-	const { focus } = getInteractionContext();
+	const { eventHighlight } = getInteractionContext();
 
 	function formatDuration(duration: number): string {
 		const hours = Math.floor(duration / (60 * 60 * 1000));
@@ -41,16 +41,12 @@
 		openDelay={0}
 		closeDelay={0}
 		onOpenChange={(open) => {
-			if (open) {
-				focus.highlight[data.id] = true;
-			} else {
-				focus.highlight[data.id] = false;
-			}
+			eventHighlight.setHighlight(data.id, open);
 		}}
 	>
 		<HoverCard.Trigger
 			onclick={() => {
-				focus.focusing[data.id] = true;
+				eventHighlight.requestFocus(data.id);
 			}}
 		>
 			<div

@@ -22,12 +22,17 @@
 	}: Props = $props();
 	const controller = parentController.makeChild(task);
 
-	const { focus } = getInteractionContext();
+	const { taskFocus } = getInteractionContext();
 
 	let rootElement: HTMLDivElement;
 
 	let note = $derived(controller.task.$note);
 	let isCompleted = $derived(controller.task.isCompleted);
+
+	/** 委托 focusActions 执行滚动 (Action 类不持有 DOM 引用) */
+	controller.focusActions.onScrollIntoView = () => {
+		rootElement.scrollIntoView({ behavior: "smooth", block: "center" });
+	};
 
 	let sameTaskIdOtherTaskDragging = $state(false);
 	const sameTaskIdOtherTaskStartDragging = (event: Events["drag:start"]) => {
@@ -58,20 +63,11 @@
 		controller.dragDropActions.$isMeDragging || sameTaskIdOtherTaskDragging,
 	);
 
-	// highlight
-	let highlighting = $state(false);
+	/** 薄 $effect: 读取 target → 委托 focusActions 处理高亮+滚动 */
 	$effect(() => {
-		const nonce = focus.focusNonce;
-		if (
-			nonce > 0 &&
-			focus.targetViewId === controller.viewId
-		) {
-			rootElement.scrollIntoView({
-				behavior: "smooth",
-				block: "center",
-			});
-			highlighting = true;
-			setTimeout(() => (highlighting = false), 3000);
+		const t = taskFocus.target;
+		if (t) {
+			controller.focusActions.handleFocusTarget(t);
 		}
 	});
 	const children = controller.task.children;
@@ -87,7 +83,7 @@
 
 <div
 	bind:this={rootElement}
-	class:highlight-box={highlighting}
+	class:highlight-box={controller.focusActions.highlighting}
 	style:view-transition-name={controller.transitionActions
 		.$todoViewTransitionName}
 	class=" relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}"
