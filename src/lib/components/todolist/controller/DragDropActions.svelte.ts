@@ -5,10 +5,33 @@ import type { TodoController } from "./TodoController.svelte";
 import { willCreateCycle } from "$lib/components/graph/graph";
 import type { DraggingTaskData } from "$lib/interaction/services/DragService.svelte";
 
+/**
+ * Todo 拖放操作处理器 — 管理任务的拖拽与放置（reparenting）。
+ *
+ * **拖放语义**：
+ * - **move**（移动）：从原 parent 移除，添加到新 parent（同 panel 默认 move）
+ * - **link**（双向关联）：保留原 parent，添加到新 parent（跨 panel 默认 link）
+ * - **copy**（复制）：TODO，暂未实现
+ * - **none**（拒绝）：拖到自己/子孙节点、同位置无变化
+ *
+ * **环检测**：使用 `willCreateCycle`（graph.ts）防止创建循环引用。
+ *
+ * **状态迁移**：拖放时通过 `StateStore.receiveChild` 同步迁移折叠状态。
+ *
+ * **交互流程**：
+ * 1. 用户按住 Handle → `startDrag()` → `drag.set()` + emit `drag:start`
+ * 2. 拖拽经过 `TaskDropable` → `dragOverMe()` → 返回 dropEffect 控制鼠标样式
+ * 3. 释放在 `TaskDropable` → `dropIntoMe()` → 执行 reparenting
+ * 4. `endDrag()` → emit `drag:end` + `drag.clear()`
+ */
 export class DragDropActions implements TodoLifeCycle {
 
+	/** 当前条目是否正在被拖拽（控制透明遮罩显示） */
 	public $isMeDragging = $state(false);
 
+	/**
+	 * @param host 关联的 TodoController
+	 */
 	public constructor(
 		public readonly host: TodoController,
 	) { }
@@ -17,10 +40,21 @@ export class DragDropActions implements TodoLifeCycle {
 	public onTodoReady() { }
 	public destroy() { }
 
+	/**
+	 * 获取全局拖拽服务。
+	 * @returns DragService 实例
+	 */
 	private get drag() {
 		return this.host.panel.interaction.drag;
 	}
 
+	/**
+	 * 开始拖拽 — 设置拖拽数据到 DragService 并广播 `drag:start` 事件。
+	 *
+	 * 携带的数据包括：originPanelId、originViewId、originParent、task、states（StateStore）。
+	 *
+	 * @throws 如果是 root（home 不能拖拽）
+	 */
 	// drag
 	public startDrag() {
 		if (!this.host.parentController) {
@@ -39,6 +73,9 @@ export class DragDropActions implements TodoLifeCycle {
 		eventbus.emit('drag:start', data);
 	}
 
+	/**
+	 * 结束拖拽 — 广播 `drag:end` 事件并清除 DragService 数据。
+	 */
 	public endDrag() {
 		eventbus.emit('drag:end', {
 			originPanelId: this.host.panel.id,
@@ -49,6 +86,18 @@ export class DragDropActions implements TodoLifeCycle {
 		this.drag.clear();
 	}
 
+	/**
+	 * 执行放置 — 将拖拽中的任务 reparenting 到当前控制器。
+	 *
+	 * 根据 `shouldMove` 判断结果：
+	 * - `none` → 拒绝
+	 * - `copy` → TODO（暂未实现）
+	 * - `link` → 环检测通过后仅 `attachChild`（保留原 parent，双向关联）
+	 * - `move` → 同 list 内调换位置（`children.move`）；跨 list 先 `attachChild` + `receiveChild` 再 `detachChild`
+	 *
+	 * @param metaKeyPressed 是否按下了 Meta 键（⌘）
+	 * @param targetIndex 插入位置索引（可选，默认末尾）
+	 */
 	// drop
 	public dropIntoMe(metaKeyPressed: boolean, targetIndex?: number) {
 		const data = this.drag.data;
@@ -111,6 +160,13 @@ export class DragDropActions implements TodoLifeCycle {
 		}
 	}
 
+	/**
+	 * 拖拽悬停在当前控制器上 — 返回 dropEffect 控制鼠标样式和指示条显示。
+	 *
+	 * @param metaKeyPressed 是否按下了 Meta 键（⌘）
+	 * @param targetIndex 插入位置索引（可选）
+	 * @returns DataTransfer.dropEffect（'none' | 'move' | 'link' | 'copy'）
+	 */
 	public dragOverMe(metaKeyPressed: boolean, targetIndex?: number): DataTransfer["dropEffect"] {
 		if (targetIndex === undefined) {
 			targetIndex = this.host.task.children.size - 1;
@@ -120,6 +176,12 @@ export class DragDropActions implements TodoLifeCycle {
 		return result;
 	}
 
+	/**
+	 * 环检测 — 判断将指定任务作为当前任务的子任务是否会形成循环引用。
+	 *
+	 * @param task 待添加的子任务
+	 * @returns `true` 如果会成环
+	 */
 	private willCreateCycle(task: Task) {
 		return willCreateCycle(this.host.task, task);
 	}
@@ -131,6 +193,22 @@ export class DragDropActions implements TodoLifeCycle {
 	// 3. 
 
 
+	/**
+	 * 判断拖放操作的类型（move / link / copy / none）。
+	 *
+	 * 规则：
+	 * 1. 拖到自己或子孙节点上 → `none`
+	 * 2. 同 parent 同位置 → `none`
+	 * 3. 同 parent 不同位置 → `move`（仅调换位置）
+	 * 4. 同 panel + 无 metaKey → `move`
+	 * 5. 同 panel + metaKey → `link`
+	 * 6. 跨 panel + 无 metaKey → `link`
+	 * 7. 跨 panel + metaKey → `move`
+	 *
+	 * @param metaKeyPressed 是否按下了 Meta 键（⌘）
+	 * @param targetIndex 插入位置索引
+	 * @returns DataTransfer.dropEffect
+	 */
 	private shouldMove(metaKeyPressed: boolean, targetIndex: number): DataTransfer["dropEffect"] {
 		const data = this.drag.data;
 		if (!data) {

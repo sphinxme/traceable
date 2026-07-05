@@ -1,4 +1,24 @@
 <script lang="ts">
+	/**
+	 * TaskDropable — 拖放目标区域组件。
+	 *
+	 * 在 `TodoList` 中每个子条目前后插入，作为拖放的放置目标。
+	 * 仅在 `drag.active`（全局拖拽进行中）时渲染检测区域。
+	 *
+	 * **交互**：
+	 * - `ondragover` → `dragOverMe(metaKey)` 返回 dropEffect，控制鼠标样式
+	 * - `ondrop` → `dropIntoMe(metaKey, index)` 执行 reparenting
+	 * - `ondragenter/leave` → 控制 `hovering` 状态，显示/隐藏指示条
+	 *
+	 * **指示条**：hover 时显示灰色横条（`::after` 伪元素），高度变化使用过渡动画。
+	 *
+	 * **z-index**：使用 `controller.depth` 确保深层嵌套的拖放区域在上层。
+	 *
+	 * @prop controller - TodoController（拖放目标所属的控制器）
+	 * @prop index - 插入位置索引
+	 * @prop topTaskId - 上方相邻任务的 ID（可选）
+	 * @prop bottomTaskId - 下方相邻任务的 ID（可选）
+	 */
 	import hotkeys from "hotkeys-js";
 	import type { TodoController } from "../controller/TodoController.svelte";
 	import { eventbus } from "../controller/eventbus.svelte";

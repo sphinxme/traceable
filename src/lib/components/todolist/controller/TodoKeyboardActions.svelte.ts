@@ -7,19 +7,42 @@ import type { Context } from "quill/modules/keyboard";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import { willCreateCycle } from "$lib/components/graph/graph";
 
+/**
+ * Todo 键盘操作处理器。
+ *
+ * 处理 Quill 编辑器中的键盘交互，包括：
+ * - **上下导航**（ArrowUp / ArrowDown）：在控制器树中递归导航
+ * - **缩进调整**（Tab / Shift+Tab）：改变任务的父子层级关系
+ * - **新建条目**（Enter）：根据光标位置和上下文有 4 种行为
+ * - **笔记开关**（Shift+Enter）：切换笔记编辑器
+ *
+ * 键盘绑定在 `TodoItem.svelte` 的 `onMount` 中通过 `editor.keyboard.addBinding` / `unshift` 注册。
+ * Action 类不持有 Quill 实例引用，通过返回值控制 Quill 默认行为（`false` = 执行默认，`true` = 阻止默认）。
+ */
 export class TodoKeyboardActions implements TodoLifeCycle {
+    /**
+     * @param host 关联的 TodoController
+     */
     constructor(
         public readonly host: TodoController,
     ) { }
     public onTodoReady() { }
     public destroy() { }
 
-    //////
+    ///////
     // 上下导航: up/down
-    /////
+    ///////
 
     /**
-     * 在todoitem中键盘按上, 向上导航
+     * 在 TodoItem 中按 ArrowUp — 向上导航。
+     *
+     * 三种 case：
+     * 1. 我是 root → 不上浮
+     * 2. 我是当前列表第一个 → 上浮到父 item（cursorIndex + 2 补偿缩进）
+     * 3. 找到了上面的兄弟 → 让它 `focusBottom`（递归到其最后一个叶子）
+     *
+     * @param cursorIndex 当前光标位置
+     * @returns `false` 表示未处理（Quill 执行默认行为），`true` 表示已处理
      */
     public navigateUp(cursorIndex: number) {
         // case1: 我就是root, 那就不上浮了
@@ -37,6 +60,16 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         return preSlibingController.focusActions.focusBottom(cursorIndex);
     }
 
+    /**
+     * 在 TodoItem 中按 ArrowDown — 向下导航。
+     *
+     * 两种 case：
+     * 1. 有孩子且未折叠 → 转给第一个孩子（cursorIndex - 2 补偿缩进）
+     * 2. 无孩子或已折叠 → `focusNext` 找下一个平级兄弟（递归上浮）
+     *
+     * @param cursorIndex 当前光标位置
+     * @returns `false` 表示未处理，`true` 表示已处理
+     */
     public navigateDown(cursorIndex: number) {
         // case 1: 还有孩子, 优先转给自己孩子
         if ((!this.host.statesTree.isCurrentFolded() || this.host.isRoot()) && this.host.task.children.size) {
@@ -56,6 +89,19 @@ export class TodoKeyboardActions implements TodoLifeCycle {
     // 调整缩进: tab/untab
     /////
 
+    /**
+     * 按 Tab — 增加缩进（成为上方兄弟的子任务）。
+     *
+     * 流程：
+     * 1. root 不能 tab
+     * 2. 上方无兄弟 → 不操作
+     * 3. 上方有兄弟 → 环检测 → `cursor.startTab` → `transitionActions.onBeforeTabStart` →
+     *    `document.startViewTransition` → `preSilbingController.receiveChild(this.host)` + 展开
+     *    → `cursor.endTab`
+     *
+     * @param cursorIndex 当前光标位置
+     * @returns `false` 表示未处理，`true` 表示已处理
+     */
     public tab(cursorIndex: number): boolean {
         // case 0: panel title上不能tab
         if (!this.host.parentController) {
@@ -87,6 +133,18 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         })
         return true;
     }
+    /**
+     * 按 Shift+Tab — 减少缩进（借助爷爷成为父亲的下一个兄弟）。
+     *
+     * 流程：
+     * 1. root / 顶层 item 不能 untab
+     * 2. 非顶层 → `cursor.startTab` → `transitionActions.onBeforeTabStart` →
+     *    `document.startViewTransition` → `grandpaController.receiveChild(this.host, parentIndex + 1)`
+     *    → `cursor.endTab`
+     *
+     * @param cursorIndex 当前光标位置
+     * @returns `false` 表示未处理，`true` 表示已处理
+     */
     public untab(cursorIndex: number): boolean {
         // case 1: panel Title上不能untab
         if (!this.host.parentController) {
@@ -120,6 +178,24 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         return true;
     }
 
+    /**
+     * 按 Enter — 根据光标位置和上下文有 4 种行为。
+     *
+     * **case 1**: 空内容 + 非顶层 + 当前列表最后一个 → `untab`（减少缩进）
+     *
+     * **case 2**: 光标在末尾（suffix 为空）或 root：
+     * - 2.1 已展开或有子 → 在子列表首部插入新 item
+     * - 2.2 未展开 → 在自己后面插入新 item
+     *
+     * **case 3**: 光标在首部（prefix 为空）→ 在自己上面插入新 item
+     *
+     * **case 4**: 光标在中间 → 截断：前面内容给新 item，后面留给自己
+     *
+     * @param range Quill 选区
+     * @param curContext Quill 键盘上下文（含 prefix / suffix）
+     * @param quill Quill 编辑器实例
+     * @returns `false` 表示未处理，`true` 表示已处理
+     */
     // enter
     // TODO:调整参数
     public enter(range: Range, curContext: Context, quill: Quill): boolean {
@@ -171,6 +247,12 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         return true;
     }
 
+    /**
+     * 在自身前面插入新 item（由父任务 `insertChild` 在当前索引处插入）。
+     *
+     * @param text 新 item 的初始文本（可选）
+     * @returns 新 item 的 viewId
+     */
     private insertBeforeMyself(text?: string) {
         assertNotEmpty(this.host.parentController, "根节点无法创建前序节点");
 
@@ -181,6 +263,12 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         return newViewId;
     }
 
+    /**
+     * 在自身后面插入新 item（由父任务 `insertChild` 在当前索引 + 1 处插入）。
+     *
+     * @param text 新 item 的初始文本（可选）
+     * @returns 新 item 的 viewId
+     */
     private insertAfterMyself(text?: string) {
         assertNotEmpty(this.host.parentController, "根节点无法创建前序节点");
 
@@ -191,6 +279,9 @@ export class TodoKeyboardActions implements TodoLifeCycle {
         return newViewId;
     }
 
+    /**
+     * 按 Shift+Enter — 切换笔记编辑器（Popover）的开关状态。
+     */
     public shiftEnter() {
         this.host.noteEditOpen = !this.host.noteEditOpen;
     }

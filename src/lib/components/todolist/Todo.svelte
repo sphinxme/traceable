@@ -1,4 +1,26 @@
 <script lang="ts">
+	/**
+	 * Todo — 单个 Todo 条目组件（递归渲染）。
+	 *
+	 * 每个 Todo 对应一个 child `TodoController`（由 `parentController.makeChild(task)` 创建）。
+	 * 渲染结构：
+	 * ```
+	 * Todo
+	 * ├── TodoItem（标题编辑 + 事件指示 + 笔记）
+	 * │   ├── overlay: CollapseButton（折叠/展开，仅有子项时显示）
+	 * │   └── handle: Handle（拖拽手柄 + 右键菜单）
+	 * └── TodoList（子列表，递归渲染，受折叠状态控制）
+	 * ```
+	 *
+	 * **拖拽遮罩**：当 `meDragging` 为 true 时（自身拖拽或同 taskId 的其他实例拖拽），
+	 * 显示半透明遮罩并降低不透明度。
+	 *
+	 * **高亮**：当 `focusActions.highlighting` 为 true 时，显示金色闪烁覆盖层（3秒），
+	 * 用于 Week→Todo 焦点定位。
+	 *
+	 * @prop task - 子任务实体
+	 * @prop parentController - 父 TodoController
+	 */
 	import CollapseIcon from "./item/overlay/CollapseButton.svelte";
 	import * as ContextMenu from "$lib/components/ui/context-menu";
 	import Handle from "./item/overlay/Handle.svelte";

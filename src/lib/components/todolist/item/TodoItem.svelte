@@ -1,4 +1,32 @@
 <script lang="ts">
+	/**
+	 * TodoItem — 条目渲染组件（标题编辑器 + 事件指示 + 笔记）。
+	 *
+	 * 渲染结构：
+	 * ```
+	 * TodoItem
+	 * ├── Overlay（叠加层容器：折叠按钮等）
+	 * ├── Handle（拖拽手柄，由 snippet 传入）
+	 * ├── Quill 编辑器（标题文本，通过 y-quill 绑定到 Yjs Y.Text）
+	 * ├── EventIndicator[]（日历事件指示器，按时间排序）
+	 * └── NoteEditor（笔记编辑器，Popover 弹出，Tiptap）
+	 * ```
+	 *
+	 * **键盘绑定**：在 `onMount` 中注册 Quill 键盘绑定：
+	 * - ArrowUp / ArrowDown → `keyboardActions.navigateUp/Down`
+	 * - Enter → `keyboardActions.enter`（4种case）
+	 * - Shift+Enter → `keyboardActions.shiftEnter`（笔记开关）
+	 * - Tab / Shift+Tab → `keyboardActions.tab/untab`
+	 *
+	 * **焦点回调**：`focusActions.onfocus` 被赋值为 `editor.setSelection(cursorIndex, 0)`。
+	 *
+	 * **View Transition**：`$titleViewTransitionName` 用于缩放时的标题形变动画。
+	 *
+	 * @prop controller - TodoController
+	 * @prop overlay - 可选的叠加层 snippet（折叠按钮等）
+	 * @prop handle - 可选的拖拽手柄 snippet
+	 * @prop drag - 可选的拖拽区域 snippet
+	 */
 	import "quill/dist/quill.core.css";
 	import Quill from "quill";
 	import { QuillBinding } from "y-quill";
