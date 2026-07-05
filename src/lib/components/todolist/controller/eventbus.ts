@@ -1,4 +1,3 @@
-import type { Event } from "$lib/states/meta/event.svelte";
 import type { Task } from "$lib/states/meta/task.svelte";
 import mitt, { type Emitter } from "mitt";
 
@@ -10,9 +9,6 @@ export type Events = {
 
     'drag:start': { originPanelId: string, originViewId: string, task: Task };
     'drag:end': { originPanelId: string, originViewId: string, task: Task };
-
-    'clickOnWeekEvent': { event: Event, task: Task, clickCount: number };
-    'highlight': { viewId: string };
 };
 
 export const eventbus: Emitter<Events> = mitt<Events>();

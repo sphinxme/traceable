@@ -132,6 +132,28 @@ export class TodoController implements TodoLifeCycle {
         return makeViewId(this.panel.id, childTaskId, this.viewId);
     }
 
+    private _rootTaskId: string | undefined;
+    get rootTaskId(): string {
+        if (this._rootTaskId) return this._rootTaskId;
+        this._rootTaskId = this.parentController
+            ? this.parentController.rootTaskId
+            : this.task.id;
+        return this._rootTaskId;
+    }
+
+    /**
+     * 沿路径展开所有祖先。
+     * path[0] = root taskId, path[last] = target taskId。
+     * 对 path[0]..path[length-2] 逐层设 $folded = false 并 getChild。
+     */
+    unfoldByPath(path: string[]): void {
+        let current = this.statesTree;
+        for (let i = 0; i < path.length - 1; i++) {
+            current.$folded = false;
+            current = current.getChild(path[i + 1]);
+        }
+    }
+
     // 是不是当前panel的root (此时todoitem是title)
     public isRoot(): this is TodoController & { parentController: undefined; } {
         return !this.parentController;

@@ -1,4 +1,3 @@
-import { eventbus, type Events } from "./eventbus";
 import type { TodoLifeCycle } from "./ILifeCycle.svelte";
 import type { TodoController } from "./TodoController.svelte";
 
@@ -13,11 +12,9 @@ export class TodoFocusActions implements TodoLifeCycle {
         if (cursorIndex !== undefined) {
             this.onfocus(cursorIndex);
         }
-        eventbus.on('highlight', this.highlight);
     }
 
     public destroy() {
-        eventbus.off('highlight', this.highlight);
     }
 
     /**
@@ -27,15 +24,6 @@ export class TodoFocusActions implements TodoLifeCycle {
      * 注意cursorIndex可能为负值或特别大的值
      */
     public onfocus: (cursorIndex: number) => boolean = () => false;
-    // hooks: 由UI注入到这里, 当外部变动时, 调用这些函数来触发UI操作
-    public doHighlight: () => void = () => { };
-    public highlight = (event: Events['highlight']) => {
-        if (this.host.viewId !== event.viewId) {
-            return;
-        }
-
-        this.doHighlight();
-    }
 
     public focusBottom(cursorIndex: number): boolean {
         // 1. 如果已经折叠, 那么就focus自己

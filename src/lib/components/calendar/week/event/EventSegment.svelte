@@ -69,6 +69,7 @@
 	// ── 交互控制器 ──
 
 	const controller = new EventSegmentController();
+	controller.onTapAction = (task) => focus.focusTask(task);
 
 	/** segment 或上下文变化时同步控制器（布局重算/拖拽结束后触发） */
 	$effect(() => {

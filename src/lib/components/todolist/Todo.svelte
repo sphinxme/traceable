@@ -7,6 +7,7 @@
 	import type { TodoController } from "./controller/TodoController.svelte";
 	import type { Task } from "$lib/states/meta/task.svelte";
 	import { eventbus, type Events } from "./controller/eventbus";
+	import { getInteractionContext } from "$lib/interaction/context.svelte";
 
 	interface Props {
 		task: Task;
@@ -20,6 +21,10 @@
 		// controller
 	}: Props = $props();
 	const controller = parentController.makeChild(task);
+
+	const { focus } = getInteractionContext();
+
+	let rootElement: HTMLDivElement;
 
 	let note = $derived(controller.task.$note);
 	let isCompleted = $derived(controller.task.isCompleted);
@@ -55,10 +60,20 @@
 
 	// highlight
 	let highlighting = $state(false);
-	controller.focusActions.doHighlight = () => {
-		highlighting = true;
-		setTimeout(() => (highlighting = false), 3000);
-	};
+	$effect(() => {
+		const nonce = focus.focusNonce;
+		if (
+			nonce > 0 &&
+			focus.targetViewId === controller.viewId
+		) {
+			rootElement.scrollIntoView({
+				behavior: "smooth",
+				block: "center",
+			});
+			highlighting = true;
+			setTimeout(() => (highlighting = false), 3000);
+		}
+	});
 	const children = controller.task.children;
 	const hasChildren = $derived(children.size > 0);
 
@@ -71,6 +86,7 @@
 </script>
 
 <div
+	bind:this={rootElement}
 	class:highlight-box={highlighting}
 	style:view-transition-name={controller.transitionActions
 		.$todoViewTransitionName}

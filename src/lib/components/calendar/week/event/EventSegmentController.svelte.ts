@@ -14,7 +14,7 @@
  * |------|------|
  * | 拖拽移动 | 实时更新预览位置，15 分钟对齐，结束时调用 `event.moveTo(newStart)` 整体平移 |
  * | 底部缩放 | 仅 `isLast` 的 segment 可缩放，结束时调用 `event.resizeTo(duration)` |
- * | 点击 | 通过 `eventbus.emit("clickOnWeekEvent")` 通知（双击跳转到对应 Task） |
+ * | 点击 | 通过 `onTapAction` 回调通知视图层 (单击跳转+高亮对应 Todo) |
  *
  * 跨天拖拽：通过 `dragOffset = segStart - event.start` 将鼠标位置还原为事件实际 start，
  * `event.moveTo()` 整体平移后其他 segment 由布局引擎自动跟随。
@@ -31,7 +31,6 @@ import {
 } from "../segment_layout/geometry";
 import type { Event } from "$lib/states/meta/event.svelte";
 import type { Task } from "$lib/states/meta/task.svelte";
-import { eventbus } from "$lib/components/todolist/controller/eventbus";
 
 /**
  * EventSegment 的可变交互状态。
@@ -50,8 +49,6 @@ export interface EventInteractState {
 	previewEnd: number;
 	/** 是否正在缩放（控制 UI 切换到缩放预览模式） */
 	isResizing: boolean;
-	/** 点击计数（用于区分单击/双击） */
-	clickCount: number;
 }
 
 export class EventSegmentController {
@@ -63,7 +60,6 @@ export class EventSegmentController {
 		previewStart: 0,
 		previewEnd: 0,
 		isResizing: false,
-		clickCount: 0,
 	});
 
 	// ── 上下文参数（由视图通过 updateContext 同步） ──
@@ -198,14 +194,12 @@ export class EventSegmentController {
 
 	// ── 点击 ──
 
-	/** 点击/双击：递增计数器并通过 eventbus 通知（双击跳转到对应 Task） */
-	onTap(event: Event, task: Task) {
-		this.state.clickCount++;
-		eventbus.emit("clickOnWeekEvent", {
-			event,
-			task,
-			clickCount: this.state.clickCount,
-		});
+	/** 点击回调, 由视图注入 (触发 focusTask → 高亮+滚动+展开) */
+	public onTapAction: ((task: Task) => void) | null = null;
+
+	/** 点击: 通过回调通知视图层 */
+	onTap() {
+		this.onTapAction?.(this.task!);
 	}
 
 	// ── Svelte Action：interactjs 绑定 ──
@@ -264,10 +258,10 @@ export class EventSegmentController {
 					},
 				},
 			})
-			// 点击/双击：通过 eventbus 通知，双击跳转到对应 Task
-			.on("tap", () => {
-				this.onTap(this.event!, this.task!);
-			});
+		// 点击：通过回调通知视图层
+		.on("tap", () => {
+			this.onTap();
+		});
 
 		return {
 			/** segment 变化时更新 resize 权限（isLast 可能随拖拽位置变化） */
