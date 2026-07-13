@@ -1,49 +1,30 @@
 import * as Y from "yjs";
-import { Repository } from "../yjs/repository";
-import { TaskProxyManager } from "./task.svelte";
-import { EventProxyManager } from "./event.svelte";
-import { JournalProxyManager, type JournalType } from "./journal.svelte";
+import { Store } from "./store.svelte";
 import { UserManager } from "./user.svelte";
 
 export class Database {
     readonly doc: Y.Doc;
-    readonly repository: Repository;
-    readonly taskProxyManaager: TaskProxyManager;
-    readonly eventProxyManager: EventProxyManager;
-    readonly journalProxyManager: JournalProxyManager;
+    readonly store: Store;
     readonly userManager: UserManager;
 
     public constructor(doc: Y.Doc) {
         this.doc = doc;
-        this.repository = new Repository(doc);
-
-        this.taskProxyManaager = new TaskProxyManager(this.repository, this.repository);
-        this.eventProxyManager = new EventProxyManager(this.repository.events, this.repository, this.taskProxyManaager);
-        this.taskProxyManaager.eventproxyManager = this.eventProxyManager;
-        this.journalProxyManager = new JournalProxyManager(this.repository.journals, this.taskProxyManaager);
-        this.userManager = new UserManager(this.repository.user, this.taskProxyManaager);
+        this.store = new Store(doc);
+        this.userManager = new UserManager(this.store.user, this.store);
     }
 
     public clear() {
-        this.doc.transact(() => {
-            const repository = this.repository;
-            repository.tasks.clear();
-            repository.texts.clear();
-            repository.journals.clear();
-            repository.events.clear();
-            repository.panelStates.clear();
-            repository.user.clear();
-        });
+        this.store.clear();
     }
 
     public import(data: ReturnType<typeof Database.prototype.export>) {
         this.clear();
 
         this.doc.transact(() => {
-            const repository = this.repository;
+            const store = this.store;
             Object.entries(data.tasks).forEach(([id, task]) => {
                 const { children, parents, events, ...others } = task;
-                repository.tasks.set(id, new Y.Map(Object.entries({
+                store.tasks.set(id, new Y.Map(Object.entries({
                     ...others,
                     children: Y.Array.from(children),
                     parents: Y.Array.from(parents),
@@ -51,44 +32,45 @@ export class Database {
                 })));
             });
             Object.entries(data.texts).forEach(([id, text]) => {
-                repository.texts.set(id, new Y.Text(text));
+                store.texts.set(id, new Y.Text(text));
             });
             Object.entries(data.events).forEach(([id, event]) => {
-                repository.events.set(id, new Y.Map(Object.entries(event)));
+                store.events.set(id, new Y.Map(Object.entries(event)));
             });
             Object.entries(data.journals).forEach(([id, journal]) => {
-                repository.journals.set(id, new Y.Map(Object.entries(journal)));
+                store.journals.set(id, new Y.Map(Object.entries(journal)));
             });
-            repository.user.set("rootTaskId", data.user.rootTaskId);
+            store.user.set("rootTaskId", data.user.rootTaskId);
         });
+
+        this.store.pruneCache();
     }
 
     public export() {
-        const tasks = this.repository.tasks.toJSON() as Record<string, {
+        const tasks = this.store.tasks.toJSON() as Record<string, {
             id: string;
             textId: string;
-            noteId: string;
             children: string[];
             parents: string[];
             events: string[];
             status: "DONE" | "TODO" | "BLOCKED";
         }>;
-        const texts = this.repository.texts.toJSON() as Record<string, string>;
-        const events = this.repository.events.toJSON() as Record<string, {
+        const texts = this.store.texts.toJSON() as Record<string, string>;
+        const events = this.store.events.toJSON() as Record<string, {
             id: string;
             taskId: string;
             start: number;
             end: number;
         }>;
-        const journals = this.repository.journals.toJSON() as Record<string, {
+        const journals = this.store.journals.toJSON() as Record<string, {
             id: string;
-            type: JournalType;
+            type: "WEEK" | "DAY";
             taskId: string;
             time: string;
         }>;
-        const user = this.repository.user.toJSON() as {
+        const user = this.store.user.toJSON() as {
             rootTaskId: string;
-        }
+        };
 
         return {
             tasks,
@@ -96,8 +78,6 @@ export class Database {
             events,
             journals,
             user,
-        }
+        };
     }
-
-
 }

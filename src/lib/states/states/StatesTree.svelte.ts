@@ -1,5 +1,7 @@
 import * as Y from "yjs";
-import type { TaskProxy } from "../meta/task.svelte";
+import type { Task } from "../meta/task.svelte";
+
+export type StateMap = Y.Map<boolean | StateMap>;
 
 /**
  * panel对应的Store
@@ -40,11 +42,7 @@ export class PanelStateStore {
         this.panelStatesTree.set("__paths__", paths);
     }
 
-    public getType(): "editor" | "journal" {
-        return this.panelStatesTree.get("__type__");
-    }
-
-    public createHomeByPaths(paths: TaskProxy[]): StateStore {
+    public createHomeByPaths(paths: Task[]): StateStore {
         const subStatesTree = paths.reduce((stateTree, task) => {
             if (stateTree.has(task.id)) {
                 return stateTree.get(task.id);
@@ -59,7 +57,7 @@ export class PanelStateStore {
 
 /**
  * todo对应的StateStore
- * 生命周期与其挂载的Controller(TodoController)相对应, TodoController在destory时必须destory对应的stateStore
+ * 生命周期与其挂载的Controller(TodoController)相对应, TodoController在destroy时必须destroy对应的stateStore
  */
 export class StateStore {
 
@@ -99,8 +97,8 @@ export class StateStore {
         return m;
     }
 
-    // 应该支持重复destory
-    public destory() {
+    // 应该支持重复destroy
+    public destroy() {
         // 生命周期与挂载的TodoController绑定
         this.statesTree.unobserve(this.onFoldedChange);
     }
@@ -135,13 +133,13 @@ export class StateStore {
         return new StateStore(subState, taskId);
     }
 
-    // 执行后, 传入的StateStore就销毁了
-    public moveInto(another: StateStore) {
+    // 将传入的 StateStore 作为子收编并销毁原引用
+    public receiveChild(another: StateStore) {
         this.statesTree.set(another.taskId, another.statesTree.clone());
         if (another.statesTree.parent) {
             (another.statesTree.parent as Y.Map<any>).delete(another.taskId);
         }
-        another.destory();
+        another.destroy();
         return this.getChild(another.taskId);
     }
 

@@ -58,12 +58,15 @@
 		children,
 		...restProps
 	}: ButtonProps = $props();
+
+	// @ts-ignore
+	let computedClass: any = $derived.by(() => cn(buttonVariants({ variant, size, className })));
 </script>
 
 {#if href}
 	<a
 		bind:this={ref}
-		class={cn(buttonVariants({ variant, size, className }))}
+		class={computedClass as any}
 		{href}
 		{...restProps}
 	>
@@ -72,7 +75,7 @@
 {:else}
 	<button
 		bind:this={ref}
-		class={cn(buttonVariants({ variant, size, className }))}
+		class={computedClass as any}
 		{type}
 		{...restProps}
 	>

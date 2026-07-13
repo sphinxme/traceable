@@ -1,4 +1,23 @@
 <script lang="ts">
+	/**
+	 * Handle — 拖拽手柄组件。
+	 *
+	 * 在 TodoItem 中显示为一个圆形状态指示点，支持：
+	 * - **点击** → 缩放进入（`controller.zoomInto()`）
+	 * - **拖拽** → 触发拖放操作（`dragDropActions.startDrag/endDrag`）
+	 * - **右键** → 上下文菜单（删除等，由 `Todo.svelte` 中的 ContextMenu 包裹）
+	 *
+	 * **状态圆点**：根据 `status` 显示不同颜色（TODO: 灰色, BLOCK: 蓝色, DONE: 浅灰）。
+	 *
+	 * **扩展面板**（已注释）：hover 时可展开状态切换面板（TODO/BLOCK/DONE）。
+	 *
+	 * @prop taskId - 任务 ID（用于 data-task-id 属性）
+	 * @prop status - 任务状态（默认 "TODO"）
+	 * @prop onclick - 点击回调
+	 * @prop ondragstart - 拖拽开始回调
+	 * @prop ondragend - 拖拽结束回调
+	 * @prop onmousedown - 鼠标按下回调
+	 */
 	// import * as ToggleGroup from "$lib/components/ui/toggle-group/index.js";
 	import type { MouseEventHandler } from "svelte/elements";
 	import { colors } from "./colors";

@@ -41,11 +41,17 @@
 		variant?: ToggleVariant;
 		size?: ToggleSize;
 	} = $props();
+
+	// @ts-ignore
+	let computedClass: any = $derived.by(() =>
+		// @ts-ignore
+		cn(toggleVariants({ variant, size, className })),
+	);
 </script>
 
 <TogglePrimitive.Root
 	bind:ref
 	bind:pressed
-	class={cn(toggleVariants({ variant, size, className }))}
+	class={computedClass as any}
 	{...restProps}
 />

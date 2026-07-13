@@ -1,15 +1,23 @@
 <script lang="ts">
+	/**
+	 * TodoView — 视图入口组件（面板根）。
+	 *
+	 * 渲染面板的根级 Todo 大纲，包含：
+	 * - 标题（Title.svelte，外部引入）
+	 * - 子列表（TodoList.svelte，alwaysDisplay = true）
+	 * - 新增按钮（点击调用 `task.insertChild()`）
+	 *
+	 * 对应 root `TodoController`（由 `EditorPanelController` 通过 `createRoot` 创建）。
+	 * 生命周期由 `$effect` 驱动：mount 时 `onTodoReady()`，destroy 时 `destroy()`。
+	 *
+	 * @prop controller - 面板根 TodoController
+	 * @prop showTitle - 是否显示标题（默认 true）
+	 * @prop highlightTitle - 是否高亮标题
+	 */
 	import TodoList from "$lib/components/todolist/TodoList.svelte";
 	import Title from "$lib/panels/todo/Title.svelte";
 	import { CirclePlus } from "@lucide/svelte";
-	import { onMount, setContext } from "svelte";
-	import { crossfade } from "svelte/transition";
 	import type { TodoController } from "./controller/TodoController.svelte";
-
-	const [send, receive] = crossfade({});
-
-	setContext("receive", receive);
-	setContext("send", send);
 
 	interface Props {
 		controller: TodoController;
@@ -20,10 +28,11 @@
 	let { controller, showTitle = true, highlightTitle }: Props = $props();
 
 	// 不用onMount而是用effect是因为controller可能在运行中被替换
+	// 视图注册已移入 focusActions.onTodoReady/destroy
 	$effect(() => {
 		controller.onTodoReady();
 		return () => {
-			controller.destory();
+			controller.destroy();
 		};
 	});
 </script>

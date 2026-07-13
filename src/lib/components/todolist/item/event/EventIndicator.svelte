@@ -1,21 +1,33 @@
 <script lang="ts">
+	/**
+	 * EventIndicator — 日历事件指示器。
+	 *
+	 * 在 TodoItem 下方显示与当前任务关联的日历事件（Event），
+	 * 以彩色横条形式展示，宽度按事件时长计算（每 2 分钟 1px）。
+	 *
+	 * **交互**：
+	 * - Hover → `eventHighlight.setHighlight(eventId, true)` 高亮日历中的对应事件段
+	 * - Click → `eventHighlight.requestFocus(eventId)` 滚动到日历中的对应事件段
+	 *
+	 * **HoverCard**：悬停时显示事件的时间信息（日期、时间段、时长）。
+	 *
+	 * @prop data - Event 实体
+	 * @prop isCompleted - 当前任务是否已完成（影响样式）
+	 */
 	import * as HoverCard from "$lib/components/ui/hover-card";
-	import type { EventProxy } from "$lib/states/meta/event.svelte";
-	import {
-		foucsingEventIds,
-		highlightFEventIds,
-	} from "$lib/states/stores.svelte";
+	import type { Event } from "$lib/states/meta/event.svelte";
+	import { getInteractionContext } from "$lib/interaction/context.svelte";
 	import dayjs from "dayjs";
 
 	interface Props {
-		data: EventProxy;
+		data: Event;
 		isCompleted: boolean;
 	}
 
 	let { data, isCompleted }: Props = $props();
-	let start = data.start$;
-	let end = data.end$;
-	let length = $derived(($end - $start) / (1000 * 60 * 2)); // 10分钟5px
+	let length = $derived((data.end - data.start) / (1000 * 60 * 2)); // 10分钟5px
+
+	const { eventHighlight } = getInteractionContext();
 
 	function formatDuration(duration: number): string {
 		const hours = Math.floor(duration / (60 * 60 * 1000));
@@ -44,16 +56,12 @@
 		openDelay={0}
 		closeDelay={0}
 		onOpenChange={(open) => {
-			if (open) {
-				highlightFEventIds[data.id] = true;
-			} else {
-				highlightFEventIds[data.id] = false;
-			}
+			eventHighlight.setHighlight(data.id, open);
 		}}
 	>
 		<HoverCard.Trigger
 			onclick={() => {
-				foucsingEventIds[data.id] = true;
+				eventHighlight.requestFocus(data.id);
 			}}
 		>
 			<div

@@ -22,3 +22,6 @@ dist-ssr
 *.sw?
 
 .env*
+
+# Planning artifacts (plannotator)
+日程系统现状诊断报告.md

@@ -1,62 +1,47 @@
 import dayjs, { Dayjs } from "dayjs";
-import * as Y from "yjs"
-import { TaskProxy, TaskProxyManager } from "./task.svelte";
+import * as Y from "yjs";
+import type { Store } from "./store.svelte";
+import type { Task } from "./task.svelte";
+import { createYMapSubscriber } from "./reactive-yjs";
 
-export type JournalType = "WEEK" | "DAY"
+export type JournalType = "WEEK" | "DAY";
 
-export class JournalProxyManager
-// implements Iterable<JournalProxy> 
-{
-    constructor(
-        private yMap: Y.Map<Y.Map<any>>,
-        private taskFactory: TaskProxyManager,
-    ) { }
+export class Journal {
+    readonly yMap: Y.Map<any>;
+    private readonly store: Store;
+    private readonly subscribe: () => void;
 
-    static genKey(time: Dayjs, type: JournalType) {
-        return `${time.valueOf()}-${type}`
+    readonly id: string;
+    readonly taskId: string;
+    readonly task: Task;
+    readonly type: JournalType;
+
+    constructor(yMap: Y.Map<any>, store: Store) {
+        this.yMap = yMap;
+        this.store = store;
+        this.subscribe = createYMapSubscriber(yMap);
+
+        this.id = this.yMap.get("id");
+        this.taskId = this.yMap.get("taskId");
+        this.task = this.store.getTask(this.taskId)!;
+        this.type = this.yMap.get("type");
     }
 
-    getOrCreateJournal(time: Dayjs, type: JournalType, text: string, note: string) {
-
-        const key = JournalProxyManager.genKey(time, type);
-        let data = this.yMap.get(key);
-        if (data) {
-            return new JournalProxy(data, this, this.taskFactory)
-        }
-
-        const task = this.taskFactory.newTask(text, note);
-        data = this.yMap.set(key, JournalProxy.genYMap(time, type, task.id))
-        return new JournalProxy(data, this, this.taskFactory);
-    }
-}
-
-
-export class JournalProxy {
-
-    public readonly id: string;
-    public readonly time: Dayjs; // 毫秒时间戳
-    public readonly type: JournalType;
-    private readonly taskId: string;
-    public readonly task: TaskProxy;
-
-    public constructor(data: Y.Map<any>, manager: JournalProxyManager, private taskfactory: TaskProxyManager) {
-        this.id = data.get("id");
-        this.time = dayjs(data.get("time") as number);
-        this.type = data.get("type");
-        this.taskId = data.get("taskId");
-        this.task = taskfactory.build(this.taskId)
+    get time(): Dayjs {
+        this.subscribe();
+        return dayjs(this.yMap.get("time") as number);
     }
 
-    public static genYMap(time: Dayjs, type: JournalType, taskId: string) {
-        const id = JournalProxyManager.genKey(time, type);
+    static genKey(time: Dayjs, type: JournalType): string {
+        return `${time.valueOf()}-${type}`;
+    }
 
-        const map = new Y.Map(Object.entries({
-            id,
-            type,
-            taskId,
-            time: time.valueOf(),
-        }));
-        console.log(map)
-        return map;
+    toJSON(): Record<string, any> {
+        return {
+            id: this.id,
+            type: this.type,
+            taskId: this.taskId,
+            time: this.time.valueOf(),
+        };
     }
 }
