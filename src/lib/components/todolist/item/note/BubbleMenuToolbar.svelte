@@ -1,4 +1,21 @@
 <script lang="ts">
+	/**
+	 * BubbleMenuToolbar — 选中文本时弹出的浮动格式工具栏。
+	 *
+	 * 使用 ProseKit InlinePopover 组件，内置选区追踪、定位计算、显隐逻辑，
+	 * 替代了旧版的 手写 ProseMirror Plugin + @floating-ui/dom 集成（~434 行 3 文件）。
+	 *
+	 * ## 已知限制
+	 *
+	 * InlinePopoverRoot 不处理 IME composing（中文输入法 composing 时
+	 * 选区变化仍可能触发工具栏弹出），需在手动测试中验证是否需要自行添加 composing 守卫。
+	 *
+	 * ## TypeScript 类型问题
+	 *
+	 * useEditor() 返回 Readable<Editor<any>>，Editor<any> 的 marks/commands
+	 * 类型推导结果为 never（因为 ExtractMarkActions<any> = never），
+	 * 因此需要 @ts-expect-error 绕过。这是 ProseKit 当前版本已知的设计限制。
+	 */
 	import { useEditor, useEditorDerivedValue } from 'prosekit/svelte'
 	import {
 		InlinePopoverRoot,

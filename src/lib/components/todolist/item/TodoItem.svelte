@@ -32,6 +32,8 @@
 	import { QuillBinding } from "y-quill";
 	import { onMount } from "svelte";
 	import * as Popover from "$lib/components/ui/popover";
+	// db 是全局模块单例（src/state.ts），这里导入以获取 db.doc（中央 Y.Doc）
+	// NoteEditor 需要显式接收 doc + fragment，与 defineYjs 签名 1:1 对应
 	import { db } from "@/state";
 
 	import EventIndicator from "./event/EventIndicator.svelte";
@@ -49,6 +51,7 @@
 	let { controller, overlay, handle, drag }: Props = $props();
 	let container: HTMLDivElement;
 	let editor: Quill;
+	// NoteEditor 通过 bind:this 暴露 editor 实例，调用方通过 .editor.focus() 访问
 	let noteEditor: { editor: { focus: () => void } };
 
 	let sortedEvents = $derived(
