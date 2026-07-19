@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { SvelteNodeViewProps } from 'prosekit/svelte'
+	import { UploadTask } from 'prosekit/extensions/file'
 	import {
 		ResizableRoot,
 		ResizableHandle,
@@ -18,6 +19,26 @@
 	let aspectRatio = $derived(
 		width && height ? width / height : undefined,
 	)
+
+	let objectURL = $derived(src.startsWith('blob:') ? src : null)
+	let uploading = $state(false)
+
+	$effect(() => {
+		const url = objectURL
+		if (!url) {
+			uploading = false
+			return
+		}
+		const task = UploadTask.get(url)
+		if (!task) {
+			uploading = false
+			return
+		}
+		uploading = true
+		task.finished.finally(() => {
+			uploading = false
+		})
+	})
 </script>
 
 <ResizableRoot
@@ -40,5 +61,19 @@
 			<span>Image</span>
 		</div>
 	{/if}
-	<ResizableHandle position="bottom-right" />
+
+	{#if uploading}
+		<div
+			class="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded bg-black/40 text-white"
+		>
+			<div
+				class="h-6 w-6 animate-spin rounded-full border-[3px] border-white/30 border-t-white"
+			></div>
+			<div class="text-xs font-medium">Uploading...</div>
+		</div>
+	{/if}
+
+	{#if !uploading}
+		<ResizableHandle position="bottom-right" />
+	{/if}
 </ResizableRoot>
