@@ -114,11 +114,12 @@ html, body, #app {
 prosekit-resizable-root {
   position: relative;
   display: inline-block;
+  vertical-align: top;
   max-width: 100%;
 }
 prosekit-resizable-root > img {
   display: block;
-  max-width: 100%;
+  width: 100%;
   height: auto;
 }
 prosekit-resizable-handle[position='right'] {
