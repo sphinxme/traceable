@@ -1,46 +1,73 @@
 <script lang="ts">
-	/**
-	 * NoteEditor — 笔记编辑器组件（基于 Tiptap）。
-	 *
-	 * 在 TodoItem 的 Popover 中弹出，提供富文本编辑能力。
-	 * 编辑器内容绑定到 Yjs `Y.XmlFragment`（`task.noteDoc`），支持实时同步。
-	 *
-	 * **快捷键**：Shift+Enter 关闭编辑器（通过自定义 Tiptap Extension 实现）。
-	 *
-	 * @prop noteDoc - Yjs XmlFragment 文档
-	 * @prop onClose - 关闭回调
-	 */
-	import TipTap from "$lib/components/tiptap/tiptap.svelte";
-	import { Extension } from "@tiptap/core";
-	import * as Y from "yjs";
+	import 'prosekit/basic/style.css'
+	import 'prosekit/basic/typography.css'
+	import { defineBasicExtension } from 'prosekit/basic'
+	import {
+		createEditor,
+		union,
+		withPriority,
+		defineKeymap,
+		Priority,
+	} from 'prosekit/core'
+	import { defineYjs } from 'prosekit/extensions/yjs'
+	import { defineImageUploadHandler } from 'prosekit/extensions/image'
+	import { defineSvelteNodeView, ProseKit } from 'prosekit/svelte'
+	import { Awareness } from 'y-protocols/awareness'
+	import * as Y from 'yjs'
+	import { onDestroy } from 'svelte'
+
+	import BubbleMenuToolbar from './BubbleMenuToolbar.svelte'
+	import ImageNodeView from './image-node/ImageNodeView.svelte'
+	import { uploadImage } from './image-node/uploadImage'
 
 	interface Props {
-		noteDoc: Y.XmlFragment;
-		onClose: () => void;
+		doc: Y.Doc
+		fragment: Y.XmlFragment
+		onClose: () => void
 	}
 
-	let { noteDoc, onClose }: Props = $props();
-	let tipTapRef: { focus: () => void };
+	let { doc, fragment, onClose }: Props = $props()
 
-	const ShiftEnterClose = Extension.create({
-		name: "shiftEnterClose",
-		addKeyboardShortcuts() {
-			return {
-				"Shift-Enter": () => {
-					onClose();
-					return true;
-				},
-			};
+	const awareness = new Awareness(doc)
+
+	const shiftEnterClose = withPriority(
+		defineKeymap({
+			'Shift-Enter': () => {
+				onClose()
+				return true
+			},
+		}),
+		Priority.highest,
+	)
+
+	const imageUploadHandler = defineImageUploadHandler({
+		uploader: async ({ file }) => {
+			return await uploadImage(file)
 		},
-	});
+	})
 
-	export function focus() {
-		tipTapRef?.focus();
-	}
+	const imageNodeView = defineSvelteNodeView({
+		name: 'image',
+		component: ImageNodeView,
+	})
+
+	const extension = union([
+		defineBasicExtension(),
+		defineYjs({ doc, awareness, fragment }),
+		shiftEnterClose,
+		imageUploadHandler,
+		imageNodeView,
+	])
+
+	export const editor = createEditor({ extension })
+
+	onDestroy(() => {
+		awareness.destroy()
+		editor.unmount()
+	})
 </script>
 
-<TipTap
-	yDoc={noteDoc}
-	customExtensions={[ShiftEnterClose]}
-	bind:this={tipTapRef}
-/>
+<ProseKit {editor}>
+	<div {@attach editor.mount} class="min-h-[100px] focus:outline-none"></div>
+	<BubbleMenuToolbar />
+</ProseKit>

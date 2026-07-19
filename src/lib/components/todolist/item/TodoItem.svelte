@@ -9,7 +9,7 @@
 	 * ├── Handle（拖拽手柄，由 snippet 传入）
 	 * ├── Quill 编辑器（标题文本，通过 y-quill 绑定到 Yjs Y.Text）
 	 * ├── EventIndicator[]（日历事件指示器，按时间排序）
-	 * └── NoteEditor（笔记编辑器，Popover 弹出，Tiptap）
+	 * └── NoteEditor（笔记编辑器，Popover 弹出，ProseKit）
 	 * ```
 	 *
 	 * **键盘绑定**：在 `onMount` 中注册 Quill 键盘绑定：
@@ -32,6 +32,7 @@
 	import { QuillBinding } from "y-quill";
 	import { onMount } from "svelte";
 	import * as Popover from "$lib/components/ui/popover";
+	import { db } from "@/state";
 
 	import EventIndicator from "./event/EventIndicator.svelte";
 	import NoteEditor from "./note/NoteEditor.svelte";
@@ -48,7 +49,7 @@
 	let { controller, overlay, handle, drag }: Props = $props();
 	let container: HTMLDivElement;
 	let editor: Quill;
-	let noteEditor: NoteEditor;
+	let noteEditor: { editor: { focus: () => void } };
 
 	let sortedEvents = $derived(
 		[...controller.task.events].sort((a, b) => a.start - b.start),
@@ -177,7 +178,7 @@
 		<Popover.Content
 			onOpenAutoFocus={(e) => {
 				e.preventDefault();
-				noteEditor.focus();
+				noteEditor.editor.focus();
 			}}
 			onCloseAutoFocus={(e) => {
 				e.preventDefault();
@@ -187,11 +188,12 @@
 		>
 			<NoteEditor
 				bind:this={noteEditor}
+				doc={db.doc}
+				fragment={controller.task.noteDoc}
 				onClose={() => {
 					controller.noteEditOpen = false;
 					return false;
 				}}
-				noteDoc={controller.task.noteDoc}
 			/>
 		</Popover.Content>
 	</Popover.Root>
