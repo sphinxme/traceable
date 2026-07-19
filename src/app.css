@@ -109,3 +109,37 @@ html, body, #app {
   animation-timing-function: ease-in-out;
   animation-duration: 300ms;
 } */
+
+/* ProseKit resizable —— headless 组件,需自行提供样式 */
+prosekit-resizable-root {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+}
+prosekit-resizable-root > img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+prosekit-resizable-handle[position='right'] {
+  position: absolute;
+  top: 50%;
+  right: 1px;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 40px;
+  cursor: col-resize;
+  border-radius: 9999px;
+  background: rgba(100, 100, 100, 0.5);
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+}
+prosekit-resizable-root:hover prosekit-resizable-handle,
+prosekit-resizable-root[data-resizing] prosekit-resizable-handle,
+prosekit-resizable-handle:hover {
+  opacity: 1;
+}
+prosekit-resizable-handle:hover {
+  background: rgba(100, 100, 100, 0.8);
+}

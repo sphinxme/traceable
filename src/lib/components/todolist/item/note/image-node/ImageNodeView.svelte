@@ -96,6 +96,6 @@
 	{/if}
 
 	{#if !uploading}
-		<ResizableHandle position="bottom-right" />
+		<ResizableHandle position="right" />
 	{/if}
 </ResizableRoot>
