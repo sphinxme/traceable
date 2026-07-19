@@ -182,13 +182,13 @@
 
 	{#if isMePressing}
 		<div
-			class="absolute -ml-2 z-50 h-full w-full rounded-md bg-zinc-300 pointer-events-none"
+			class="absolute -ml-2 z-50 h-full w-full rounded-md bg-zinc-300 pointer-events-none opacity-25"
 			in:scaleFadeIn={{ duration: overlayDuration, easing: overlayEasing }}
 			out:fade={{ duration: overlayDuration }}
 		></div>
 	{:else if isOtherSameIdPressing}
 		<div
-			class="absolute -ml-2 z-50 h-full w-full rounded-md bg-zinc-300 pointer-events-none"
+			class="absolute -ml-2 z-50 h-full w-full rounded-md bg-zinc-300 pointer-events-none opacity-25"
 			in:fade={{ duration: overlayDuration }}
 			out:fade={{ duration: overlayDuration }}
 		></div>
