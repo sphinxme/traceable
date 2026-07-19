@@ -93,7 +93,7 @@
 	let meDragging = $derived(isMePressing || isOtherSameIdPressing);
 
 	const overlayEasing = cubicOut;
-	const overlayDuration = 150;
+	const overlayDuration = 300;
 
 	const children = controller.task.children;
 	const hasChildren = $derived(children.size > 0);
