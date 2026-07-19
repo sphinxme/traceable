@@ -32,12 +32,11 @@
 	import { fade } from "svelte/transition";
 	import { cubicOut } from "svelte/easing";
 
-	function scaleFadeIn(node: HTMLElement, { duration = 150, easing = cubicOut }: { duration?: number; easing?: (t: number) => number } = {}) {
-		const originalTransform = getComputedStyle(node).transform;
+	function scaleFadeIn(node: HTMLElement, { duration = 300, easing = cubicOut }: { duration?: number; easing?: (t: number) => number } = {}) {
 		return {
 			duration,
 			easing,
-			css: (t: number) => `transform: scale(${t}); opacity: ${t * 0.25}; transform-origin: top left;`
+			css: (t: number) => `transform: scale(${t}); opacity: ${t}; transform-origin: top left;`
 		};
 	}
 
@@ -182,13 +181,13 @@
 
 	{#if isMePressing}
 		<div
-			class="absolute -ml-2 z-50 h-full w-full rounded-md bg-zinc-300 pointer-events-none opacity-25"
+			class="absolute -ml-2 z-50 h-full w-full rounded-md bg-overlay pointer-events-none"
 			in:scaleFadeIn={{ duration: overlayDuration, easing: overlayEasing }}
 			out:fade={{ duration: overlayDuration }}
 		></div>
 	{:else if isOtherSameIdPressing}
 		<div
-			class="absolute -ml-2 z-50 h-full w-full rounded-md bg-zinc-300 pointer-events-none opacity-25"
+			class="absolute -ml-2 z-50 h-full w-full rounded-md bg-overlay pointer-events-none"
 			in:fade={{ duration: overlayDuration }}
 			out:fade={{ duration: overlayDuration }}
 		></div>
