@@ -17,6 +17,7 @@
 	 * @prop ondragstart - 拖拽开始回调
 	 * @prop ondragend - 拖拽结束回调
 	 * @prop onmousedown - 鼠标按下回调
+	 * @prop onmouseup - 鼠标释放回调
 	 */
 	// import * as ToggleGroup from "$lib/components/ui/toggle-group/index.js";
 	import type { MouseEventHandler } from "svelte/elements";
@@ -29,6 +30,7 @@
 		ondragstart: MouseEventHandler<HTMLDivElement>;
 		ondragend: MouseEventHandler<HTMLDivElement>;
 		onmousedown: MouseEventHandler<HTMLDivElement>;
+		onmouseup: MouseEventHandler<HTMLDivElement>;
 	}
 
 	let {
@@ -38,6 +40,7 @@
 		ondragstart,
 		ondragend,
 		onmousedown,
+		onmouseup,
 	}: Props = $props();
 </script>
 
@@ -50,6 +53,7 @@
 	{ondragstart}
 	{ondragend}
 	{onmousedown}
+	{onmouseup}
 	draggable="true"
 	data-task-id={taskId}
 	class="handle relative flex items-center justify-center"
@@ -106,6 +110,9 @@
 		width: 0rem;
 		height: 0%;
 		display: none;
+	}
+	.handle:active .plate {
+		opacity: 0 !important;
 	}
 	/* .extra-panel:active {
 		display: none;

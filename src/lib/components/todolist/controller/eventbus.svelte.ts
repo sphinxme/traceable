@@ -12,6 +12,7 @@ import mitt, { type Emitter } from "mitt";
  * - 缩放退出：`zoomout:beforeStart` → （View Transition 动画）→ `zoomout:afterTransitioned`
  * - 缩放进入：`withZoomIntoTransition` → （View Transition 动画）→ `zoominto:afterTransitioned`
  * - 拖拽：`drag:start` → ... → `drag:end`
+ * - 按下：`press:start` → ... → `press:end`（mousedown 瞬间即触发，早于 drag:start）
  */
 export type Events = {
     /** 缩放退出过渡开始前（由 `EditorPanelController.withZoomoutTransition` 发射） */
@@ -26,6 +27,11 @@ export type Events = {
     'drag:start': { originPanelId: string, originViewId: string, task: Task };
     /** 拖拽结束（由 `DragDropActions.endDrag` 发射） */
     'drag:end': { originPanelId: string, originViewId: string, task: Task };
+
+    /** 按下开始（由 Handle mousedown 发射，早于 drag:start） */
+    'press:start': { task: Task };
+    /** 按下结束（由 Handle mouseup / dragend 发射） */
+    'press:end': { task: Task };
 };
 
 /**

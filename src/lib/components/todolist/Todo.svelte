@@ -12,8 +12,8 @@
 	 * └── TodoList（子列表，递归渲染，受折叠状态控制）
 	 * ```
 	 *
-	 * **拖拽遮罩**：当 `meDragging` 为 true 时（自身拖拽或同 taskId 的其他实例拖拽），
-	 * 显示半透明遮罩并降低不透明度。
+	 * **拖拽遮罩**：当 `isMePressing` 或 `isOtherSameIdPressing` 为 true 时，
+	 * 显示半透明遮罩并降低不透明度。当前item使用 scale+fade 动画，其他同id item使用 fade。
 	 *
 	 * **高亮**：当 `focusActions.highlighting` 为 true 时，显示金色闪烁覆盖层（3秒），
 	 * 用于 Week→Todo 焦点定位。
@@ -29,6 +29,17 @@
 	import type { TodoController } from "./controller/TodoController.svelte";
 	import type { Task } from "$lib/states/meta/task.svelte";
 	import { eventbus, type Events } from "./controller/eventbus.svelte";
+	import { fade } from "svelte/transition";
+	import { cubicOut } from "svelte/easing";
+
+	function scaleFadeIn(node: HTMLElement, { duration = 150, easing = cubicOut }: { duration?: number; easing?: (t: number) => number } = {}) {
+		const originalTransform = getComputedStyle(node).transform;
+		return {
+			duration,
+			easing,
+			css: (t: number) => `transform: scale(${t}); opacity: ${t * 0.25}; transform-origin: top left;`
+		};
+	}
 
 	interface Props {
 		task: Task;
@@ -53,34 +64,36 @@
 		rootElement.scrollIntoView({ behavior: "smooth", block: "center" });
 	};
 
-	let sameTaskIdOtherTaskDragging = $state(false);
-	const sameTaskIdOtherTaskStartDragging = (event: Events["drag:start"]) => {
+	let isOtherSameIdPressing = $state(false);
+	const onPressStart = (event: Events["press:start"]) => {
 		if (event.task.id === controller.task.id) {
-			sameTaskIdOtherTaskDragging = true;
+			isOtherSameIdPressing = true;
 		}
 	};
 	$effect(() => {
-		eventbus.on("drag:start", sameTaskIdOtherTaskStartDragging);
+		eventbus.on("press:start", onPressStart);
 		return () => {
-			eventbus.off("drag:start", sameTaskIdOtherTaskStartDragging);
+			eventbus.off("press:start", onPressStart);
 		};
 	});
 
-	const sameTaskIdOtherTaskEndDragging = (event: Events["drag:end"]) => {
+	const onPressEnd = (event: Events["press:end"]) => {
 		if (event.task.id === controller.task.id) {
-			sameTaskIdOtherTaskDragging = false;
+			isOtherSameIdPressing = false;
 		}
 	};
 	$effect(() => {
-		eventbus.on("drag:end", sameTaskIdOtherTaskEndDragging);
+		eventbus.on("press:end", onPressEnd);
 		return () => {
-			eventbus.off("drag:end", sameTaskIdOtherTaskEndDragging);
+			eventbus.off("press:end", onPressEnd);
 		};
 	});
 
-	let meDragging = $derived(
-		controller.dragDropActions.$isMeDragging || sameTaskIdOtherTaskDragging,
-	);
+	let isMePressing = $derived(controller.dragDropActions.$isMeDragging);
+	let meDragging = $derived(isMePressing || isOtherSameIdPressing);
+
+	const overlayEasing = cubicOut;
+	const overlayDuration = 150;
 
 	const children = controller.task.children;
 	const hasChildren = $derived(children.size > 0);
@@ -98,7 +111,8 @@
 	class:highlight-box={controller.focusActions.highlighting}
 	style:view-transition-name={controller.transitionActions
 		.$todoViewTransitionName}
-	class=" relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}"
+	class="relative flex flex-col transition-opacity duration-150"
+	class:opacity-35={meDragging}
 >
 	<TodoItem {controller}>
 		{#snippet handle()}
@@ -108,18 +122,22 @@
 						onmousedown={(event) => {
 							if (event.button === 0) {
 								controller.dragDropActions.$isMeDragging = true;
+								eventbus.emit("press:start", { task: controller.task });
+							}
+						}}
+						onmouseup={(event) => {
+							if (event.button === 0) {
+								controller.dragDropActions.$isMeDragging = false;
+								eventbus.emit("press:end", { task: controller.task });
 							}
 						}}
 						ondragstart={(event) => {
-							// event.preventDefault();
-							console.log("drag start");
-							// event.dataTransfer.effectAllowed = "move";
 							controller.dragDropActions.startDrag();
 						}}
 						ondragend={(event) => {
 							event.preventDefault();
-							console.log("drag end");
 							controller.dragDropActions.endDrag();
+							eventbus.emit("press:end", { task: controller.task });
 						}}
 						taskId={controller.task.id}
 						onclick={() => controller.zoomInto()}
@@ -162,34 +180,22 @@
 		{/snippet}
 	</TodoList>
 
-	{#if meDragging}
-		<!-- dragging mask -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
+	{#if isMePressing}
 		<div
-			style:pointer-events="none"
-			class=" dragging absolute -ml-2 z-50 h-full w-full rounded-md bg-zinc-500 opacity-0 transition duration-100"
+			class="absolute -ml-2 z-50 h-full w-full rounded-md bg-zinc-300 pointer-events-none"
+			in:scaleFadeIn={{ duration: overlayDuration, easing: overlayEasing }}
+			out:fade={{ duration: overlayDuration }}
+		></div>
+	{:else if isOtherSameIdPressing}
+		<div
+			class="absolute -ml-2 z-50 h-full w-full rounded-md bg-zinc-300 pointer-events-none"
+			in:fade={{ duration: overlayDuration }}
+			out:fade={{ duration: overlayDuration }}
 		></div>
 	{/if}
 </div>
 
 <style>
-	@keyframes fadeIn {
-		from {
-			opacity: 0;
-			transform: scaleX(0);
-		}
-		to {
-			opacity: 0.3;
-			transform: scaleX(1);
-		}
-	}
-	.dragging {
-		opacity: 0; /* 初始状态为透明 */
-		transform: scaleX(0);
-		transform-origin: top left; /* 设置缩放原点为左上角 */
-		animation: fadeIn 150ms ease-out forwards; /* 动画持续300毫秒，并保持最终状态 */
-	}
-
 	/* 使用伪元素创建高亮层 */
 	.highlight-box::before {
 		content: "";
