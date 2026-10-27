@@ -109,3 +109,49 @@ html, body, #app {
   animation-timing-function: ease-in-out;
   animation-duration: 300ms;
 } */
+
+/* ProseKit resizable —— headless 组件,需自行提供样式 */
+prosekit-resizable-root {
+  position: relative;
+  display: inline-block;
+  vertical-align: top;
+  max-width: 100%;
+  margin-block: .5em;
+  /* 编辑器根是 column flex 容器(typography.css),root 是 flex item:
+     继承的 break-spaces 会让模板空白文本节点生成行盒,凭空多出 1 个 line-height 的内容高度,
+     而 flex item 的 min-height:auto(内容最小高度)会压过 aspect-ratio,
+     两者叠加导致盒子比图片高、把手垂直偏移。 */
+  white-space: normal;
+  min-height: 0;
+}
+/* 加 .ProseMirror 前缀提升优先级,压过 typography.css 的 .ProseMirror img 规则 */
+.ProseMirror prosekit-resizable-root > img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  /* img 的垂直 margin 会被算进 root 盒高,拖拽锁定的比例会偏"胖",必须为 0 */
+  margin: 0;
+}
+prosekit-resizable-handle[position='right'] {
+  position: absolute;
+  top: 50%;
+  right: 1px;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 40px;
+  cursor: col-resize;
+  border-radius: 9999px;
+  background: rgba(100, 100, 100, 0.5);
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 10;
+}
+prosekit-resizable-root:hover prosekit-resizable-handle,
+prosekit-resizable-root[data-resizing] prosekit-resizable-handle,
+prosekit-resizable-handle:hover {
+  opacity: 1;
+}
+prosekit-resizable-handle:hover {
+  background: rgba(100, 100, 100, 0.8);
+}

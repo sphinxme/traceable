@@ -9,7 +9,7 @@
 	 * ├── Handle（拖拽手柄，由 snippet 传入）
 	 * ├── Quill 编辑器（标题文本，通过 y-quill 绑定到 Yjs Y.Text）
 	 * ├── EventIndicator[]（日历事件指示器，按时间排序）
-	 * └── NoteEditor（笔记编辑器，Popover 弹出，Tiptap）
+	 * └── NoteEditor（笔记编辑器，Popover 弹出，ProseKit）
 	 * ```
 	 *
 	 * **键盘绑定**：在 `onMount` 中注册 Quill 键盘绑定：
@@ -48,7 +48,8 @@
 	let { controller, overlay, handle, drag }: Props = $props();
 	let container: HTMLDivElement;
 	let editor: Quill;
-	let noteEditor: NoteEditor;
+	// NoteEditor 通过 bind:this 暴露 editor 实例与 destroy 方法
+	let noteEditor: { editor: { focus: () => void }; destroy: () => void };
 
 	let sortedEvents = $derived(
 		[...controller.task.events].sort((a, b) => a.start - b.start),
@@ -131,6 +132,14 @@
 	// export const setTitleViewTransitionName = (name: string) => {
 	// 	titleViewTransitionName = name;
 	// };
+
+	// Popover 关闭时立即销毁 NoteEditor（在 Svelte teardown 移除 DOM 之前），
+	// 避免 teardown 触发 ProseKit updateExtension 重入崩溃，原因详见 NoteEditor.svelte
+	$effect(() => {
+		if (!controller.noteEditOpen) {
+			noteEditor?.destroy?.();
+		}
+	});
 </script>
 
 <div class="group flex flex-col">
@@ -177,22 +186,23 @@
 		<Popover.Content
 			onOpenAutoFocus={(e) => {
 				e.preventDefault();
-				noteEditor.focus();
+				noteEditor.editor.focus();
 			}}
-			onCloseAutoFocus={(e) => {
-				e.preventDefault();
-				editor.focus();
-			}}
+		onCloseAutoFocus={(e) => {
+			e.preventDefault();
+			editor.focus();
+			noteEditor?.destroy?.();
+		}}
 			align="start"
 		>
-			<NoteEditor
-				bind:this={noteEditor}
-				onClose={() => {
-					controller.noteEditOpen = false;
-					return false;
-				}}
-				noteDoc={controller.task.noteDoc}
-			/>
+		<NoteEditor
+			bind:this={noteEditor}
+			fragment={controller.task.noteDoc}
+			onClose={() => {
+				controller.noteEditOpen = false;
+				return false;
+			}}
+		/>
 		</Popover.Content>
 	</Popover.Root>
 </div>
