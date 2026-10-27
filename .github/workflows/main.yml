@@ -35,7 +35,7 @@ jobs:
       - name: Build and Push
         uses: docker/build-push-action@v4
         with:
-          context: ./auth_server
+          context: ./apps/auth-server
           push: true
           tags: |
             ccr.ccs.tencentyun.com/sphinx/traceable-auth-server:${{ steps.version.outputs.version }}

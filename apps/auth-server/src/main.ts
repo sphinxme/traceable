@@ -1,25 +1,25 @@
-import { Hono } from "jsr:@hono/hono";
-import { cors } from "jsr:@hono/hono/cors";
-import { Liveblocks } from "https://cdn.jsdelivr.net/npm/@liveblocks/node@2.10.2/+esm";
+import { Hono } from "hono";
+import { cors } from "hono/cors";
+import { Liveblocks } from "@liveblocks/node";
 import {
   createPresignedUrl,
   generateKey,
   isS3Configured,
   isValidPath,
 } from "./lib/s3.ts";
-import type { Context, Next } from "jsr:@hono/hono";
+import type { Context, Next } from "hono";
 
-if (!Deno.env.has("LIVEBLOCKS_KEY")) {
+const secret = process.env.LIVEBLOCKS_KEY;
+if (!secret) {
     throw new Error("no LIVEBLOCKS_KEY found!");
 }
 
-const secret = Deno.env.get("LIVEBLOCKS_KEY")
-const liveblocks = new Liveblocks({secret});
+const liveblocks = new Liveblocks({ secret });
 
 // API Key认证中间件
 async function authMiddleware(c: Context, next: Next) {
   const apiKey = c.req.header("X-API-Key");
-  if (apiKey !== Deno.env.get("API_KEY")) {
+  if (apiKey !== process.env.API_KEY) {
     return c.json({ code: 401, message: "Unauthorized" }, 401);
   }
   await next();
@@ -110,4 +110,6 @@ app
         }
     });
 
-Deno.serve({port:9000}, app.fetch);
+const port = Number(process.env.PORT ?? 9000);
+
+Bun.serve({ port, fetch: app.fetch });

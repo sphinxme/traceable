@@ -1,10 +1,10 @@
-import { AwsClient } from "jsr:@mhart/aws4fetch";
+import { AwsClient } from "aws4fetch";
 
 // 环境变量验证
-const QINIU_ACCESS_KEY = Deno.env.get("QINIU_ACCESS_KEY");
-const QINIU_SECRET_KEY = Deno.env.get("QINIU_SECRET_KEY");
-const QINIU_BUCKET_NAME = Deno.env.get("QINIU_BUCKET_NAME");
-const QINIU_REGION = Deno.env.get("QINIU_REGION") || "cn-east-1";
+const QINIU_ACCESS_KEY = process.env.QINIU_ACCESS_KEY;
+const QINIU_SECRET_KEY = process.env.QINIU_SECRET_KEY;
+const QINIU_BUCKET_NAME = process.env.QINIU_BUCKET_NAME;
+const QINIU_REGION = process.env.QINIU_REGION || "cn-east-1";
 
 // 启动时验证必要的环境变量
 if (!QINIU_ACCESS_KEY || !QINIU_SECRET_KEY || !QINIU_BUCKET_NAME) {
