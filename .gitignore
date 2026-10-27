@@ -22,7 +22,10 @@ dist-ssr
 *.sw?
 
 .env*
-temp
+!.env.example
 
-# Planning artifacts (plannotator)
-日程系统现状诊断报告.md
+# 常驻目录：temp/（临时文件）、specs/（中间计划），内容永不提交，仅保留 .gitkeep
+temp/*
+!temp/.gitkeep
+specs/*
+!specs/.gitkeep

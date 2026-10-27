@@ -163,5 +163,5 @@ console.log('图片地址:', data.pictureUrl);
 ## 启动服务
 
 ```bash
-deno run --allow-net --allow-env --allow-read --env-file=.env main.ts
+bun run dev
 ```

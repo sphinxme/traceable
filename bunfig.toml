@@ -1,0 +1,9 @@
+# @zag-js 的部分包在 npmmirror 存在同步缺口（如 types@1.47.0），
+# 该 scope 直接走官方源，其余包仍使用全局 .npmrc 配置的镜像
+[install.scopes]
+"@zag-js" = "https://registry.npmjs.org"
+
+# bun fmt（内置 formatter，支持 Svelte / Tailwind class 排序 / package.json 排序）
+# 跑 `bun fmt` 全量格式化，`bun fmt --check` 仅检查
+[fmt.sortTailwindcss]
+config = "./apps/desktop/tailwind.config.ts"

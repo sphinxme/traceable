@@ -7,7 +7,7 @@
         "editor.defaultFormatter": "vscode.typescript-language-features"
     },
     "[html]": {
-        "editor.defaultFormatter": "denoland.vscode-deno"
+        "editor.defaultFormatter": "vscode.html-language-features"
     },
     "[rust]": {
         "editor.defaultFormatter": "rust-lang.rust-analyzer"
