@@ -18,7 +18,6 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
     "strict": false,
-    "baseUrl": ".",
     "paths": {
       "$lib": ["./src/lib"],
       "$lib/*": ["./src/lib/*"],
