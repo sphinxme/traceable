@@ -24,7 +24,7 @@
     --destructive-foreground: 210 40% 98%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
-	--sidebar-background: 0 0% 98%;
+    --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
@@ -54,7 +54,7 @@
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     --ring: 212.7 26.8% 83.9%;
-	--sidebar-background: 240 5.9% 10%;
+    --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -75,9 +75,11 @@
 }
 
 body {
-  user-select:none;
+  user-select: none;
 }
-html, body, #app {
+html,
+body,
+#app {
   overflow: hidden;
   height: 100%;
   /* background-color: brown; */
@@ -116,7 +118,7 @@ prosekit-resizable-root {
   display: inline-block;
   vertical-align: top;
   max-width: 100%;
-  margin-block: .5em;
+  margin-block: 0.5em;
   /* 编辑器根是 column flex 容器(typography.css),root 是 flex item:
      继承的 break-spaces 会让模板空白文本节点生成行盒,凭空多出 1 个 line-height 的内容高度,
      而 flex item 的 min-height:auto(内容最小高度)会压过 aspect-ratio,
@@ -133,7 +135,7 @@ prosekit-resizable-root {
   /* img 的垂直 margin 会被算进 root 盒高,拖拽锁定的比例会偏"胖",必须为 0 */
   margin: 0;
 }
-prosekit-resizable-handle[position='right'] {
+prosekit-resizable-handle[position="right"] {
   position: absolute;
   top: 50%;
   right: 1px;

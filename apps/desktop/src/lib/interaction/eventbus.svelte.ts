@@ -28,9 +28,9 @@ import mitt, { type Emitter } from "mitt";
  * @property viewId     目标 Todo 的精确 viewId（用于 Todo.svelte 精确匹配）
  */
 export interface FocusTarget {
-    rootViewId: string;
-    path: string[];
-    viewId: string;
+  rootViewId: string;
+  path: string[];
+  viewId: string;
 }
 
 /**
@@ -42,10 +42,10 @@ export interface FocusTarget {
  * | `'focus:todo'` | Week→Todo | `EventSegment` 点击 | `TodoFocusActions` 展开/滚动/高亮 |
  */
 export type InteractionEvents = {
-    /** Todo→Week: 点击 EventIndicator → 滚动到对应 EventSegment */
-    "focus:eventSegment": { eventId: string };
-    /** Week→Todo: 点击 EventSegment → 展开/滚动/高亮对应 Todo */
-    "focus:todo": FocusTarget;
+  /** Todo→Week: 点击 EventIndicator → 滚动到对应 EventSegment */
+  "focus:eventSegment": { eventId: string };
+  /** Week→Todo: 点击 EventSegment → 展开/滚动/高亮对应 Todo */
+  "focus:todo": FocusTarget;
 };
 
 /**
@@ -64,7 +64,8 @@ export type InteractionEvents = {
  * interactionBus.off('focus:todo', handler);
  * ```
  */
-export const interactionBus: Emitter<InteractionEvents> = mitt<InteractionEvents>();
+export const interactionBus: Emitter<InteractionEvents> =
+  mitt<InteractionEvents>();
 
 /**
  * 组件级订阅辅助函数 — 在组件初始化阶段调用，`$effect` 自动管理 on/off 生命周期。
@@ -90,13 +91,13 @@ export const interactionBus: Emitter<InteractionEvents> = mitt<InteractionEvents
  * ```
  */
 export function interactionBus$listen<K extends keyof InteractionEvents>(
-    event: K,
-    handler: (payload: InteractionEvents[K]) => void,
+  event: K,
+  handler: (payload: InteractionEvents[K]) => void,
 ) {
-    $effect(() => {
-        interactionBus.on(event, handler);
-        return () => {
-            interactionBus.off(event, handler);
-        };
-    });
+  $effect(() => {
+    interactionBus.on(event, handler);
+    return () => {
+      interactionBus.off(event, handler);
+    };
+  });
 }

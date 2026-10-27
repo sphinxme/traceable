@@ -1,26 +1,28 @@
 import { Observable, shareReplay, tap } from "rxjs";
 
 const a = new Observable<string>((subscriber) => {
-    subscriber.next("123");
-}).pipe(tap({
+  subscriber.next("123");
+}).pipe(
+  tap({
     subscribe() {
-        console.log("subscribe")
+      console.log("subscribe");
     },
     unsubscribe() {
-        console.log("unsubscribe")
+      console.log("unsubscribe");
     },
-}), shareReplay({ bufferSize: 1, refCount: true }),);
+  }),
+  shareReplay({ bufferSize: 1, refCount: true }),
+);
 
 const sub1 = a.subscribe((val) => {
-    console.log(`1: val`)
-})
+  console.log(`1: val`);
+});
 
 const sub2 = a.subscribe((val) => {
-    console.log(`2: val`)
-})
+  console.log(`2: val`);
+});
 
 setTimeout(() => {
-    sub1.unsubscribe();
-    sub2.unsubscribe();
-}, 5000)
-
+  sub1.unsubscribe();
+  sub2.unsubscribe();
+}, 5000);

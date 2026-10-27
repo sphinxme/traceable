@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { location, push } from "svelte-spa-router";
-	let { children, path }: { children: any; path: string } = $props();
+  import { location, push } from "svelte-spa-router";
+  let { children, path }: { children: any; path: string } = $props();
 </script>
 
 <button
-	onclick={() => {
-		push(path);
-	}}
-	class="m-1 rounded-lg p-2 px-4 text-center text-lg transition-colors duration-300 hover:bg-zinc-200"
-	class:bg-zinc-200={$location == path}
+  onclick={() => {
+    push(path);
+  }}
+  class="m-1 rounded-lg p-2 px-4 text-center text-lg transition-colors duration-300 hover:bg-zinc-200"
+  class:bg-zinc-200={$location == path}
 >
-	{@render children?.()}
+  {@render children?.()}
 </button>

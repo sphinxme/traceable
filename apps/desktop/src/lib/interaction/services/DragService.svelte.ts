@@ -11,11 +11,11 @@ import type { StateStore } from "$lib/states/states/StatesTree.svelte";
  * @property states        所属的状态树存储
  */
 export interface DraggingTaskData {
-	originPanelId: string;
-	originViewId: string;
-	originParent: Task;
-	task: Task;
-	states: StateStore;
+  originPanelId: string;
+  originViewId: string;
+  originParent: Task;
+  task: Task;
+  states: StateStore;
 }
 
 /**
@@ -27,18 +27,18 @@ export interface DraggingTaskData {
  * `data` 和 `active` 均为 `$state`，消费者可响应式读取以驱动 UI 反馈。
  */
 export class DragService {
-	public data: DraggingTaskData | undefined = $state(undefined);
-	public active: boolean = $state(false);
+  public data: DraggingTaskData | undefined = $state(undefined);
+  public active: boolean = $state(false);
 
-	public set(data: DraggingTaskData) {
-		this.data = data;
-		this.active = true;
-	}
+  public set(data: DraggingTaskData) {
+    this.data = data;
+    this.active = true;
+  }
 
-	public clear() {
-		this.data = undefined;
-		this.active = false;
-	}
+  public clear() {
+    this.data = undefined;
+    this.active = false;
+  }
 
-	public destroy() {}
+  public destroy() {}
 }

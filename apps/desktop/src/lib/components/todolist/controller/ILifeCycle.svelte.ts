@@ -12,21 +12,21 @@
  * `destroy()` 同理。
  */
 export interface TodoLifeCycle {
-    /**
-     * Todo.svelte/TodoView.svelte的onMount加载, 并且所有hooks都已挂载好时触发
-     *
-     * 在此阶段：
-     * - 消费待处理的 cursor focus 请求（键盘导航 / 新建 Todo）
-     * - 注册视图到 `TaskFocusService`（root controller）
-     * - 订阅事件总线（`interactionBus` / `eventbus`）
-     * - 设置 View Transition 初始状态
-     */
-    onTodoReady(): void;
+  /**
+   * Todo.svelte/TodoView.svelte的onMount加载, 并且所有hooks都已挂载好时触发
+   *
+   * 在此阶段：
+   * - 消费待处理的 cursor focus 请求（键盘导航 / 新建 Todo）
+   * - 注册视图到 `TaskFocusService`（root controller）
+   * - 订阅事件总线（`interactionBus` / `eventbus`）
+   * - 设置 View Transition 初始状态
+   */
+  onTodoReady(): void;
 
-    /**
-     * 需要可重复调用
-     *
-     * 清理资源：退订事件、清除定时器、注销视图注册、从父控制器删除自身。
-     */
-    destroy(): void;
+  /**
+   * 需要可重复调用
+   *
+   * 清理资源：退订事件、清除定时器、注销视图注册、从父控制器删除自身。
+   */
+  destroy(): void;
 }

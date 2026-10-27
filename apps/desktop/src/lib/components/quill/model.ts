@@ -7,9 +7,7 @@ export type KeyboardHandler = (
   quill: Quill,
 ) => boolean;
 
-export function warpKeyHandler(
-  handler: KeyboardHandler,
-) {
+export function warpKeyHandler(handler: KeyboardHandler) {
   return function (
     this: {
       quill: Quill;

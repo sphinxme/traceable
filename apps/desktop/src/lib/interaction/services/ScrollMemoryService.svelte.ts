@@ -5,8 +5,8 @@
  * @property scrollLeft 水平滚动偏移
  */
 export interface ScrollState {
-	scrollTop: number;
-	scrollLeft: number;
+  scrollTop: number;
+  scrollLeft: number;
 }
 
 /**
@@ -16,7 +16,7 @@ export interface ScrollState {
  * key 由调用方定义（通常为视图 ID 或面板标识）。
  */
 export class ScrollMemoryService {
-	public journal: Record<string, ScrollState> = {};
-	public weekPanel: Record<string, ScrollState> = {};
-	public editorPanel: Record<string, ScrollState> = {};
+  public journal: Record<string, ScrollState> = {};
+  public weekPanel: Record<string, ScrollState> = {};
+  public editorPanel: Record<string, ScrollState> = {};
 }

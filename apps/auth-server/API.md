@@ -34,10 +34,10 @@ POST /pictures/upload
 
 **Headers**
 
-| 名称 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| X-API-Key | string | 是 | API认证密钥 |
-| Content-Type | string | 是 | 固定值: `application/json` |
+| 名称         | 类型   | 必填 | 说明                       |
+| ------------ | ------ | ---- | -------------------------- |
+| X-API-Key    | string | 是   | API认证密钥                |
+| Content-Type | string | 是   | 固定值: `application/json` |
 
 **Body**
 
@@ -48,10 +48,10 @@ POST /pictures/upload
 }
 ```
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| filename | string | 否 | 原始文件名，用于生成存储路径和提取扩展名，默认 `file.bin` |
-| contentType | string | 否 | 文件MIME类型，默认 `application/octet-stream` |
+| 字段        | 类型   | 必填 | 说明                                                      |
+| ----------- | ------ | ---- | --------------------------------------------------------- |
+| filename    | string | 否   | 原始文件名，用于生成存储路径和提取扩展名，默认 `file.bin` |
+| contentType | string | 否   | 文件MIME类型，默认 `application/octet-stream`             |
 
 **响应**
 
@@ -72,13 +72,13 @@ POST /pictures/upload
 }
 ```
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| uploadUrl | string | S3预签名上传URL，有效期1小时 |
+| 字段       | 类型   | 说明                            |
+| ---------- | ------ | ------------------------------- |
+| uploadUrl  | string | S3预签名上传URL，有效期1小时    |
 | pictureUrl | string | 图片访问URL，通过本服务代理访问 |
-| key | string | S3对象存储路径 |
-| method | string | 上传HTTP方法，固定为 `PUT` |
-| headers | object | 上传时需要携带的Headers |
+| key        | string | S3对象存储路径                  |
+| method     | string | 上传HTTP方法，固定为 `PUT`      |
+| headers    | object | 上传时需要携带的Headers         |
 
 失败响应 (401):
 
@@ -131,16 +131,16 @@ Location: https://s3.cn-east-1.qiniucs.com/traceable/uploads/2026/03/uuid.jpg?X-
 
 ```typescript
 // 1. 获取预签名URL
-const response = await fetch('http://localhost:9000/pictures/upload', {
-  method: 'POST',
+const response = await fetch("http://localhost:9000/pictures/upload", {
+  method: "POST",
   headers: {
-    'Content-Type': 'application/json',
-    'X-API-Key': 'your_api_key'
+    "Content-Type": "application/json",
+    "X-API-Key": "your_api_key",
   },
   body: JSON.stringify({
-    filename: 'photo.jpg',
-    contentType: 'image/jpeg'
-  })
+    filename: "photo.jpg",
+    contentType: "image/jpeg",
+  }),
 });
 
 const { data } = await response.json();
@@ -149,14 +149,12 @@ const { data } = await response.json();
 await fetch(data.uploadUrl, {
   method: data.method,
   headers: data.headers,
-  body: fileBlob  // File 或 Blob 对象
+  body: fileBlob, // File 或 Blob 对象
 });
 
 // 3. 使用 pictureUrl 访问图片
-console.log('图片地址:', data.pictureUrl);
+console.log("图片地址:", data.pictureUrl);
 ```
-
-
 
 ---
 

@@ -9,19 +9,20 @@ const QINIU_REGION = process.env.QINIU_REGION || "cn-east-1";
 // 启动时验证必要的环境变量
 if (!QINIU_ACCESS_KEY || !QINIU_SECRET_KEY || !QINIU_BUCKET_NAME) {
   console.warn(
-    "[S3] Missing required environment variables: QINIU_ACCESS_KEY, QINIU_SECRET_KEY, or QINIU_BUCKET_NAME"
+    "[S3] Missing required environment variables: QINIU_ACCESS_KEY, QINIU_SECRET_KEY, or QINIU_BUCKET_NAME",
   );
 }
 
 // 创建S3客户端单例
-const client = QINIU_ACCESS_KEY && QINIU_SECRET_KEY
-  ? new AwsClient({
-      accessKeyId: QINIU_ACCESS_KEY,
-      secretAccessKey: QINIU_SECRET_KEY,
-      region: QINIU_REGION,
-      service: "s3",
-    })
-  : null;
+const client =
+  QINIU_ACCESS_KEY && QINIU_SECRET_KEY
+    ? new AwsClient({
+        accessKeyId: QINIU_ACCESS_KEY,
+        secretAccessKey: QINIU_SECRET_KEY,
+        region: QINIU_REGION,
+        service: "s3",
+      })
+    : null;
 
 const BUCKET = QINIU_BUCKET_NAME || "";
 const REGION = QINIU_REGION;
@@ -59,7 +60,7 @@ export async function createPresignedUrl(
   const signed = await client.sign(url.toString(), {
     method,
     headers,
-    aws: { signQuery: true }
+    aws: { signQuery: true },
   });
 
   return signed.url;

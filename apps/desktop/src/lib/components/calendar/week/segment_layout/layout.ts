@@ -33,13 +33,13 @@ import { getDayStart } from "./geometry";
  * @property isLast    - 是否是原始 Event 的最后一个 segment（用于交互判断：只有 last 可从底部 resize）
  */
 export interface EventSegment {
-	eventId: string;
-	event: Event;
-	dayIndex: number;
-	segStart: number;
-	segEnd: number;
-	isFirst: boolean;
-	isLast: boolean;
+  eventId: string;
+  event: Event;
+  dayIndex: number;
+  segStart: number;
+  segEnd: number;
+  isFirst: boolean;
+  isLast: boolean;
 }
 
 /**
@@ -51,8 +51,8 @@ export interface EventSegment {
  * 渲染时：width = dayWidth / laneCount, left = laneIndex * width
  */
 export interface PositionedSegment extends EventSegment {
-	laneIndex: number;
-	laneCount: number;
+  laneIndex: number;
+  laneCount: number;
 }
 
 /**
@@ -67,64 +67,64 @@ export interface PositionedSegment extends EventSegment {
  *   Segment 2: 06:00~10:00 (isFirst=false, isLast=true)  — 当日头部
  */
 function segmentEvent(
-	event: Event,
-	displayStartDay: Dayjs,
-	displayEndDay: Dayjs,
-	offsetByHour: number,
+  event: Event,
+  displayStartDay: Dayjs,
+  displayEndDay: Dayjs,
+  offsetByHour: number,
 ): EventSegment[] {
-	const segments: EventSegment[] = [];
-	const displayStartMs = displayStartDay.valueOf();
-	const displayEndMs = displayEndDay.valueOf();
-	const eventStart = event.start;
-	const eventEnd = event.end;
+  const segments: EventSegment[] = [];
+  const displayStartMs = displayStartDay.valueOf();
+  const displayEndMs = displayEndDay.valueOf();
+  const eventStart = event.start;
+  const eventEnd = event.end;
 
-	if (eventEnd <= eventStart) {
-		return segments;
-	}
+  if (eventEnd <= eventStart) {
+    return segments;
+  }
 
-	const rawSegments: {
-		segStart: number;
-		segEnd: number;
-		dayIndex: number;
-		isFirst: boolean;
-		isLast: boolean;
-	}[] = [];
+  const rawSegments: {
+    segStart: number;
+    segEnd: number;
+    dayIndex: number;
+    isFirst: boolean;
+    isLast: boolean;
+  }[] = [];
 
-	let isFirst = true;
-	let current = eventStart;
+  let isFirst = true;
+  let current = eventStart;
 
-	while (current < eventEnd) {
-		const dayStart = getDayStart(current, offsetByHour);
-		const nextDayStart = dayStart.add(1, "day");
-		const segEnd = Math.min(eventEnd, nextDayStart.valueOf());
+  while (current < eventEnd) {
+    const dayStart = getDayStart(current, offsetByHour);
+    const nextDayStart = dayStart.add(1, "day");
+    const segEnd = Math.min(eventEnd, nextDayStart.valueOf());
 
-		rawSegments.push({
-			segStart: current,
-			segEnd,
-			dayIndex: dayStart.diff(displayStartDay, "day"),
-			isFirst,
-			isLast: segEnd >= eventEnd,
-		});
+    rawSegments.push({
+      segStart: current,
+      segEnd,
+      dayIndex: dayStart.diff(displayStartDay, "day"),
+      isFirst,
+      isLast: segEnd >= eventEnd,
+    });
 
-		isFirst = false;
-		current = segEnd;
-	}
+    isFirst = false;
+    current = segEnd;
+  }
 
-	for (const seg of rawSegments) {
-		if (seg.segEnd > displayStartMs && seg.segStart < displayEndMs) {
-			segments.push({
-				eventId: event.id,
-				event,
-				dayIndex: seg.dayIndex,
-				segStart: Math.max(seg.segStart, displayStartMs),
-				segEnd: Math.min(seg.segEnd, displayEndMs),
-				isFirst: seg.isFirst,
-				isLast: seg.isLast,
-			});
-		}
-	}
+  for (const seg of rawSegments) {
+    if (seg.segEnd > displayStartMs && seg.segStart < displayEndMs) {
+      segments.push({
+        eventId: event.id,
+        event,
+        dayIndex: seg.dayIndex,
+        segStart: Math.max(seg.segStart, displayStartMs),
+        segEnd: Math.min(seg.segEnd, displayEndMs),
+        isFirst: seg.isFirst,
+        isLast: seg.isLast,
+      });
+    }
+  }
 
-	return segments;
+  return segments;
 }
 
 /**
@@ -156,71 +156,71 @@ function segmentEvent(
  *   贪心已足够好且复杂度为 O(n * lanes)，n 为当天段数。
  */
 function allocateLanes(segments: EventSegment[]): PositionedSegment[] {
-	const sorted = [...segments].sort((a, b) => {
-		if (a.segStart !== b.segStart) {
-			return a.segStart - b.segStart;
-		}
-		return b.segEnd - a.segEnd;
-	});
+  const sorted = [...segments].sort((a, b) => {
+    if (a.segStart !== b.segStart) {
+      return a.segStart - b.segStart;
+    }
+    return b.segEnd - a.segEnd;
+  });
 
-	const clusters: EventSegment[][] = [];
-	let currentCluster: EventSegment[] = [];
-	let clusterMaxEnd = -Infinity;
+  const clusters: EventSegment[][] = [];
+  let currentCluster: EventSegment[] = [];
+  let clusterMaxEnd = -Infinity;
 
-	for (const seg of sorted) {
-		if (currentCluster.length === 0) {
-			currentCluster.push(seg);
-			clusterMaxEnd = seg.segEnd;
-		} else if (seg.segStart >= clusterMaxEnd) {
-			clusters.push(currentCluster);
-			currentCluster = [seg];
-			clusterMaxEnd = seg.segEnd;
-		} else {
-			currentCluster.push(seg);
-			clusterMaxEnd = Math.max(clusterMaxEnd, seg.segEnd);
-		}
-	}
+  for (const seg of sorted) {
+    if (currentCluster.length === 0) {
+      currentCluster.push(seg);
+      clusterMaxEnd = seg.segEnd;
+    } else if (seg.segStart >= clusterMaxEnd) {
+      clusters.push(currentCluster);
+      currentCluster = [seg];
+      clusterMaxEnd = seg.segEnd;
+    } else {
+      currentCluster.push(seg);
+      clusterMaxEnd = Math.max(clusterMaxEnd, seg.segEnd);
+    }
+  }
 
-	if (currentCluster.length > 0) {
-		clusters.push(currentCluster);
-	}
+  if (currentCluster.length > 0) {
+    clusters.push(currentCluster);
+  }
 
-	const positioned: PositionedSegment[] = [];
+  const positioned: PositionedSegment[] = [];
 
-	for (const cluster of clusters) {
-		const lanes: number[] = [];
-		const clusterResults: { seg: EventSegment; laneIndex: number }[] = [];
+  for (const cluster of clusters) {
+    const lanes: number[] = [];
+    const clusterResults: { seg: EventSegment; laneIndex: number }[] = [];
 
-		for (const seg of cluster) {
-			let laneIndex = -1;
-			for (let i = 0; i < lanes.length; i++) {
-				if (lanes[i] <= seg.segStart) {
-					laneIndex = i;
-					break;
-				}
-			}
+    for (const seg of cluster) {
+      let laneIndex = -1;
+      for (let i = 0; i < lanes.length; i++) {
+        if (lanes[i] <= seg.segStart) {
+          laneIndex = i;
+          break;
+        }
+      }
 
-			if (laneIndex === -1) {
-				laneIndex = lanes.length;
-				lanes.push(seg.segEnd);
-			} else {
-				lanes[laneIndex] = seg.segEnd;
-			}
+      if (laneIndex === -1) {
+        laneIndex = lanes.length;
+        lanes.push(seg.segEnd);
+      } else {
+        lanes[laneIndex] = seg.segEnd;
+      }
 
-			clusterResults.push({ seg, laneIndex });
-		}
+      clusterResults.push({ seg, laneIndex });
+    }
 
-		const laneCount = lanes.length;
-		for (const { seg, laneIndex } of clusterResults) {
-			positioned.push({
-				...seg,
-				laneIndex,
-				laneCount,
-			});
-		}
-	}
+    const laneCount = lanes.length;
+    for (const { seg, laneIndex } of clusterResults) {
+      positioned.push({
+        ...seg,
+        laneIndex,
+        laneCount,
+      });
+    }
+  }
 
-	return positioned;
+  return positioned;
 }
 
 /**
@@ -236,44 +236,44 @@ function allocateLanes(segments: EventSegment[]): PositionedSegment[] {
  * @returns 排序后的 PositionedSegment[]，供 Week.svelte {#each} 渲染
  */
 export function layoutEvents(
-	events: Event[],
-	displayStartDay: Dayjs,
-	displayEndDay: Dayjs,
-	offsetByHour: number,
+  events: Event[],
+  displayStartDay: Dayjs,
+  displayEndDay: Dayjs,
+  offsetByHour: number,
 ): PositionedSegment[] {
-	const allSegments: EventSegment[] = [];
+  const allSegments: EventSegment[] = [];
 
-	for (const event of events) {
-		allSegments.push(
-			...segmentEvent(event, displayStartDay, displayEndDay, offsetByHour),
-		);
-	}
+  for (const event of events) {
+    allSegments.push(
+      ...segmentEvent(event, displayStartDay, displayEndDay, offsetByHour),
+    );
+  }
 
-	const byDay = new Map<number, EventSegment[]>();
+  const byDay = new Map<number, EventSegment[]>();
 
-	for (const seg of allSegments) {
-		const daySegs = byDay.get(seg.dayIndex);
-		if (daySegs) {
-			daySegs.push(seg);
-		} else {
-			byDay.set(seg.dayIndex, [seg]);
-		}
-	}
+  for (const seg of allSegments) {
+    const daySegs = byDay.get(seg.dayIndex);
+    if (daySegs) {
+      daySegs.push(seg);
+    } else {
+      byDay.set(seg.dayIndex, [seg]);
+    }
+  }
 
-	const positioned: PositionedSegment[] = [];
+  const positioned: PositionedSegment[] = [];
 
-	for (const [, daySegs] of byDay) {
-		positioned.push(...allocateLanes(daySegs));
-	}
+  for (const [, daySegs] of byDay) {
+    positioned.push(...allocateLanes(daySegs));
+  }
 
-	positioned.sort((a, b) => {
-		if (a.dayIndex !== b.dayIndex) {
-			return a.dayIndex - b.dayIndex;
-		}
-		return a.segStart - b.segStart;
-	});
+  positioned.sort((a, b) => {
+    if (a.dayIndex !== b.dayIndex) {
+      return a.dayIndex - b.dayIndex;
+    }
+    return a.segStart - b.segStart;
+  });
 
-	return positioned;
+  return positioned;
 }
 
 /**
@@ -286,10 +286,10 @@ export function layoutEvents(
  * 此函数仅作为集中入口，方便未来调整间距/padding 等样式。
  */
 export function getLaneGeometry(
-	segment: PositionedSegment,
-	dayWidth: number,
+  segment: PositionedSegment,
+  dayWidth: number,
 ): { width: number; left: number } {
-	const width = Math.floor(dayWidth / segment.laneCount);
-	const left = segment.laneIndex * width;
-	return { width, left };
+  const width = Math.floor(dayWidth / segment.laneCount);
+  const left = segment.laneIndex * width;
+  return { width, left };
 }

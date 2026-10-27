@@ -38,28 +38,28 @@ import { MS_PER_DAY, SNAP_THRESHOLD_PX } from "./config";
  * 否则结果可能 > 1。
  */
 export function fractionOfDay(start: number, end: number): number {
-	return (end - start) / MS_PER_DAY;
+  return (end - start) / MS_PER_DAY;
 }
 
 /** 生成 [start, stop] 闭区间整数序列 */
 export function range(start: number, stop: number, step: number = 1) {
-	return Array.from(
-		{ length: Math.floor((stop - start) / step + 1) },
-		(_, i) => start + i * step,
-	);
+  return Array.from(
+    { length: Math.floor((stop - start) / step + 1) },
+    (_, i) => start + i * step,
+  );
 }
 
 /** 将时间戳对齐到最近的 15 分钟整点 */
 export function roundToNearest15MinutesDayjs(time: Dayjs): Dayjs {
-	const minutes = time.minute();
-	const remainder = minutes % 15;
-	let roundedMinutes = minutes;
-	if (remainder < 7.5) {
-		roundedMinutes -= remainder;
-	} else {
-		roundedMinutes += 15 - remainder;
-	}
-	return time.minute(roundedMinutes).second(0).millisecond(0);
+  const minutes = time.minute();
+  const remainder = minutes % 15;
+  let roundedMinutes = minutes;
+  if (remainder < 7.5) {
+    roundedMinutes -= remainder;
+  } else {
+    roundedMinutes += 15 - remainder;
+  }
+  return time.minute(roundedMinutes).second(0).millisecond(0);
 }
 
 /**
@@ -67,15 +67,15 @@ export function roundToNearest15MinutesDayjs(time: Dayjs): Dayjs {
  * snapsOffset 为所有 15 分钟刻度对应的像素位置数组。
  */
 export function roundToNearest15MinutesPixels(
-	snapsOffset: number[],
-	offset: number,
+  snapsOffset: number[],
+  offset: number,
 ): number {
-	for (const snap of snapsOffset) {
-		if (Math.abs(offset - snap) < SNAP_THRESHOLD_PX) {
-			return snap;
-		}
-	}
-	return offset;
+  for (const snap of snapsOffset) {
+    if (Math.abs(offset - snap) < SNAP_THRESHOLD_PX) {
+      return snap;
+    }
+  }
+  return offset;
 }
 
 /**
@@ -83,7 +83,7 @@ export function roundToNearest15MinutesPixels(
  * 索引相对于 displayStartDay，0-based。
  */
 export function makeGetColumnIndex(displayStartDay: Dayjs) {
-	return (t: number) => dayjs(t).diff(displayStartDay, "day");
+  return (t: number) => dayjs(t).diff(displayStartDay, "day");
 }
 
 /**
@@ -95,10 +95,10 @@ export function makeGetColumnIndex(displayStartDay: Dayjs) {
  *   t = 08:00 → 今天 06:00（属于当天）
  */
 export function getDayStart(t: number, offsetByHour: number): Dayjs {
-	return dayjs(t)
-		.add(-offsetByHour, "hour")
-		.startOf("day")
-		.add(offsetByHour, "hour");
+  return dayjs(t)
+    .add(-offsetByHour, "hour")
+    .startOf("day")
+    .add(offsetByHour, "hour");
 }
 
 /**
@@ -108,12 +108,12 @@ export function getDayStart(t: number, offsetByHour: number): Dayjs {
  * 确保 00:00~06:00 的事件被归到前一日，不会产生负偏移。
  */
 export function calculateTopOffset(
-	start: number,
-	offsetByHour: number,
-	dayHeight: number,
+  start: number,
+  offsetByHour: number,
+  dayHeight: number,
 ): number {
-	const dayStart = getDayStart(start, offsetByHour).valueOf();
-	return Math.floor(fractionOfDay(dayStart, start) * dayHeight);
+  const dayStart = getDayStart(start, offsetByHour).valueOf();
+  return Math.floor(fractionOfDay(dayStart, start) * dayHeight);
 }
 
 /**
@@ -123,20 +123,20 @@ export function calculateTopOffset(
  * 否则跨天事件会得到 > dayHeight 的高度。
  */
 export function calculateEventHeight(
-	start: number,
-	end: number,
-	dayHeight: number,
+  start: number,
+  end: number,
+  dayHeight: number,
 ): number {
-	return Math.floor(fractionOfDay(start, end) * dayHeight);
+  return Math.floor(fractionOfDay(start, end) * dayHeight);
 }
 
 /** 周视图的显示范围信息 */
 export interface DisplayRange {
-	today: Dayjs;
-	displayDayNum: number;
-	displayStartDay: Dayjs;
-	displayEndDay: Dayjs;
-	displayDays: Dayjs[];
+  today: Dayjs;
+  displayDayNum: number;
+  displayStartDay: Dayjs;
+  displayEndDay: Dayjs;
+  displayDays: Dayjs[];
 }
 
 /**
@@ -144,15 +144,15 @@ export interface DisplayRange {
  * 以今天为中心，前后各展示 dayNum 天，共 2*dayNum+1 天。
  */
 export function calculateDisplayRange(
-	dayNum: number,
-	offsetByHour: number,
+  dayNum: number,
+  offsetByHour: number,
 ): DisplayRange {
-	const today = dayjs().startOf("day").add(offsetByHour, "hour");
-	return {
-		today,
-		displayDayNum: 2 * dayNum + 1,
-		displayStartDay: today.subtract(dayNum, "day"),
-		displayEndDay: today.add(dayNum, "day"),
-		displayDays: range(-dayNum, dayNum).map((i) => today.add(i, "day")),
-	};
+  const today = dayjs().startOf("day").add(offsetByHour, "hour");
+  return {
+    today,
+    displayDayNum: 2 * dayNum + 1,
+    displayStartDay: today.subtract(dayNum, "day"),
+    displayEndDay: today.add(dayNum, "day"),
+    displayDays: range(-dayNum, dayNum).map((i) => today.add(i, "day")),
+  };
 }

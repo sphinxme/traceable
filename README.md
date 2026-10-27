@@ -8,11 +8,11 @@ Traceable 是一个桌面日程管理应用。核心理念是"事事可追溯"�
 
 应用围绕三个核心实体构建，所有数据基于 Yjs（CRDT）管理，支持离线使用与多设备实时同步。
 
-| 概念 | 说明 |
-|------|------|
-| **Task** | 无限嵌套的大纲条目，支持双向链接（一个任务可出现在多个父任务下），可关联富文本笔记 |
-| **Event** | 日历上的时间块，与 Task 多对一关联，表示计划在某个时间段处理某任务 |
-| **Journal** | 按周/日组织的 Task 容器，本质是 Task + 时间/类型元数据 |
+| 概念        | 说明                                                                               |
+| ----------- | ---------------------------------------------------------------------------------- |
+| **Task**    | 无限嵌套的大纲条目，支持双向链接（一个任务可出现在多个父任务下），可关联富文本笔记 |
+| **Event**   | 日历上的时间块，与 Task 多对一关联，表示计划在某个时间段处理某任务                 |
+| **Journal** | 按周/日组织的 Task 容器，本质是 Task + 时间/类型元数据                             |
 
 > 数据模型、Yjs 文档结构、响应式桥接等细节见 [apps/desktop/src/lib/states/meta/README.md](apps/desktop/src/lib/states/meta/README.md)
 >
@@ -47,53 +47,21 @@ setInteractionContext(interaction);
 
 ### 页面 → 面板 → 组件
 
-| 层级 | 职责 | 示例 |
-|------|------|------|
-| **页面**（`routes/`） | 分栏组合面板 | `TracePage` = 日历 + Todo 编辑器 |
-| **面板**（`panels/`） | 管理面板级状态与控制器 | `Editor` → `EditorPanelController` → `TodoController` |
-| **组件**（`components/`） | 渲染与交互 | `TodoView` → `TodoList` → `TodoItem`；`Calendar` → `Week` → `WeekEvent` |
+| 层级                      | 职责                   | 示例                                                                    |
+| ------------------------- | ---------------------- | ----------------------------------------------------------------------- |
+| **页面**（`routes/`）     | 分栏组合面板           | `TracePage` = 日历 + Todo 编辑器                                        |
+| **面板**（`panels/`）     | 管理面板级状态与控制器 | `Editor` → `EditorPanelController` → `TodoController`                   |
+| **组件**（`components/`） | 渲染与交互             | `TodoView` → `TodoList` → `TodoItem`；`Calendar` → `Week` → `WeekEvent` |
 
 页面通过 `PaneGroup` / `Pane` / `PaneResizer` 实现可调整大小的分栏布局：
 
-| 路由 | 左面板 | 右面板 |
-|------|--------|--------|
-| `/trace` | 日历 | Todo 编辑器 |
+| 路由        | 左面板 | 右面板      |
+| ----------- | ------ | ----------- |
+| `/trace`    | 日历   | Todo 编辑器 |
 | `/organize` | 周日志 | Todo 编辑器 |
-| `/schedule` | 日历 | 周日志 |
-| `/settings` | — | 设置 |
+| `/schedule` | 日历   | 周日志      |
+| `/settings` | —      | 设置        |
 
 面板控制器（`PanelController`）是面板与组件之间的桥梁，管理导航路径（面包屑缩放）和 `TodoController` 的生命周期。
 
 > Todo 控制器架构详情见 [apps/desktop/src/lib/components/todolist/README.md](apps/desktop/src/lib/components/todolist/README.md)
-
-## 项目结构
-
-```
-traceable/
-├── apps/                             # npm workspaces
-│   ├── desktop/                      # Tauri+Svelte5 桌面端
-│   │   ├── src/                      # 前端
-│   │   │   ├── App.svelte            # 应用根组件（加载 Yjs、路由）
-│   │   │   ├── main.ts               # 入口
-│   │   │   ├── state.ts               # 全局 Database 实例
-│   │   │   ├── routes/               # 页面组件
-│   │   │   └── lib/
-│   │   │       ├── router/           # 自定义路由（History API）
-│   │   │       ├── states/           # 数据层
-│   │   │       │   ├── meta/         #   领域模型 → README.md
-│   │   │       │   ├── yjs/          #   Yjs 初始化与同步 → README.md
-│   │   │       │   └── states/       #   面板状态管理 → README.md
-│   │   │       ├── interaction/      # 交互服务 → README.md
-│   │   │       ├── panels/           # 面板（todo, calendar, journal）
-│   │   │       └── components/       # UI 组件
-│   │   │           ├── todolist/     #   Todo 大纲 → README.md
-│   │   │           ├── calendar/     #   日历视图
-│   │   │           ├── tiptap/       #   富文本编辑器
-│   │   │           ├── graph/        #   图算法（DAG 路径查找、环检测）
-│   │   │           └── ui/           #   shadcn-svelte 基础组件
-│   │   └── src-tauri/                # Tauri 桌面壳（Rust）
-│   └── auth-server/                  # 认证服务 → README.md（可独立构建分发）
-├── packages/                         # 预留共享包
-├── package.json                      # workspaces 根配置
-└── bun.lock                          # 依赖锁文件
-```
