@@ -34,128 +34,125 @@ import type { Task } from "$lib/states/meta/task.svelte";
 
 /** 从 Todo 拖入日历时的预览事件时间范围 */
 export interface DraggingTaskEvent {
-	start: number;
-	end: number;
+  start: number;
+  end: number;
 }
 
 export class WeekController {
-	// ── 依赖注入 ──
+  // ── 依赖注入 ──
 
-	/** Yjs 数据层，唯一事实来源 */
-	readonly store!: Store;
-	/** 网格骨架控制器（坐标系唯一事实来源） */
-	readonly skeleton!: WeekSkeletonController;
+  /** Yjs 数据层，唯一事实来源 */
+  readonly store!: Store;
+  /** 网格骨架控制器（坐标系唯一事实来源） */
+  readonly skeleton!: WeekSkeletonController;
 
-	// ── 委托服务 ──
+  // ── 委托服务 ──
 
-	private readonly nowIndicator: NowIndicatorTimer;
-	private readonly scrollRestore: ScrollRestoreService;
+  private readonly nowIndicator: NowIndicatorTimer;
+  private readonly scrollRestore: ScrollRestoreService;
 
-	// ── 可变状态（$state，由视图通过 bind 回传或交互更新）──
+  // ── 可变状态（$state，由视图通过 bind 回传或交互更新）──
 
-	/** 滚动容器引用，由 ScrollArea 通过 bind:ref 回传 */
-	scrollAreaRef = $state<HTMLElement | null>(null);
-	/** 从 Todo 拖入时的预览事件（null 表示无拖入） */
-	draggingTaskEvent = $state<DraggingTaskEvent | null>(null);
+  /** 滚动容器引用，由 ScrollArea 通过 bind:ref 回传 */
+  scrollAreaRef = $state<HTMLElement | null>(null);
+  /** 从 Todo 拖入时的预览事件（null 表示无拖入） */
+  draggingTaskEvent = $state<DraggingTaskEvent | null>(null);
 
-	// ── 派生状态（$derived，依赖变化时自动重算）──
+  // ── 派生状态（$derived，依赖变化时自动重算）──
 
-	/** 从 Store 查询显示范围内的事件（Yjs 数据变更时自动重新查询） */
-	readonly events = $derived(
-		this.store.queryEventsByRange(
-			this.skeleton.displayRange.displayStartDay.valueOf(),
-			this.skeleton.displayRange.displayEndDay.valueOf(),
-		),
-	);
+  /** 从 Store 查询显示范围内的事件（Yjs 数据变更时自动重新查询） */
+  readonly events = $derived(
+    this.store.queryEventsByRange(
+      this.skeleton.displayRange.displayStartDay.valueOf(),
+      this.skeleton.displayRange.displayEndDay.valueOf(),
+    ),
+  );
 
-	/**
-	 * 布局引擎输出：将 events 切分为 per-day segments 并做重叠分列。
-	 * 每个 PositionedSegment 对应一个 EventSegment 实例。
-	 */
-	readonly positionedSegments = $derived(
-		layoutEvents(
-			this.events.filter((e) => e.task),
-			this.skeleton.displayRange.displayStartDay,
-			this.skeleton.displayRange.displayEndDay,
-			this.skeleton.offsetByHour,
-		),
-	);
+  /**
+   * 布局引擎输出：将 events 切分为 per-day segments 并做重叠分列。
+   * 每个 PositionedSegment 对应一个 EventSegment 实例。
+   */
+  readonly positionedSegments = $derived(
+    layoutEvents(
+      this.events.filter((e) => e.task),
+      this.skeleton.displayRange.displayStartDay,
+      this.skeleton.displayRange.displayEndDay,
+      this.skeleton.offsetByHour,
+    ),
+  );
 
-	/**
-	 * 15 分钟 snap 点的像素偏移数组（共 97 个，0~96 * piece）。
-	 * 用于拖拽时吸附到 15 分钟整点。
-	 */
-	readonly snapsOffset = $derived.by(() => {
-		const pieceNum = 24 * 4;
-		const piece = this.skeleton.dayHeight / pieceNum;
-		return list(0, pieceNum, (i) => i * piece);
-	});
+  /**
+   * 15 分钟 snap 点的像素偏移数组（共 97 个，0~96 * piece）。
+   * 用于拖拽时吸附到 15 分钟整点。
+   */
+  readonly snapsOffset = $derived.by(() => {
+    const pieceNum = 24 * 4;
+    const piece = this.skeleton.dayHeight / pieceNum;
+    return list(0, pieceNum, (i) => i * piece);
+  });
 
-	/** 当前时间指示线的百分比位置（委托给 NowIndicatorTimer） */
-	get nowPercentage() {
-		return this.nowIndicator.nowPercentage;
-	}
+  /** 当前时间指示线的百分比位置（委托给 NowIndicatorTimer） */
+  get nowPercentage() {
+    return this.nowIndicator.nowPercentage;
+  }
 
-	constructor(store: Store, skeleton: WeekSkeletonController) {
-		this.store = store;
-		this.skeleton = skeleton;
-		this.nowIndicator = new NowIndicatorTimer(skeleton.offsetByHour);
-		this.scrollRestore = new ScrollRestoreService(skeleton);
-	}
+  constructor(store: Store, skeleton: WeekSkeletonController) {
+    this.store = store;
+    this.skeleton = skeleton;
+    this.nowIndicator = new NowIndicatorTimer(skeleton.offsetByHour);
+    this.scrollRestore = new ScrollRestoreService(skeleton);
+  }
 
-	// ── 生命周期 ──
+  // ── 生命周期 ──
 
-	/** 组件就绪后调用：启动 now indicator + 恢复滚动位置 */
-	onReady() {
-		this.nowIndicator.start();
-		this.scrollRestore.setup(this.scrollAreaRef);
-	}
+  /** 组件就绪后调用：启动 now indicator + 恢复滚动位置 */
+  onReady() {
+    this.nowIndicator.start();
+    this.scrollRestore.setup(this.scrollAreaRef);
+  }
 
-	/** 组件卸载时调用：停止定时器 + 移除监听器 */
-	destroy() {
-		this.nowIndicator.stop();
-		this.scrollRestore.destroy();
-	}
+  /** 组件卸载时调用：停止定时器 + 移除监听器 */
+  destroy() {
+    this.nowIndicator.stop();
+    this.scrollRestore.destroy();
+  }
 
-	// ── 从 Todo 拖入：像素 → 时间转换 + 事件创建 ──
+  // ── 从 Todo 拖入：像素 → 时间转换 + 事件创建 ──
 
-	/**
-	 * 将日列内的像素偏移转换为时间戳。
-	 * 先定位到日界（offsetByHour），再按像素比例换算为毫秒偏移。
-	 */
-	private pixelsToTime(day: Dayjs, topPx: number): Dayjs {
-		return day
-			.startOf("day")
-			.add(this.skeleton.offsetByHour, "hour")
-			.add(
-				(topPx / this.skeleton.dayHeight) * MS_PER_DAY,
-				"milliseconds",
-			);
-	}
+  /**
+   * 将日列内的像素偏移转换为时间戳。
+   * 先定位到日界（offsetByHour），再按像素比例换算为毫秒偏移。
+   */
+  private pixelsToTime(day: Dayjs, topPx: number): Dayjs {
+    return day
+      .startOf("day")
+      .add(this.skeleton.offsetByHour, "hour")
+      .add((topPx / this.skeleton.dayHeight) * MS_PER_DAY, "milliseconds");
+  }
 
-	/** 从 Todo 拖入：拖拽悬停时更新预览块位置（30 分钟默认时长，15 分钟对齐） */
-	handleDragOver(day: Dayjs, _task: Task, topPx: number) {
-		let start = this.pixelsToTime(day, topPx);
-		start = roundToNearest15MinutesDayjs(start);
-		this.draggingTaskEvent = {
-			start: start.valueOf(),
-			end: start.valueOf() + DEFAULT_EVENT_DURATION_MS,
-		};
-	}
+  /** 从 Todo 拖入：拖拽悬停时更新预览块位置（30 分钟默认时长，15 分钟对齐） */
+  handleDragOver(day: Dayjs, _task: Task, topPx: number) {
+    let start = this.pixelsToTime(day, topPx);
+    start = roundToNearest15MinutesDayjs(start);
+    this.draggingTaskEvent = {
+      start: start.valueOf(),
+      end: start.valueOf() + DEFAULT_EVENT_DURATION_MS,
+    };
+  }
 
-	/** 从 Todo 拖入：释放时创建新事件并写入 Store */
-	handleDrop(day: Dayjs, task: Task, topPx: number) {
-		let start = this.pixelsToTime(day, topPx);
-		start = roundToNearest15MinutesDayjs(start);
-		task.insertEvent(
-			start.valueOf(),
-			start.add(DEFAULT_EVENT_DURATION_MS, "milliseconds").valueOf(),
-		);
-		this.draggingTaskEvent = null;
-	}
+  /** 从 Todo 拖入：释放时创建新事件并写入 Store */
+  handleDrop(day: Dayjs, task: Task, topPx: number) {
+    let start = this.pixelsToTime(day, topPx);
+    start = roundToNearest15MinutesDayjs(start);
+    task.insertEvent(
+      start.valueOf(),
+      start.add(DEFAULT_EVENT_DURATION_MS, "milliseconds").valueOf(),
+    );
+    this.draggingTaskEvent = null;
+  }
 
-	/** 从 Todo 拖入：拖拽离开/取消时清除预览 */
-	handleDragEnd() {
-		this.draggingTaskEvent = null;
-	}
+  /** 从 Todo 拖入：拖拽离开/取消时清除预览 */
+  handleDragEnd() {
+    this.draggingTaskEvent = null;
+  }
 }

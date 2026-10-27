@@ -6,7 +6,7 @@
  * - `DONE` — 浅灰（`bg-zinc-100`）：已完成
  */
 export const colors = {
-    "TODO": "bg-zinc-500",
-    "BLOCK": "bg-blue-300",
-    "DONE": "bg-zinc-100",
-}
+  TODO: "bg-zinc-500",
+  BLOCK: "bg-blue-300",
+  DONE: "bg-zinc-100",
+};

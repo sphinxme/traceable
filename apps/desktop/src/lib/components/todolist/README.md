@@ -8,13 +8,13 @@
 
 交互逻辑拆分到 5 个 Action 处理器（均实现 `TodoLifeCycle`）：
 
-| Action | 职责 |
-|--------|------|
-| `TodoKeyboardActions` | 键盘导航（↑↓）、缩进（Tab/Shift+Tab）、新建（Enter，4种case）、笔记开关（Shift+Enter） |
-| `TodoTransitionActions` | View Transition 动画命名与协调（缩放进入/退出、Tab移动） |
-| `TodoFocusActions` | 光标恢复（键盘导航/新建后）+ Week→Todo 高亮（滚动+金色闪烁） |
-| `TodoChildrenActions` | 子任务索引与兄弟节点查询 |
-| `DragDropActions` | 拖放 reparenting（move/link），含 DAG 环检测 |
+| Action                  | 职责                                                                                   |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| `TodoKeyboardActions`   | 键盘导航（↑↓）、缩进（Tab/Shift+Tab）、新建（Enter，4种case）、笔记开关（Shift+Enter） |
+| `TodoTransitionActions` | View Transition 动画命名与协调（缩放进入/退出、Tab移动）                               |
+| `TodoFocusActions`      | 光标恢复（键盘导航/新建后）+ Week→Todo 高亮（滚动+金色闪烁）                           |
+| `TodoChildrenActions`   | 子任务索引与兄弟节点查询                                                               |
+| `DragDropActions`       | 拖放 reparenting（move/link），含 DAG 环检测                                           |
 
 ## 关键概念
 
@@ -24,10 +24,10 @@
 
 ### 双事件总线
 
-| 总线 | 范围 | 用途 |
-|------|------|------|
-| `eventbus`（`controller/eventbus.svelte.ts`） | todolist 内部 | 缩放过渡（`zoomout:*` / `zoominto:*`）、拖拽（`drag:start` / `drag:end`） |
-| `interactionBus`（`interaction/eventbus.svelte.ts`） | 全局交互 | Week→Todo 焦点（`focus:todo`）、Todo→Week 高亮（`focus:eventSegment`） |
+| 总线                                                 | 范围          | 用途                                                                      |
+| ---------------------------------------------------- | ------------- | ------------------------------------------------------------------------- |
+| `eventbus`（`controller/eventbus.svelte.ts`）        | todolist 内部 | 缩放过渡（`zoomout:*` / `zoominto:*`）、拖拽（`drag:start` / `drag:end`） |
+| `interactionBus`（`interaction/eventbus.svelte.ts`） | 全局交互      | Week→Todo 焦点（`focus:todo`）、Todo→Week 高亮（`focus:eventSegment`）    |
 
 两者分离以避免反向依赖（interaction/services → todolist/controller）。
 

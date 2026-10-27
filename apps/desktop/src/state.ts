@@ -4,5 +4,5 @@ import { Database } from "$lib/states/meta/database.svelte";
 export let db: Database;
 
 export function load(doc: Y.Doc) {
-    db = new Database(doc);
+  db = new Database(doc);
 }

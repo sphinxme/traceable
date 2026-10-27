@@ -3,7 +3,7 @@ name: Build and Push Auth Server Image
 on:
   push:
     tags:
-      - 'auth-server-v*.*.*'
+      - "auth-server-v*.*.*"
 
 jobs:
   build-push:

@@ -49,18 +49,18 @@ export const SNAP_THRESHOLD_PX = 6;
 // ── 业务规则 ──
 
 export const NOT_WORK_HOUR_RANGES: ReadonlyArray<{
-	start: number;
-	end: number;
+  start: number;
+  end: number;
 }> = [
-	{ start: 6, end: 10 },
-	{ start: 12, end: 13.5 },
-	{ start: 18, end: 19.5 },
-	// end=30 表示次日 06:00。值可 >24，DayGrid 按 (end-offsetByHour)*2 计算 grid-row，
-	// 超出 48 行的部分会被 CSS Grid 自动截断。
-	{ start: 22, end: 30 },
+  { start: 6, end: 10 },
+  { start: 12, end: 13.5 },
+  { start: 18, end: 19.5 },
+  // end=30 表示次日 06:00。值可 >24，DayGrid 按 (end-offsetByHour)*2 计算 grid-row，
+  // 超出 48 行的部分会被 CSS Grid 自动截断。
+  { start: 22, end: 30 },
 ];
 
 /** 判断是否为休息日（仅周六，周日不标记） */
 export function isRestDay(day: Dayjs) {
-	return day.day() == 6;
+  return day.day() == 6;
 }

@@ -23,47 +23,47 @@ import { interactionBus } from "../eventbus.svelte";
  *   引用变更 hack、状态残留、只读约束等问题。
  */
 export class EventHighlightService {
-    /**
-     * 持续高亮状态表 — `Record<eventId, boolean>`。
-     *
-     * 由 EventIndicator 的 hover 事件驱动写入，
-     * 由 EventSegment 读取以决定是否显示放大 + 阴影效果。
-     */
-    private highlightMap = $state<Record<string, boolean>>({});
+  /**
+   * 持续高亮状态表 — `Record<eventId, boolean>`。
+   *
+   * 由 EventIndicator 的 hover 事件驱动写入，
+   * 由 EventSegment 读取以决定是否显示放大 + 阴影效果。
+   */
+  private highlightMap = $state<Record<string, boolean>>({});
 
-    /**
-     * 设置某个事件的持续高亮状态。
-     *
-     * @param eventId 事件 ID
-     * @param on      `true` = 高亮, `false` = 取消高亮
-     */
-    setHighlight(eventId: string, on: boolean): void {
-        this.highlightMap[eventId] = on;
-    }
+  /**
+   * 设置某个事件的持续高亮状态。
+   *
+   * @param eventId 事件 ID
+   * @param on      `true` = 高亮, `false` = 取消高亮
+   */
+  setHighlight(eventId: string, on: boolean): void {
+    this.highlightMap[eventId] = on;
+  }
 
-    /**
-     * 查询某个事件是否处于持续高亮状态。
-     *
-     * @param eventId 事件 ID
-     * @returns `true` 如果当前高亮, 否则 `false`
-     */
-    isHighlighted(eventId: string): boolean {
-        return this.highlightMap[eventId] ?? false;
-    }
+  /**
+   * 查询某个事件是否处于持续高亮状态。
+   *
+   * @param eventId 事件 ID
+   * @returns `true` 如果当前高亮, 否则 `false`
+   */
+  isHighlighted(eventId: string): boolean {
+    return this.highlightMap[eventId] ?? false;
+  }
 
-    /**
-     * 发起一次性聚焦请求 — 滚动到对应的 Week EventSegment。
-     *
-     * 由 EventIndicator 的 click 事件调用。
-     * 通过 {@link interactionBus} 发射 `'focus:eventSegment'` 事件，
-     * 由 EventSegment 的 `interactionBus$listen` 监听器消费。
-     *
-     * 事件是 fire-and-forget 的：消费即消失，无残留状态，
-     * 后续挂载的组件不会误读陈旧请求。
-     *
-     * @param eventId 要聚焦的事件 ID
-     */
-    requestFocus(eventId: string): void {
-        interactionBus.emit("focus:eventSegment", { eventId });
-    }
+  /**
+   * 发起一次性聚焦请求 — 滚动到对应的 Week EventSegment。
+   *
+   * 由 EventIndicator 的 click 事件调用。
+   * 通过 {@link interactionBus} 发射 `'focus:eventSegment'` 事件，
+   * 由 EventSegment 的 `interactionBus$listen` 监听器消费。
+   *
+   * 事件是 fire-and-forget 的：消费即消失，无残留状态，
+   * 后续挂载的组件不会误读陈旧请求。
+   *
+   * @param eventId 要聚焦的事件 ID
+   */
+  requestFocus(eventId: string): void {
+    interactionBus.emit("focus:eventSegment", { eventId });
+  }
 }

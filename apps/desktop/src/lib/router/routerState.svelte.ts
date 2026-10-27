@@ -1,38 +1,36 @@
 class Router {
+  public path = $derived(window.location.pathname);
 
-    public path = $derived(window.location.pathname);
+  constructor() {}
 
-    constructor() { }
+  private handlePopState = () => {
+    console.log("handled");
+    this.path = window.location.pathname;
+  };
 
-    private handlePopState = () => {
-        console.log("handled")
-        this.path = window.location.pathname;
-    };
+  private isInitialized = false;
 
-    private isInitialized = false;
+  public init() {
+    if (this.isInitialized) return;
 
-    public init() {
-        if (this.isInitialized) return;
+    console.log("registered");
 
-        console.log('registered')
+    window.addEventListener("popstate", this.handlePopState);
+  }
 
-        window.addEventListener('popstate', this.handlePopState);
+  public destroy() {
+    if (this.isInitialized) {
+      console.log("destroyed");
+      window.removeEventListener("popstate", this.handlePopState);
+      this.isInitialized = false;
     }
+  }
 
-    public destroy() {
-        if (this.isInitialized) {
-            console.log('destroyed')
-            window.removeEventListener('popstate', this.handlePopState);
-            this.isInitialized = false;
-        }
-    }
-
-
-    public navigate(to: string) {
-        console.log(`navigate to ${to}`)
-        history.pushState({}, '', to);
-        this.path = to;
-    }
+  public navigate(to: string) {
+    console.log(`navigate to ${to}`);
+    history.pushState({}, "", to);
+    this.path = to;
+  }
 }
 
 // 导出这个 store 的单例

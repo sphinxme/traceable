@@ -1,22 +1,22 @@
 {
-    "editor.defaultFormatter": "dbaeumer.vscode-eslint",
-    "editor.formatOnPaste": true,
-    "editor.formatOnSave": true,
-    "npm.packageManager": "bun",
-    "[typescript]": {
-        "editor.defaultFormatter": "vscode.typescript-language-features"
-    },
-    "[html]": {
-        "editor.defaultFormatter": "vscode.html-language-features"
-    },
-    "[rust]": {
-        "editor.defaultFormatter": "rust-lang.rust-analyzer"
-    },
-    "[jsonc]": {
-        "editor.defaultFormatter": "vscode.json-language-features"
-    },
-    "[svelte]": {
-        "editor.defaultFormatter": "svelte.svelte-vscode"
-    },
-    "workbench.editor.mouseBackForwardToNavigate": true
+  "editor.defaultFormatter": "dbaeumer.vscode-eslint",
+  "editor.formatOnPaste": true,
+  "editor.formatOnSave": true,
+  "npm.packageManager": "bun",
+  "[typescript]": {
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features"
+  },
+  "[rust]": {
+    "editor.defaultFormatter": "rust-lang.rust-analyzer"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "vscode.json-language-features"
+  },
+  "[svelte]": {
+    "editor.defaultFormatter": "svelte.svelte-vscode"
+  },
+  "workbench.editor.mouseBackForwardToNavigate": true
 }

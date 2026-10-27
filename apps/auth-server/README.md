@@ -6,15 +6,15 @@
 
 ## 文件
 
-| 文件 | 说明 |
-|------|------|
-| `src/main.ts` | 服务入口（Hono 路由） |
-| `src/lib/s3.ts` | S3 预签名 URL 生成（七牛云对象存储） |
-| `package.json` | 依赖声明（npm 包） |
-| `tsconfig.json` | TypeScript 配置 |
-| `.env.example` | 环境变量模板 |
-| `API.md` | 图片上传/访问 API 文档 |
-| `Dockerfile` | Docker 部署配置（构建上下文为本目录，可独立构建分发） |
+| 文件            | 说明                                                  |
+| --------------- | ----------------------------------------------------- |
+| `src/main.ts`   | 服务入口（Hono 路由）                                 |
+| `src/lib/s3.ts` | S3 预签名 URL 生成（七牛云对象存储）                  |
+| `package.json`  | 依赖声明（npm 包）                                    |
+| `tsconfig.json` | TypeScript 配置                                       |
+| `.env.example`  | 环境变量模板                                          |
+| `API.md`        | 图片上传/访问 API 文档                                |
+| `Dockerfile`    | Docker 部署配置（构建上下文为本目录，可独立构建分发） |
 
 ## API
 
@@ -46,15 +46,15 @@ GET /pictures/uploads/{year}/{month}/{uuid}.{ext}
 
 ## 环境变量
 
-| 变量 | 说明 |
-|------|------|
-| `LIVEBLOCKS_KEY` | Liveblocks 密钥（必需） |
-| `API_KEY` | 图片上传 API 认证密钥 |
-| `QINIU_ACCESS_KEY` | 七牛云 Access Key |
-| `QINIU_SECRET_KEY` | 七牛云 Secret Key |
-| `QINIU_BUCKET_NAME` | 存储空间名 |
-| `QINIU_REGION` | 区域（默认 `cn-east-1`） |
-| `PORT` | 监听端口（默认 `9000`） |
+| 变量                | 说明                     |
+| ------------------- | ------------------------ |
+| `LIVEBLOCKS_KEY`    | Liveblocks 密钥（必需）  |
+| `API_KEY`           | 图片上传 API 认证密钥    |
+| `QINIU_ACCESS_KEY`  | 七牛云 Access Key        |
+| `QINIU_SECRET_KEY`  | 七牛云 Secret Key        |
+| `QINIU_BUCKET_NAME` | 存储空间名               |
+| `QINIU_REGION`      | 区域（默认 `cn-east-1`） |
+| `PORT`              | 监听端口（默认 `9000`）  |
 
 ## 启动
 
