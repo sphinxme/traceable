@@ -1,73 +1,107 @@
 <script lang="ts">
   /**
    * Weekly — 周日志面板：纵向平铺 15 个周日志（窗口覆盖 6 周前 → 8 周后），
-   * 每个 Journal 渲染为一个独立的 TodoView（根控制器由 WeeklyJournalPanelController 创建）。
-   * 列表当前按 新→旧 渲染，与预期的日志顺序（旧→新）相反，待修正（见 genTimes）。
+   * 每个 Journal 的容器 Task 是一个独立 home（W3 keyed）。
    *
-   * 滚动行为：首次打开定位到当前周（Focusable）；会话内已有记忆位置时
-   * 改为恢复上次滚动位置（ScrollMemoryService.journal）。
+   * 面板实例由本组件创建；目录/门面注册与滚动记忆接线同 Editor。
    */
-  // TODO: 支持无限滚动
-  import * as Y from "yjs";
   import TodoView from "$lib/components/todolist/TodoView.svelte";
-  import dayjs, { Dayjs } from "dayjs";
+  import dayjs, { type Dayjs } from "dayjs";
   import Focusable from "$lib/components/ui/focusable/Focusable.svelte";
-  import type { Store } from "$lib/states/meta/store.svelte";
-  import {
-    PanelStateStore,
-    type StateMap,
-  } from "$lib/states/states/StatesTree.svelte";
-  import { WeeklyJournalPanelController } from "./JournalPanelController.svelte";
-  import { onMount } from "svelte";
+  import { range } from "radash";
+  import type { Store } from "$lib/document/entities/store.svelte";
+  import { JournalPanel } from "$lib/view/panel.svelte";
+  import { getAppServices } from "$lib/app/context.svelte";
   import { ScrollArea } from "$lib/components/ui/scroll-area";
-  import { getInteractionContext } from "$lib/interaction/context.svelte";
 
   interface Props {
-    store: Store;
-    allPanelStates: Y.Map<StateMap>;
     panelId: string;
+    store: Store;
   }
 
-  let { store, allPanelStates, panelId }: Props = $props();
-  const rootTaskId = "weekly";
+  let { panelId, store }: Props = $props();
 
-  const panelState = PanelStateStore.getOrCreateFromParentYMap(
-    allPanelStates,
-    panelId,
-    rootTaskId,
-  );
+  const services = getAppServices();
 
-  const controller = new WeeklyJournalPanelController(
+  function genTimes(): Dayjs[] {
+    const start = dayjs().startOf("week").add(7, "day");
+    return [...range(-7, 7)].map((offset) => start.subtract(offset, "week"));
+  }
+
+  function journals() {
+    return genTimes().map((time) =>
+      store.getOrCreateJournal(
+        `${time.valueOf()}-WEEK`,
+        time.valueOf(),
+        "WEEK",
+        time.format("MM/DD"),
+      ),
+    );
+  }
+
+  const panel = new JournalPanel(
     panelId,
-    panelState,
-    rootTaskId,
     store,
+    services.panelState,
+    services.focus,
+    journals,
   );
 
-  const { scroll } = getInteractionContext();
+  const entries = $derived.by(() => {
+    const byTaskId = new Map(
+      journals().map((journal) => [journal.taskId, journal]),
+    );
+    return panel.homes().map((home) => ({
+      home,
+      journal: byTaskId.get(home.id)!,
+    }));
+  });
 
-  function isCurrentWeek(t: Dayjs) {
-    return t.startOf("week").isSame(dayjs().startOf("week"));
+  const SCROLL_KEY = "__panel__";
+  const hadScrollMemory = panel.scrollMemory.has(SCROLL_KEY);
+
+  let scrollAreaRef = $state<HTMLElement | null>(null);
+
+  function isCurrentWeek(time: Dayjs): boolean {
+    return time.startOf("week").isSame(dayjs().startOf("week"));
   }
-  // TODO:focus改成使用mitt + viewId触发
 
-  let scrollAreaRef = $state<HTMLElement>(null as any);
-  onMount(() => {
-    if (scroll.journal[panelId]) {
-      scrollAreaRef.scrollTo({
-        top: scroll.journal[panelId].scrollTop,
-        left: scroll.journal[panelId].scrollLeft,
+  $effect(() => {
+    services.directory.register(panel);
+    services.facade.registerTaskParticipant(panel);
+    return () => {
+      services.facade.unregisterTaskParticipant(panel);
+      services.directory.unregister(panel.id);
+    };
+  });
+
+  $effect(() => {
+    const el = scrollAreaRef;
+    if (!el) return;
+
+    const saved = panel.scrollMemory.get(SCROLL_KEY);
+    if (saved) {
+      el.scrollTo({
+        top: saved.scrollTop,
+        left: saved.scrollLeft,
         behavior: "instant",
       });
     }
-    const update = () => {
-      scroll.journal[panelId] = {
-        scrollTop: scrollAreaRef.scrollTop,
-        scrollLeft: scrollAreaRef.scrollLeft,
-      };
+
+    const onScroll = () => {
+      panel.scrollMemory.set(SCROLL_KEY, {
+        scrollTop: el.scrollTop,
+        scrollLeft: el.scrollLeft,
+      });
     };
-    // console.log({ scroll.journal });
-    scrollAreaRef.addEventListener("scroll", update);
+    el.addEventListener("scroll", onScroll);
+    return () => {
+      panel.scrollMemory.set(SCROLL_KEY, {
+        scrollTop: el.scrollTop,
+        scrollLeft: el.scrollLeft,
+      });
+      el.removeEventListener("scroll", onScroll);
+    };
   });
 </script>
 
@@ -75,18 +109,18 @@
   class="flex h-full grow flex-col rounded bg-background pl-1 pr-0 shadow-xl"
   style:contain="content"
 >
-  <!-- <div class="pl-2 h-full overflow-y-auto"> -->
   <ScrollArea bind:ref={scrollAreaRef} class=" h-full pl-2">
-    {#each controller.getJournalList() as weekDoc}
+    {#each entries as { home, journal } (home.id)}
       <div>
         <Focusable
-          focus={!scroll.journal[panelId] && isCurrentWeek(weekDoc.time)}
+          focus={!hadScrollMemory && isCurrentWeek(journal.time)}
           inline="start"
         />
         <TodoView
+          {panel}
+          homeTask={home}
           showTitle
-          highlightTitle={isCurrentWeek(weekDoc.time)}
-          controller={controller.getTodoController(weekDoc)}
+          highlightTitle={isCurrentWeek(journal.time)}
         />
       </div>
     {/each}

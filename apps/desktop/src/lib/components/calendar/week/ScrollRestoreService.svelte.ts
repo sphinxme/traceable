@@ -2,19 +2,23 @@
  * 滚动位置记忆服务
  *
  * 恢复上次滚动位置，并监听 scroll 事件持续持久化。
- * 通过 InteractionContext 的 ScrollMemoryService 存储。
+ * 存储于 WeekPanelController.scrollMemory（会话级 Map，键 "__panel__"）。
  *
  * 首次加载（无滚动记忆）时水平滚动到今天的日列并居中。
  */
 import { SIDE_WIDTH, SIZE } from "./segment_layout/config";
-import { getInteractionContext } from "$lib/interaction/context.svelte";
+import type { ScrollState } from "$lib/protocol";
 import type { WeekSkeletonController } from "./skeleton/WeekSkeletonController.svelte";
+
+const SCROLL_KEY = "__panel__";
 
 export class ScrollRestoreService {
   private cleanup: (() => void) | null = null;
-  private readonly scroll = getInteractionContext().scroll;
 
-  constructor(private skeleton: WeekSkeletonController) {}
+  constructor(
+    private skeleton: WeekSkeletonController,
+    private readonly scrollMemory: Map<string, ScrollState>,
+  ) {}
 
   /**
    * 恢复上次滚动位置，并监听 scroll 事件持续持久化。
@@ -22,12 +26,12 @@ export class ScrollRestoreService {
    */
   setup(ref: HTMLElement | null) {
     if (!ref) return;
-    const key = "weekPanel";
 
-    if (this.scroll.weekPanel[key]) {
+    const saved = this.scrollMemory.get(SCROLL_KEY);
+    if (saved) {
       ref.scrollTo({
-        top: this.scroll.weekPanel[key].scrollTop,
-        left: this.scroll.weekPanel[key].scrollLeft,
+        top: saved.scrollTop,
+        left: saved.scrollLeft,
         behavior: "instant",
       });
     } else {
@@ -35,10 +39,10 @@ export class ScrollRestoreService {
     }
 
     const update = () => {
-      this.scroll.weekPanel[key] = {
+      this.scrollMemory.set(SCROLL_KEY, {
         scrollTop: ref.scrollTop,
         scrollLeft: ref.scrollLeft,
-      };
+      });
     };
 
     ref.addEventListener("scroll", update);

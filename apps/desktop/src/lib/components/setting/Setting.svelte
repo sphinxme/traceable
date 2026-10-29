@@ -2,7 +2,9 @@
   import { Button } from "../ui/button";
   import * as Dialog from "$lib/components/ui/dialog";
   import { Textarea } from "../ui/textarea";
-  import { db } from "@/state";
+  import { getAppServices } from "$lib/app/context.svelte";
+
+  const services = getAppServices();
 
   let open = $state(false);
 
@@ -12,15 +14,12 @@
 
   let deleteEventPanelOpen = $state(false);
   let deleteEventId = $state("");
-
-  let deleteTaskPanelOpen = $state(false);
-  let deleteTaskId = $state("");
 </script>
 
 {message2}
 <Button
   onclick={async () => {
-    value = JSON.stringify(await db.export(), null, 2);
+    value = JSON.stringify(services.database.export(), null, 2);
     open = true;
   }}
 >
@@ -28,11 +27,10 @@
 </Button>
 
 <Button onclick={() => (deleteEventPanelOpen = true)}>delete event</Button>
-<Button onclick={() => (deleteTaskPanelOpen = true)}>delete task</Button>
 
 <Button
   onclick={async () => {
-    await db.clear();
+    services.database.clear();
     message2 = "已清空";
     window.location.reload();
   }}
@@ -47,7 +45,8 @@
     <Button
       onclick={async () => {
         message = "";
-        await db.import(JSON.parse(value));
+        services.database.import(JSON.parse(value));
+        services.panelState.sweep();
         message = "已导入, 三秒后重启";
         setTimeout(() => {
           window.location.reload();
@@ -64,7 +63,7 @@
     <Textarea bind:value={deleteEventId} />
     <Button
       onclick={async () => {
-        await db.store.deleteEvent(deleteEventId);
+        services.store.deleteEvent(deleteEventId);
         message2 = "已删除";
         setTimeout(() => {
           window.location.reload();
@@ -72,23 +71,6 @@
       }}
     >
       删除event
-    </Button>
-  </Dialog.Content>
-</Dialog.Root>
-
-<Dialog.Root bind:open={deleteTaskPanelOpen}>
-  <Dialog.Content>
-    <Textarea bind:value={deleteTaskId} />
-    <Button
-      onclick={async () => {
-        await db.store.deleteTask(deleteTaskId);
-        message2 = "已删除";
-        setTimeout(() => {
-          window.location.reload();
-        }, 3000);
-      }}
-    >
-      删除task
     </Button>
   </Dialog.Content>
 </Dialog.Root>

@@ -8,8 +8,8 @@
 import type { Action } from "svelte/action";
 import interact from "interactjs";
 
-import type { Task } from "$lib/states/meta/task.svelte";
-import type { DragService } from "$lib/interaction/services/DragService.svelte";
+import type { Task } from "$lib/document/entities/task.svelte";
+import type { DragService } from "$lib/interaction/drag-service.svelte";
 
 /**
  * interactjs 拖放区：使日列可被 EventSegmentController.action 的 draggable 检测为放置目标。
@@ -53,7 +53,7 @@ export const dayExternalDropZone: Action<
 > = (node, { drag, onDragOver, onDragEnd, onDrop }) => {
   node.ondragover = (event) => {
     event.preventDefault();
-    const data = drag.data;
+    const data = drag.payload;
     if (!data) {
       return;
     }
@@ -65,7 +65,7 @@ export const dayExternalDropZone: Action<
   };
   node.ondrop = (event) => {
     event.preventDefault();
-    const data = drag.data;
+    const data = drag.payload;
     if (!data) {
       return;
     }

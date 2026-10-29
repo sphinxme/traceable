@@ -1,46 +1,44 @@
 # Todo 大纲组件
 
-无限嵌套的大纲编辑器，采用 Controller 模式管理复杂交互。
+无限嵌套的大纲视图。组件层是**纯视图**：条目实例（`ViewHandle`）在 script 顶层构造，登记/接线/注销收口于同一个 `$effect`；交互意图在 `components/adapters/`，编排在 `Panel.perform`，领域规则在 `outline-ops`。
 
-## 架构概览
+## 组件关系
 
-控制器树与组件树同构——每个 `TodoView`（面板根）或 `Todo`（子条目）实例对应一个 `TodoController`，控制器持有全部业务逻辑，组件只负责渲染和委托。
+```
+TodoView（panel + homeTask；根条目实例）
+├── Title（root 标题编辑器）
+├── TodoList（统一绑定 list part）
+│   ├── TaskDropable（拖放放置槽）
+│   └── Todo（子条目实例）
+│       ├── TodoItem（标题编辑器 + 事件指示 + 笔记）
+│       │   ├── CollapseButton（折叠按钮）
+│       │   └── Handle（拖拽手柄 + zoom）
+│       └── TodoList（递归）
+└── 底部新增按钮 → actions.addChild
+```
 
-交互逻辑拆分到 5 个 Action 处理器（均实现 `TodoLifeCycle`）：
+## 职责
 
-| Action                  | 职责                                                                                   |
-| ----------------------- | -------------------------------------------------------------------------------------- |
-| `TodoKeyboardActions`   | 键盘导航（↑↓）、缩进（Tab/Shift+Tab）、新建（Enter，4种case）、笔记开关（Shift+Enter） |
-| `TodoTransitionActions` | View Transition 动画命名与协调（缩放进入/退出、Tab移动）                               |
-| `TodoFocusActions`      | 光标恢复（键盘导航/新建后）+ Week→Todo 高亮（滚动+金色闪烁）                           |
-| `TodoChildrenActions`   | 子任务索引与兄弟节点查询                                                               |
-| `DragDropActions`       | 拖放 reparenting（move/link），含 DAG 环检测                                           |
+- 渲染大纲树；每个 home 一棵树，以 `homeTask.id` keyed。
+- 创建并持有 `ViewHandle`：每个已渲染的条目对应一个条目实例。
+- 在 effect 内完成 DOM 接线、注册/注销、焦点与滚动回调。
+- 转发输入事件给适配器；不直接调用 Ops，不直接写拓扑。
 
-## 关键概念
+## 关键约定
 
-### ViewId
+- **地址**：跨结构变更的找回一律 `OccurrenceRef`；身份不从位置推导。
+- **part 归属**：`self` = TodoView / Todo；`title` = Title / TodoItem；`list` = TodoList（统一含 root）。
+- **折叠**：`FoldTree` 是唯一权威；`handle.folded` 只是响应式通道。
+- **动画**：`Panel.perform` + `TransitionRun` 统一命名，组件只提供 part 元素与命名接线。
+- **焦点**：perform 通过 `FocusService` 按 ref 恢复；上下键直接调条目实例上的走法方法。
+- **拖放**：`DragService` 是唯一会话态；ghost 由 Todo 派生读取，组件永不写会话。
+- **ghost**：拖拽中的同 taskId 出现自动变暗，不靠遍历或广播。
 
-每个 `TodoController` 拥有唯一的 `viewId`，由 `panelId` + 父 `viewId` 哈希 + `taskId` 组合而成。贯穿滚动记忆、光标恢复、View Transition 命名、DAG 路径查找等全部子系统。
+## 边界
 
-### 双事件总线
+- 不做意图选择（适配层）；
+- 不做领域规则（Ops）；
+- 不做跨面板协调（门面 / perform）；
+- 不持有 app 级服务状态，只读取。
 
-| 总线                                                 | 范围          | 用途                                                                      |
-| ---------------------------------------------------- | ------------- | ------------------------------------------------------------------------- |
-| `eventbus`（`controller/eventbus.svelte.ts`）        | todolist 内部 | 缩放过渡（`zoomout:*` / `zoominto:*`）、拖拽（`drag:start` / `drag:end`） |
-| `interactionBus`（`interaction/eventbus.svelte.ts`） | 全局交互      | Week→Todo 焦点（`focus:todo`）、Todo→Week 高亮（`focus:eventSegment`）    |
-
-两者分离以避免反向依赖（interaction/services → todolist/controller）。
-
-### 面板控制器
-
-`TodoController` 通过 `PanelController` 接口访问面板能力（`id`、`interaction`、`zoomable()`、`pushPaths()`），实现见 `EditorPanelController`。
-
-### 缩放导航
-
-`zoomInto()` 将当前 Task 路径推入面板导航栈，触发 `document.startViewTransition` 动画；`EditorPanelController` 的 `$effect.pre` 销毁旧控制器树并创建新树。
-
-### 拖放语义
-
-- **move**：从原 parent 移除后添加到新 parent（同 panel 默认）
-- **link**：保留原 parent，添加到新 parent（跨 panel 默认，实现双向关联）
-- 拖到自己/子孙节点 → 拒绝；`willCreateCycle` 防止 DAG 成环
+接线契约 W1–W4 的概念说明见 [view/README.md](../../view/README.md)；输入规则见 [adapters/README.md](../adapters/README.md)。

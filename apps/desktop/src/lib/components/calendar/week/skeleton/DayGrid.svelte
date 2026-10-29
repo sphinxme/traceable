@@ -13,12 +13,12 @@
    * skeleton.measure 通过 ResizeObserver 将实际尺寸回传给 skeleton。
    */
   import dayjs, { type Dayjs } from "dayjs";
-  import type { Task } from "$lib/states/meta/task.svelte";
+  import type { Task } from "$lib/document/entities/task.svelte";
   import { range } from "../segment_layout/geometry";
   import { isRestDay } from "../segment_layout/config";
   import { dayDropZone, dayExternalDropZone } from "../dropZone.svelte";
   import { WeekSkeletonController } from "./WeekSkeletonController.svelte";
-  import type { DragService } from "$lib/interaction/services/DragService.svelte";
+  import type { DragService } from "$lib/interaction/drag-service.svelte";
 
   interface Props {
     skeleton: WeekSkeletonController;

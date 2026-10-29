@@ -20,14 +20,15 @@
     Content as PopoverTooltipContent,
   } from "$lib/components/ui/popover-tooltip";
 
-  import { getInteractionContext } from "$lib/interaction/context.svelte";
-  import { interactionBus$listen } from "$lib/interaction/eventbus.svelte";
+  import { getAppServices } from "$lib/app/context.svelte";
+  import type { SegmentHandle } from "$lib/interaction/segment-registry";
+  import type { WeekPanelController } from "../WeekPanelController.svelte";
   import {
     getLaneGeometry,
     type PositionedSegment,
   } from "../segment_layout/layout";
   import { formatDuration } from "../format";
-  import type { Task } from "$lib/states/meta/task.svelte";
+  import type { Task } from "$lib/document/entities/task.svelte";
   import { Redo2 } from "@lucide/svelte";
   import { fade } from "svelte/transition";
   import { WeekSkeletonController } from "../skeleton/WeekSkeletonController.svelte";
@@ -38,37 +39,52 @@
     segment: PositionedSegment;
     task: Task;
     snapsOffset: number[];
+    weekPanel: WeekPanelController;
   }
 
-  let { skeleton, segment, task, snapsOffset }: Props = $props();
+  let { skeleton, segment, task, snapsOffset, weekPanel }: Props = $props();
 
-  const { taskFocus, eventHighlight } = getInteractionContext();
+  const services = getAppServices();
 
   let container: HTMLDivElement;
 
   // ── 视图特有的响应式状态（不属于控制器） ──
 
   const event = $derived(segment.event);
-  const highlight = $derived(eventHighlight.isHighlighted(event.id));
+  const highlight = $derived(weekPanel.isHighlighted(event.id));
+  const parentTasks = $derived(task.parents);
 
-  /** 一次性聚焦: 通过 mitt 事件监听, 替代旧 $effect + $state 方案 */
-  interactionBus$listen("focus:eventSegment", ({ eventId }) => {
-    if (eventId === event.id) {
+  const segmentHandle: SegmentHandle = {
+    get eventId() {
+      return event.id;
+    },
+    get dayIndex() {
+      return segment.dayIndex;
+    },
+    get segStart() {
+      return segment.segStart;
+    },
+    scrollIntoView() {
       container.scrollIntoView({
         behavior: "smooth",
         inline: "center",
         block: "center",
       });
-    }
+    },
+    setHighlight(_on: boolean) {},
+  };
+
+  $effect(() => {
+    weekPanel.segments.register(segmentHandle);
+    return () => weekPanel.segments.unregister(segmentHandle);
   });
-  const parentTasks = $derived(task.parents);
 
   const tooltip = new PopoverTooltipController({ delayDuration: 0 });
 
   // ── 交互控制器 ──
 
   const controller = new EventSegmentController();
-  controller.onTapAction = (task) => taskFocus.focusTask(task);
+  controller.onTapAction = (task) => services.facade.focusTask(task.id);
 
   /** segment 或上下文变化时同步控制器（布局重算/拖拽结束后触发） */
   $effect(() => {
