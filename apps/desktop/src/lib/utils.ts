@@ -1,13 +1,15 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
+export { cn } from "cn";
 
-export function cn(...inputs: (ClassValue | undefined | null)[]): any {
-  return twMerge(clsx(inputs.filter(Boolean) as ClassValue[]));
-}
-
-export function cnClass(...inputs: (ClassValue | undefined | null)[]): string {
-  return cn(...inputs);
-}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type WithoutChild<T> = T extends { child?: any } ? Omit<T, "child"> : T;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type WithoutChildren<T> = T extends { children?: any }
+  ? Omit<T, "children">
+  : T;
+export type WithoutChildrenOrChild<T> = WithoutChildren<WithoutChild<T>>;
+export type WithElementRef<T, U extends HTMLElement = HTMLElement> = T & {
+  ref?: U | null;
+};
 
 /** 开发期断言：仅 DEV 生效，失败即抛。 */
 export function devAssert(

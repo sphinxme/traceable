@@ -8,7 +8,6 @@
   import TodoView from "$lib/components/todolist/TodoView.svelte";
   import dayjs, { type Dayjs } from "dayjs";
   import Focusable from "$lib/components/ui/focusable/Focusable.svelte";
-  import { range } from "radash";
   import type { Store } from "$lib/document/entities/store.svelte";
   import { JournalPanel } from "$lib/view/panel.svelte";
   import { getAppServices } from "$lib/app/context.svelte";
@@ -25,7 +24,7 @@
 
   function genTimes(): Dayjs[] {
     const start = dayjs().startOf("week").add(7, "day");
-    return [...range(-7, 7)].map((offset) => start.subtract(offset, "week"));
+    return Array.from({ length: 15 }, (_, i) => start.subtract(i - 7, "week"));
   }
 
   function journals() {

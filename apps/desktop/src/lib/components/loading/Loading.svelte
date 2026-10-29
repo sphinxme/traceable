@@ -1,6 +1,5 @@
 <script lang="ts">
-  import { Check } from "@lucide/svelte";
-  import { Moon } from "svelte-loading-spinners";
+  import { Check, Loader2 } from "@lucide/svelte";
 
   interface Props {
     items: Record<string, Promise<any>>;
@@ -15,7 +14,7 @@
       <div
         class="flex w-full flex-row items-center justify-center gap-x-2 text-sm text-slate-600"
       >
-        <Moon size="0.725" unit="rem" color="black" duration="300ms" />
+        <Loader2 class="size-3 animate-spin" />
         <div>loading {name} ...</div>
       </div>
     {:then}

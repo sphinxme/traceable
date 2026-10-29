@@ -96,7 +96,7 @@
       <div
         class=" {task.$note.length > 0
           ? ' -mt-8'
-          : ''} group flex w-5 flex-shrink-0 flex-row items-start pb-0 pl-1"
+          : ''} group flex w-5 shrink-0 flex-row items-start pb-0 pl-1"
       >
         <div
           class=" h-full bg-zinc-100 transition-colors duration-300 group-hover:bg-zinc-300"

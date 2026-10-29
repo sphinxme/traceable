@@ -1,23 +1,35 @@
 <script lang="ts">
   import { LinkPreview as HoverCardPrimitive } from "bits-ui";
-  import { cn } from "$lib/utils.js";
+  import { cn, type WithoutChildrenOrChild } from "$lib/utils.js";
+  import HoverCardPortal from "./hover-card-portal.svelte";
+  import type { ComponentProps } from "svelte";
 
   let {
     ref = $bindable(null),
     class: className,
-    align = "center",
+    side = "bottom",
     sideOffset = 4,
+    align = "center",
+    portalProps,
     ...restProps
-  }: HoverCardPrimitive.ContentProps = $props();
+  }: HoverCardPrimitive.ContentProps & {
+    portalProps?: WithoutChildrenOrChild<
+      ComponentProps<typeof HoverCardPortal>
+    >;
+  } = $props();
 </script>
 
-<HoverCardPrimitive.Content
-  bind:ref
-  {align}
-  {sideOffset}
-  class={cn(
-    "z-50 mt-3 w-64 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-none animate-in fade-in-0",
-    className,
-  )}
-  {...restProps}
-/>
+<HoverCardPortal {...portalProps}>
+  <HoverCardPrimitive.Content
+    bind:ref
+    data-slot="hover-card-content"
+    {side}
+    {sideOffset}
+    {align}
+    class={cn(
+      "data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 bg-popover text-popover-foreground w-64 rounded-lg p-4 text-sm shadow-md ring-1 duration-100 z-50 origin-(--bits-link-preview-content-transform-origin) outline-hidden",
+      className,
+    )}
+    {...restProps}
+  />
+</HoverCardPortal>

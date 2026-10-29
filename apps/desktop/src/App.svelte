@@ -98,22 +98,6 @@
         <div data-tauri-drag-region class="flex-1">
           <PlusIcon class="ml-auto text-zinc-600" size={18} />
         </div>
-        <!-- 123 -->
-        <!-- <nav class="flex flex-row">
-				<SidebarItem path="/trace">
-					<SquareLibrary />
-				</SidebarItem>
-				<SidebarItem path="/organize">
-					<PanelsTopLeft />
-				</SidebarItem>
-				<SidebarItem path="/schedule">
-					<CalendarRange />
-				</SidebarItem>
-
-				<SidebarItem path="/settings">
-					<Settings />
-				</SidebarItem>
-			</nav> -->
       </div>
 
       <!-- <DefaultPage /> -->

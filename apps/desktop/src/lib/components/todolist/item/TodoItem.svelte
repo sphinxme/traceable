@@ -163,6 +163,9 @@
       }}
       onCloseAutoFocus={(e) => {
         e.preventDefault();
+        // bits-ui 2 在 Portal 容器切换时也会触发 onCloseAutoFocus；
+        // 只有真正关闭时才回收焦点并提前销毁编辑器。
+        if (handle.noteOpen) return;
         editor?.focus();
         noteEditor?.destroy?.();
       }}

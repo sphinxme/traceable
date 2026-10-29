@@ -137,6 +137,6 @@
 </script>
 
 <ProseKit {editor}>
-  <div {@attach editor.mount} class="min-h-[100px] focus:outline-none"></div>
+  <div {@attach editor.mount} class="min-h-[100px] focus:outline-hidden"></div>
   <BubbleMenuToolbar />
 </ProseKit>

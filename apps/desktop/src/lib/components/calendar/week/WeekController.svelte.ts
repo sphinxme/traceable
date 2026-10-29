@@ -21,7 +21,6 @@
  *   destroy  → 停止定时器 + 移除 scroll 监听器
  */
 import type { Dayjs } from "dayjs";
-import { list } from "radash";
 
 import { MS_PER_DAY, DEFAULT_EVENT_DURATION_MS } from "./segment_layout/config";
 import { roundToNearest15MinutesDayjs } from "./segment_layout/geometry";
@@ -89,7 +88,7 @@ export class WeekController {
   readonly snapsOffset = $derived.by(() => {
     const pieceNum = 24 * 4;
     const piece = this.skeleton.dayHeight / pieceNum;
-    return list(0, pieceNum, (i) => i * piece);
+    return Array.from({ length: pieceNum + 1 }, (_, i) => i * piece);
   });
 
   /** 当前时间指示线的百分比位置（委托给 NowIndicatorTimer） */

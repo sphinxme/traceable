@@ -123,7 +123,7 @@
   use:tooltip.trigger
   style:z-index={WeekSkeletonController.layers.events}
   style:padding="2px"
-  class="border-1 grow-0 overflow-visible text-sm text-zinc-50 opacity-75 ease-out hover:opacity-90"
+  class="grow-0 overflow-visible text-sm text-zinc-50 opacity-75 ease-out hover:opacity-90"
   style:transition-property="transform, opacity"
   style:transition-duration="150ms"
   style:transform="translateY({controller.state.topOffset}px) {highlight
@@ -200,7 +200,7 @@
   </div>
 
   <p
-    class=" overflow-hidden overflow-ellipsis whitespace-pre-line text-nowrap pt-2 text-zinc-500"
+    class=" overflow-hidden text-ellipsis whitespace-pre-line text-nowrap pt-2 text-zinc-500"
   >
     {task.$note}
   </p>

@@ -2,16 +2,19 @@
   import { type VariantProps, tv } from "tailwind-variants";
 
   export const badgeVariants = tv({
-    base: "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+    base: "h-5 gap-1 rounded-4xl border border-transparent px-2 py-0.5 text-xs font-medium transition-all has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&>svg]:size-3! group/badge inline-flex w-fit shrink-0 items-center justify-center overflow-hidden whitespace-nowrap focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&>svg]:pointer-events-none",
     variants: {
       variant: {
-        default:
-          "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
+        default: "bg-primary text-primary-foreground [a]:hover:bg-primary/80",
         secondary:
-          "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-secondary text-secondary-foreground [a]:hover:bg-secondary/80",
         destructive:
-          "border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80",
-        outline: "text-foreground",
+          "bg-destructive/10 [a]:hover:bg-destructive/20 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 text-destructive dark:bg-destructive/20",
+        outline:
+          "border-border text-foreground [a]:hover:bg-muted [a]:hover:text-muted-foreground",
+        ghost:
+          "hover:bg-muted hover:text-muted-foreground dark:hover:bg-muted/50",
+        link: "text-primary underline-offset-4 hover:underline",
       },
     },
     defaultVariants: {
@@ -23,9 +26,8 @@
 </script>
 
 <script lang="ts">
-  import type { WithElementRef } from "bits-ui";
+  import { cn, type WithElementRef } from "$lib/utils.js";
   import type { HTMLAnchorAttributes } from "svelte/elements";
-  import { cn } from "$lib/utils.js";
 
   let {
     ref = $bindable(null),
@@ -39,12 +41,13 @@
   } = $props();
 </script>
 
-{#if href}
-  <a bind:this={ref} {href} {...restProps}>
-    {@render children?.()}
-  </a>
-{:else}
-  <span bind:this={ref} {...restProps}>
-    {@render children?.()}
-  </span>
-{/if}
+<svelte:element
+  this={href ? "a" : "span"}
+  bind:this={ref}
+  data-slot="badge"
+  {href}
+  class={cn(badgeVariants({ variant }), className)}
+  {...restProps}
+>
+  {@render children?.()}
+</svelte:element>

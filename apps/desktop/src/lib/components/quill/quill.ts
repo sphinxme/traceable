@@ -4,7 +4,6 @@ import * as Y from "yjs";
 import Quill, { type QuillOptions } from "quill";
 
 import { QuillBinding } from "y-quill";
-// import QuillCursors from "quill-cursors";
 
 type QuillActionParams = {
   text?: Y.Text;

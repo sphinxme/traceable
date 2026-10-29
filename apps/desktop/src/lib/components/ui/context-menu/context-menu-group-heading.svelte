@@ -14,9 +14,10 @@
 
 <ContextMenuPrimitive.GroupHeading
   bind:ref
+  data-slot="context-menu-group-heading"
+  data-inset={inset}
   class={cn(
-    "px-2 py-1.5 text-sm font-semibold text-foreground",
-    inset && "pl-8",
+    "text-muted-foreground px-2 py-1.5 text-xs font-medium data-inset:pl-8",
     className,
   )}
   {...restProps}

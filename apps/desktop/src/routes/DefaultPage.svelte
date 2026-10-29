@@ -3,11 +3,9 @@
   import { onMount } from "svelte";
 
   let {} = $props();
-  // import { push } from "svelte-spa-router";
   onMount(() => {
     router.navigate("/trace");
   });
-  // push("/trace");
 </script>
 
 Redirecting...
