@@ -34,7 +34,7 @@
 
 <RadioGroup.Root
   data-tauri-drag-region
-  class="flex h-full flex-grow flex-row justify-center gap-4 p-1.5 text-sm font-medium "
+  class="flex h-full grow flex-row justify-center gap-4 p-1.5 text-sm font-medium "
   value={router.path}
   onValueChange={(value) => router.navigate(value)}
 >

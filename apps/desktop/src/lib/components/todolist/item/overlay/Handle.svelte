@@ -40,9 +40,9 @@
       style:z-index="8"
       style:transition-property="width"
     >
-      <div class="w-5 flex-shrink-0"></div>
+      <div class="w-5 shrink-0"></div>
       <div
-        class="toggle flex flex-grow items-stretch justify-stretch text-xs font-bold text-zinc-700"
+        class="toggle flex grow items-stretch justify-stretch text-xs font-bold text-zinc-700"
         onclick={(e) => e.stopPropagation()}
       ></div>
     </div>

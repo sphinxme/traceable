@@ -26,7 +26,7 @@
 <Root>
   <List>
     {#each panel.navTaskList as task, i (task.id)}
-      <Item index={i}>
+      <Item>
         {#if i === 0}
           <Link href="lang">
             {#snippet child(attrs)}
@@ -51,13 +51,12 @@
       </Item>
       {#if i === 0}
         <Separator
-          index={i}
           class={panel.isRootHome
             ? "-rotate-45 transition-transform"
             : "transition-transform"}
         />
       {:else if i + 1 < panel.navTaskList.length}
-        <Separator index={i} />
+        <Separator />
       {/if}
     {/each}
   </List>
