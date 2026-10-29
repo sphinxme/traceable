@@ -1,70 +1,32 @@
 <svelte:options runes={true} />
 
 <script lang="ts">
-  // import Button from "$lib/components/ui/button/button.svelte";
-  // import { SquareLibrary, PanelsTopLeft, CalendarRange } from "@lucide/svelte";
-  import { onDestroy } from "svelte";
-  import {
-    InteractionContext,
-    setInteractionContext,
-  } from "$lib/interaction/context.svelte";
-
-  // import Router from "svelte-spa-router";
-  // import { Window } from "@tauri-apps/api/window";
-
-  // import Calculator from "@lucide/svelte/icons/calculator";
-  // import Calendar from "@lucide/svelte/icons/calendar";
-  // import CreditCard from "@lucide/svelte/icons/credit-card";
-  import Smile from "@lucide/svelte/icons/smile";
-  import User from "@lucide/svelte/icons/user";
-  // import * as Command from "$lib/components/ui/command/index.js";
-
-  // 使用导入的 page store 来获取当前路径
-  import SidebarItem from "$lib/components/sidebar/SidebarItem.svelte";
   import DefaultPage from "./routes/DefaultPage.svelte";
   import TracePage from "./routes/TracePage.svelte";
   import OrganizePage from "./routes/OrganizePage.svelte";
   import SchedulePage from "./routes/SchedulePage.svelte";
   import SettingsPage from "./routes/SettingsPage.svelte";
 
-  import {
-    CalendarRange,
-    House,
-    PanelsTopLeft,
-    Plus,
-    PlusCircle,
-    PlusIcon,
-    Settings,
-    SquareLibrary,
-  } from "@lucide/svelte";
-  import hotkeys from "hotkeys-js";
-
+  import { PlusIcon } from "@lucide/svelte";
   import {
     loadFromIndexedDB,
     loadFromLiveBlocks,
     newYDoc,
   } from "$lib/states/yjs/load";
-  import { db, load } from "./state";
+  import { Database } from "$lib/document/entities/database.svelte";
+  import AppProvider from "$lib/app/AppProvider.svelte";
   import Router from "$lib/router/Router.svelte";
-  import { Button } from "$lib/components/ui/button";
   import NavBarItem from "$lib/components/navbar/NavBarItem.svelte";
   import Loading from "$lib/components/loading/Loading.svelte";
 
-  // const appWindow = new Window("main");
-  let open = $state(false); // open dialog
-  const interaction = new InteractionContext();
-  setInteractionContext(interaction);
   const doc = newYDoc();
   const loadingFromIndexedDBPromise = loadFromIndexedDB(doc);
   const loadingFromLiveBlocksPromise = loadFromLiveBlocks(doc);
-  // const loadingFromLiveBlocksPromise = Promise.resolve();
   const loadPromise = Promise.all([
     loadingFromIndexedDBPromise,
     loadingFromLiveBlocksPromise,
   ]);
-  const finalLoad = loadPromise.then(() => {
-    load(doc);
-  });
+  const finalLoad = loadPromise.then(() => new Database(doc));
 
   const routes = {
     "/": DefaultPage,
@@ -73,20 +35,6 @@
     "/schedule": SchedulePage,
     "/settings": SettingsPage,
   };
-
-  hotkeys("command+p,alt+p", (e) => {
-    if (e.type === "keydown") {
-      e.preventDefault();
-      open = !open;
-
-      return false;
-    }
-  });
-
-  onDestroy(() => {
-    hotkeys.unbind();
-    interaction.destroy();
-  });
 </script>
 
 <!-- <Command.Dialog bind:open>
@@ -134,29 +82,24 @@
       liveblocks: loadingFromLiveBlocksPromise,
     }}
   />
-{:then}
-  <div
-    data-tauri-drag-region
-    class=" flex h-full flex-col items-start overflow-hidden bg-zinc-100"
-  >
+{:then database}
+  <AppProvider db={database}>
     <div
       data-tauri-drag-region
-      class=" flex h-9 w-full flex-row items-center justify-center gap-2 px-1.5 duration-300 ease-in-out"
+      class=" flex h-full flex-col items-start overflow-hidden bg-zinc-100"
     >
-      <div data-tauri-drag-region class="flex-1"></div>
-      <NavBarItem></NavBarItem>
+      <div
+        data-tauri-drag-region
+        class=" flex h-9 w-full flex-row items-center justify-center gap-2 px-1.5 duration-300 ease-in-out"
+      >
+        <div data-tauri-drag-region class="flex-1"></div>
+        <NavBarItem></NavBarItem>
 
-      <div data-tauri-drag-region class="flex-1">
-        <PlusIcon
-          class="ml-auto text-zinc-600"
-          onclick={(e) => {
-            console.log("aaa");
-          }}
-          size={18}
-        />
-      </div>
-      <!-- 123 -->
-      <!-- <nav class="flex flex-row">
+        <div data-tauri-drag-region class="flex-1">
+          <PlusIcon class="ml-auto text-zinc-600" size={18} />
+        </div>
+        <!-- 123 -->
+        <!-- <nav class="flex flex-row">
 				<SidebarItem path="/trace">
 					<SquareLibrary />
 				</SidebarItem>
@@ -171,11 +114,12 @@
 					<Settings />
 				</SidebarItem>
 			</nav> -->
+      </div>
+
+      <!-- <DefaultPage /> -->
+      <Router {routes}></Router>
+
+      <!-- <Router {routes} /> -->
     </div>
-
-    <!-- <DefaultPage /> -->
-    <Router {routes}></Router>
-
-    <!-- <Router {routes} /> -->
-  </div>
+  </AppProvider>
 {/await}

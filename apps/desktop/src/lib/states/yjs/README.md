@@ -9,8 +9,9 @@ newYDoc()                        创建 Y.Doc
   ├── loadFromIndexedDB(doc)     本地持久化（y-indexeddb）
   └── loadFromLiveBlocks(doc)    实时同步（@liveblocks/yjs）
         ↓ Promise.all
-  load(doc) → new Database(doc)  交给数据层（见 ../meta/README.md）
+  new Database(doc)              交给组合根
+  └── AppProvider                构造 AppServices 并注入（组件初始化期）
 ```
 
-加载完成前 App 显示 Loading 组件；各函数细节（含失败语义）见 `load.ts` JSDoc。
-Liveblocks 认证端点由 `VITE_LIVEBLOCKS_AUTH_ENDPOINT` 配置，对应 [auth-server](../../../../../auth-server/README.md)。
+加载完成前 App 显示 Loading 组件；组合根装配见 [app/README.md](../../app/README.md)。
+各函数细节（含失败语义）见 `load.ts` JSDoc；Liveblocks 认证端点由 `VITE_LIVEBLOCKS_AUTH_ENDPOINT` 配置，对应 [auth-server](../../../../../auth-server/README.md)。

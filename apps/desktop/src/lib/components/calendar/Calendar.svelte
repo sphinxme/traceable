@@ -6,7 +6,7 @@
    * 周视图采用 Skeleton-Controller-Svelte 三层架构，
    * 详见 `week/Week.svelte` 顶部 JSDoc。
    */
-  import type { Store } from "$lib/states/meta/store.svelte";
+  import type { Store } from "$lib/document/entities/store.svelte";
   import Week from "./week/Week.svelte";
 
   let { store, view = "week" }: { store: Store; view?: "week" | "month" } =

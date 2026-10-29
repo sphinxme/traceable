@@ -1,48 +1,30 @@
 <script lang="ts">
   /**
-   * CollapseButton — 折叠/展开按钮组件。
+   * CollapseButton — 折叠/展开按钮（G3 唯一 UI 写点）。
    *
-   * 在 TodoItem 的叠加层中显示，控制 `StateStore.$folded` 状态。
-   *
-   * **显示逻辑**：
-   * - 折叠时 → 始终可见，旋转 -90°（箭头朝右）
-   * - 展开时 → 仅在 group hover 时半透明显示
-   *
-   * 仅在有子项的 Todo 中渲染（由 `Todo.svelte` 控制）。
-   *
-   * @prop folded - 折叠状态（双向绑定）
-   * @prop onfolded - 折叠回调
-   * @prop onunfolded - 展开回调
+   * 读写一律经 `handle.folded` 通道（FoldTree 唯一权威）；显示逻辑：
+   * 折叠时始终可见并旋转 -90°；展开时仅 group hover 显示。
    */
   import { ChevronDown } from "@lucide/svelte";
+  import type { ViewHandle } from "$lib/view/view-handle.svelte";
+
   interface Props {
-    folded?: boolean;
-    onfolded: () => void;
-    onunfolded: () => void;
+    handle: ViewHandle;
   }
 
-  let { folded = $bindable(false), onfolded, onunfolded }: Props = $props();
+  let { handle }: Props = $props();
 
-  const displayClass = (folded: boolean) => {
-    if (folded) {
-      return "opacity-100";
-    }
-    return "group-hover:opacity-50 opacity-0";
-  };
+  const displayClass = (folded: boolean) =>
+    folded ? "opacity-100" : "group-hover:opacity-50 opacity-0";
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-  onclick={() => {
-    folded = !folded;
-    if (folded) {
-      onfolded();
-    } else {
-      onunfolded();
-    }
-  }}
-  class={`${displayClass(folded)} cursor-pointer bg-white transition-all duration-300 ease-out ${folded ? "-rotate-90" : ""}`}
+  onclick={() => (handle.folded = !handle.folded)}
+  class={`${displayClass(handle.folded)} cursor-pointer bg-white transition-all duration-300 ease-out ${
+    handle.folded ? "-rotate-90" : ""
+  }`}
 >
   <ChevronDown size={16} strokeWidth={3} />
 </div>

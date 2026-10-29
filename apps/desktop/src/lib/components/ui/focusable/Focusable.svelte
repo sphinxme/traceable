@@ -11,15 +11,15 @@
   let container: HTMLDivElement;
 
   onMount(() => {
-    if (focus) {
-      setTimeout(() => {
-        container.scrollIntoView({
-          behavior: "smooth",
-          inline,
-          block,
-        });
-      }, 100);
-    }
+    if (!focus) return;
+    const timer = setTimeout(() => {
+      container?.scrollIntoView({
+        behavior: "smooth",
+        inline,
+        block,
+      });
+    }, 100);
+    return () => clearTimeout(timer);
   });
 </script>
 

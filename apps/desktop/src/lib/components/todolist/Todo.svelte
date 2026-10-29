@@ -1,134 +1,82 @@
 <script lang="ts">
   /**
-   * Todo — 单个 Todo 条目组件（递归渲染）。
+   * Todo — 单个大纲条目（递归渲染）。
    *
-   * 每个 Todo 对应一个 child `TodoController`（由 `parentController.makeChild(task)` 创建）。
-   * 渲染结构：
-   * ```
-   * Todo
-   * ├── TodoItem（标题编辑 + 事件指示 + 笔记）
-   * │   ├── overlay: CollapseButton（折叠/展开，仅有子项时显示）
-   * │   └── handle: Handle（拖拽手柄 + 右键菜单）
-   * └── TodoList（子列表，递归渲染，受折叠状态控制）
-   * ```
-   *
-   * **拖拽遮罩**：当 `meDragging` 为 true 时（自身拖拽或同 taskId 的其他实例拖拽），
-   * 显示半透明遮罩并降低不透明度。
-   *
-   * **高亮**：当 `focusActions.highlighting` 为 true 时，显示金色闪烁覆盖层（3秒），
-   * 用于 Week→Todo 焦点定位。
-   *
-   * @prop task - 子任务实体
-   * @prop parentController - 父 TodoController
+   * 子条目实例在 script 顶层纯分配；登记/接线/注销收口于同一个 `$effect`（W1/G6）。
+   * ghost 为纯派生（不遍历条目实例）：源出现与同 taskId 的其他出现自动响应拖拽会话。
    */
   import CollapseIcon from "./item/overlay/CollapseButton.svelte";
   import * as ContextMenu from "$lib/components/ui/context-menu";
   import Handle from "./item/overlay/Handle.svelte";
   import TodoItem from "./item/TodoItem.svelte";
   import TodoList from "./TodoList.svelte";
-  import type { TodoController } from "./controller/TodoController.svelte";
-  import type { Task } from "$lib/states/meta/task.svelte";
-  import { eventbus, type Events } from "./controller/eventbus.svelte";
+  import { ViewHandle } from "$lib/view/view-handle.svelte";
+  import type { Task } from "$lib/document/entities/task.svelte";
+  import { getAppServices } from "$lib/app/context.svelte";
+  import { remove } from "$lib/components/adapters/actions";
 
   interface Props {
+    parent: ViewHandle;
     task: Task;
-    parentController: TodoController;
-    // controller: TodoController;
+    onZoom?: (handle: ViewHandle) => void;
   }
 
-  let {
-    task,
-    parentController,
-    // controller
-  }: Props = $props();
-  const controller = parentController.makeChild(task);
+  let { parent, task, onZoom }: Props = $props();
 
-  let rootElement: HTMLDivElement;
+  const ds = getAppServices().drag;
+  const handle = new ViewHandle(parent.panel, task, parent);
+  let rootEl: HTMLDivElement;
+  let highlighting = $state(false);
 
-  let note = $derived(controller.task.$note);
-  let isCompleted = $derived(controller.task.isCompleted);
+  const ghost = $derived(ds.active && ds.payload?.task.id === task.id);
+  const hasChildren = $derived(task.children.size > 0);
 
-  /** 委托 focusActions 执行滚动 (Action 类不持有 DOM 引用) */
-  controller.focusActions.onScrollIntoView = () => {
-    rootElement.scrollIntoView({ behavior: "smooth", block: "center" });
-  };
-
-  let sameTaskIdOtherTaskDragging = $state(false);
-  const sameTaskIdOtherTaskStartDragging = (event: Events["drag:start"]) => {
-    if (event.task.id === controller.task.id) {
-      sameTaskIdOtherTaskDragging = true;
-    }
-  };
   $effect(() => {
-    eventbus.on("drag:start", sameTaskIdOtherTaskStartDragging);
+    parent.panel.registry.register(handle);
+    handle.bindPart("self", rootEl);
+    handle.scrollIntoView = () =>
+      rootEl.scrollIntoView({ behavior: "smooth", block: "center" });
     return () => {
-      eventbus.off("drag:start", sameTaskIdOtherTaskStartDragging);
+      handle.scrollIntoView = () => {};
+      handle.unbindPart("self");
+      parent.panel.registry.unregister(handle);
     };
   });
 
-  const sameTaskIdOtherTaskEndDragging = (event: Events["drag:end"]) => {
-    if (event.task.id === controller.task.id) {
-      sameTaskIdOtherTaskDragging = false;
+  $effect(() => {
+    const until = handle.highlightUntil;
+    if (until === null) {
+      highlighting = false;
+      return;
     }
-  };
-  $effect(() => {
-    eventbus.on("drag:end", sameTaskIdOtherTaskEndDragging);
-    return () => {
-      eventbus.off("drag:end", sameTaskIdOtherTaskEndDragging);
-    };
-  });
-
-  let meDragging = $derived(
-    controller.dragDropActions.$isMeDragging || sameTaskIdOtherTaskDragging,
-  );
-
-  const children = controller.task.children;
-  const hasChildren = $derived(children.size > 0);
-
-  $effect(() => {
-    controller.onTodoReady();
-    return () => {
-      controller.destroy();
-    };
+    highlighting = true;
+    const timer = setTimeout(
+      () => {
+        handle.highlightUntil = null;
+        highlighting = false;
+      },
+      Math.max(0, until - Date.now()),
+    );
+    return () => clearTimeout(timer);
   });
 </script>
 
 <div
-  bind:this={rootElement}
-  class:highlight-box={controller.focusActions.highlighting}
-  style:view-transition-name={controller.transitionActions
-    .$todoViewTransitionName}
-  class=" relative flex flex-col ${meDragging ? '  opacity-35 ' : ''}"
+  bind:this={rootEl}
+  class="traceable-highlight relative flex flex-col"
+  class:is-highlighting={highlighting}
+  class:opacity-35={ghost}
 >
-  <TodoItem {controller}>
-    {#snippet handle()}
+  <TodoItem {handle}>
+    {#snippet handleSlot()}
       <ContextMenu.Root>
         <ContextMenu.Trigger>
-          <Handle
-            onmousedown={(event) => {
-              if (event.button === 0) {
-                controller.dragDropActions.$isMeDragging = true;
-              }
-            }}
-            ondragstart={(event) => {
-              // event.preventDefault();
-              console.log("drag start");
-              // event.dataTransfer.effectAllowed = "move";
-              controller.dragDropActions.startDrag();
-            }}
-            ondragend={(event) => {
-              event.preventDefault();
-              console.log("drag end");
-              controller.dragDropActions.endDrag();
-            }}
-            taskId={controller.task.id}
-            onclick={() => controller.zoomInto()}
-          />
+          <Handle {handle} onZoom={() => onZoom?.(handle)} />
         </ContextMenu.Trigger>
         <ContextMenu.Content>
           <ContextMenu.Item
             class="text-red-500"
-            onclick={() => controller.deleteMyself()}
+            onclick={() => remove(parent.panel, handle)}
           >
             删除
           </ContextMenu.Item>
@@ -137,20 +85,16 @@
     {/snippet}
 
     {#snippet overlay()}
-      {#if !meDragging && hasChildren}
-        <CollapseIcon
-          bind:folded={controller.statesTree.$folded}
-          onfolded={() => console.log("folded")}
-          onunfolded={() => console.log("unfolded")}
-        />
+      {#if hasChildren && !ghost}
+        <CollapseIcon {handle} />
       {/if}
     {/snippet}
   </TodoItem>
 
-  <TodoList {controller}>
+  <TodoList {handle} {onZoom}>
     {#snippet side()}
       <div
-        class=" {controller.task.$note.length > 0
+        class=" {task.$note.length > 0
           ? ' -mt-8'
           : ''} group flex w-5 flex-shrink-0 flex-row items-start pb-0 pl-1"
       >
@@ -162,7 +106,7 @@
     {/snippet}
   </TodoList>
 
-  {#if meDragging}
+  {#if ghost}
     <!-- dragging mask -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
@@ -184,43 +128,9 @@
     }
   }
   .dragging {
-    opacity: 0; /* 初始状态为透明 */
+    opacity: 0;
     transform: scaleX(0);
-    transform-origin: top left; /* 设置缩放原点为左上角 */
-    animation: fadeIn 150ms ease-out forwards; /* 动画持续300毫秒，并保持最终状态 */
-  }
-
-  /* 使用伪元素创建高亮层 */
-  .highlight-box::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 8px;
-    background-color: rgba(255, 215, 0, 0.3);
-    animation: blink 3s infinite;
-    z-index: 1;
-    pointer-events: none;
-  }
-
-  /* 定义闪烁动画 */
-  @keyframes blink {
-    0% {
-      opacity: 0;
-    }
-
-    20% {
-      opacity: 1;
-    }
-
-    60% {
-      opacity: 1;
-    }
-
-    100% {
-      opacity: 0;
-    }
+    transform-origin: top left;
+    animation: fadeIn 150ms ease-out forwards;
   }
 </style>

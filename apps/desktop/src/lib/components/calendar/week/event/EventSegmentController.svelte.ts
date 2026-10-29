@@ -29,8 +29,8 @@ import {
   calculateEventHeight,
   roundToNearest15MinutesPixels,
 } from "../segment_layout/geometry";
-import type { Event } from "$lib/states/meta/event.svelte";
-import type { Task } from "$lib/states/meta/task.svelte";
+import type { Event } from "$lib/document/entities/event.svelte";
+import type { Task } from "$lib/document/entities/task.svelte";
 
 /**
  * EventSegment 的可变交互状态。

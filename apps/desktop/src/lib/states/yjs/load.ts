@@ -7,7 +7,7 @@ import { LiveblocksYjsProvider } from "@liveblocks/yjs";
  * Yjs 文档生命周期管理：创建、本地持久化与实时同步。
  *
  * 编排位于 App.svelte：newYDoc() 后并行执行 loadFromIndexedDB / loadFromLiveBlocks，
- * Promise.all 完成后经 load(doc)（src/state.ts）初始化 Database，加载期间显示 Loading。
+ * Promise.all 完成后由 App.svelte 构造 Database，并在 AppProvider 组件初始化期装配 AppServices；加载期间显示 Loading。
  */
 
 /** 创建空白 Y.Doc。 */

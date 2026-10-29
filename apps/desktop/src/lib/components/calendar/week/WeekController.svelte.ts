@@ -29,8 +29,9 @@ import { layoutEvents } from "./segment_layout/layout";
 import type { WeekSkeletonController } from "./skeleton/WeekSkeletonController.svelte";
 import { NowIndicatorTimer } from "./skeleton/now_indicator/NowIndicatorTimer.svelte";
 import { ScrollRestoreService } from "./ScrollRestoreService.svelte";
-import type { Store } from "$lib/states/meta/store.svelte";
-import type { Task } from "$lib/states/meta/task.svelte";
+import type { Store } from "$lib/document/entities/store.svelte";
+import type { Task } from "$lib/document/entities/task.svelte";
+import type { ScrollState } from "$lib/protocol";
 
 /** 从 Todo 拖入日历时的预览事件时间范围 */
 export interface DraggingTaskEvent {
@@ -96,11 +97,15 @@ export class WeekController {
     return this.nowIndicator.nowPercentage;
   }
 
-  constructor(store: Store, skeleton: WeekSkeletonController) {
+  constructor(
+    store: Store,
+    skeleton: WeekSkeletonController,
+    scrollMemory: Map<string, ScrollState>,
+  ) {
     this.store = store;
     this.skeleton = skeleton;
     this.nowIndicator = new NowIndicatorTimer(skeleton.offsetByHour);
-    this.scrollRestore = new ScrollRestoreService(skeleton);
+    this.scrollRestore = new ScrollRestoreService(skeleton, scrollMemory);
   }
 
   // ── 生命周期 ──
@@ -131,7 +136,11 @@ export class WeekController {
   }
 
   /** 从 Todo 拖入：拖拽悬停时更新预览块位置（30 分钟默认时长，15 分钟对齐） */
-  handleDragOver(day: Dayjs, _task: Task, topPx: number) {
+  handleDragOver(day: Dayjs, task: Task, topPx: number) {
+    if (!this.store.getTask(task.id)) {
+      this.draggingTaskEvent = null;
+      return;
+    }
     let start = this.pixelsToTime(day, topPx);
     start = roundToNearest15MinutesDayjs(start);
     this.draggingTaskEvent = {
@@ -142,13 +151,16 @@ export class WeekController {
 
   /** 从 Todo 拖入：释放时创建新事件并写入 Store */
   handleDrop(day: Dayjs, task: Task, topPx: number) {
+    this.draggingTaskEvent = null;
+    const liveTask = this.store.getTask(task.id);
+    if (!liveTask) return;
+
     let start = this.pixelsToTime(day, topPx);
     start = roundToNearest15MinutesDayjs(start);
-    task.insertEvent(
+    liveTask.insertEvent(
       start.valueOf(),
       start.add(DEFAULT_EVENT_DURATION_MS, "milliseconds").valueOf(),
     );
-    this.draggingTaskEvent = null;
   }
 
   /** 从 Todo 拖入：拖拽离开/取消时清除预览 */

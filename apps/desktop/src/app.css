@@ -157,3 +157,32 @@ prosekit-resizable-handle:hover {
 prosekit-resizable-handle:hover {
   background: rgba(100, 100, 100, 0.8);
 }
+
+/* reveal 高亮（Todo / TodoView 共用；事实时刻在 ViewHandle.highlightUntil） */
+.traceable-highlight {
+  position: relative;
+}
+.traceable-highlight.is-highlighting::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background-color: rgba(255, 215, 0, 0.3);
+  animation: traceable-highlight-blink 3s infinite;
+  z-index: 1;
+  pointer-events: none;
+}
+@keyframes traceable-highlight-blink {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}

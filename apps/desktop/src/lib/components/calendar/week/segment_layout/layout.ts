@@ -19,7 +19,7 @@
  * @see EventSegment.svelte 中的 laneWidth / laneLeft
  */
 import { type Dayjs } from "dayjs";
-import type { Event } from "$lib/states/meta/event.svelte";
+import type { Event } from "$lib/document/entities/event.svelte";
 import { getDayStart } from "./geometry";
 
 /**

@@ -2,62 +2,86 @@
   /**
    * TodoView — 视图入口组件（面板根）。
    *
-   * 渲染面板的根级 Todo 大纲，包含：
-   * - 标题（item/Title.svelte，根条目渲染器）
-   * - 子列表（TodoList.svelte，alwaysDisplay = true）
-   * - 新增按钮（点击调用 `task.insertChild()`）
-   *
-   * 对应 root `TodoController`（由 `EditorPanelController` 通过 `createRoot` 创建）。
-   * 生命周期由 `$effect` 驱动：mount 时 `onTodoReady()`，destroy 时 `destroy()`。
-   *
-   * @prop controller - 面板根 TodoController
-   * @prop showTitle - 是否显示标题（默认 true）
-   * @prop highlightTitle - 是否高亮标题
+   * 每个 home 一个根条目实例（script 顶层纯分配）；登记/接线/注销收口于同一个
+   * `$effect`（W1/G6）。导航变更 home 时由调用方以 homeTask.id keyed 整树重建（W3）。
    */
-  import TodoList from "$lib/components/todolist/TodoList.svelte";
+  import TodoList from "./TodoList.svelte";
   import Title from "./item/Title.svelte";
   import { CirclePlus } from "@lucide/svelte";
-  import type { TodoController } from "./controller/TodoController.svelte";
+  import { ViewHandle } from "$lib/view/view-handle.svelte";
+  import { addChild } from "$lib/components/adapters/actions";
+  import type { Panel } from "$lib/view/panel.svelte";
+  import type { Task } from "$lib/document/entities/task.svelte";
 
   interface Props {
-    controller: TodoController;
+    panel: Panel;
+    homeTask: Task;
     showTitle?: boolean;
     highlightTitle?: boolean;
+    onZoom?: (handle: ViewHandle) => void;
   }
 
-  let { controller, showTitle = true, highlightTitle }: Props = $props();
+  let {
+    panel,
+    homeTask,
+    showTitle = true,
+    highlightTitle,
+    onZoom,
+  }: Props = $props();
 
-  // 不用onMount而是用effect是因为controller可能在运行中被替换
-  // 视图注册已移入 focusActions.onTodoReady/destroy
+  const handle = new ViewHandle(panel, homeTask);
+  let selfEl: HTMLDivElement;
+  let highlighting = $state(false);
+
   $effect(() => {
-    controller.onTodoReady();
+    panel.registry.register(handle);
+    handle.bindPart("self", selfEl);
+    handle.scrollIntoView = () =>
+      selfEl.scrollIntoView({ behavior: "smooth", block: "center" });
     return () => {
-      controller.destroy();
+      handle.scrollIntoView = () => {};
+      handle.unbindPart("self");
+      panel.registry.unregister(handle);
     };
+  });
+
+  $effect(() => {
+    const until = handle.highlightUntil;
+    if (until === null) {
+      highlighting = false;
+      return;
+    }
+    highlighting = true;
+    const timer = setTimeout(
+      () => {
+        handle.highlightUntil = null;
+        highlighting = false;
+      },
+      Math.max(0, until - Date.now()),
+    );
+    return () => clearTimeout(timer);
   });
 </script>
 
 <div
-  class="todoview flex grow flex-col"
-  style:view-transition-name={controller.transitionActions
-    .$todoViewTransitionName}
+  bind:this={selfEl}
+  class="todoview traceable-highlight flex grow flex-col"
+  class:is-highlighting={highlighting}
 >
   {#if showTitle}
-    <Title {highlightTitle} {controller} />
+    <Title {handle} {highlightTitle} />
   {/if}
 
-  <!-- list -->
   <div class="pl-4">
-    <TodoList alwaysDisplay {controller} />
+    <TodoList {handle} alwaysDisplay {onZoom} />
   </div>
+
   <!-- svelte-ignore a11y_interactive_supports_focus -->
   <!-- svelte-ignore a11y_click_events_have_key_events -->
   <div
     role="button"
     class="flex w-full flex-row rounded-lg p-1 pl-3 opacity-20 transition-colors duration-300 hover:bg-zinc-300"
-    onclick={() => {
-      controller.task.insertChild();
-    }}
+    onclick={() => addChild(panel, handle)}
   >
     <CirclePlus size={16} />
   </div>

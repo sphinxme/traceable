@@ -1,3 +1,4 @@
+// 临时验证脚本：用于手动观察 rxjs 行为，命名不匹配 *.test.ts，不会被 vitest 收集。
 import { Observable, shareReplay, tap } from "rxjs";
 
 const a = new Observable<string>((subscriber) => {

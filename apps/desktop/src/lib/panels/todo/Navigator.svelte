@@ -1,9 +1,9 @@
 <script lang="ts">
   /**
-   * Navigator — 面包屑导航，渲染 `EditorPanelController.currentPaths`。
+   * Navigator — 面包屑导航，渲染 `EditorPanel.navTaskList`。
    *
-   * 第一项渲染为 House 图标（点击缩放退回该层），中间项可点击（popTo 缩放退出），
-   * 末项为当前 home（Page 样式，不可点击）。位于根 home 时首个分隔线旋转 45° 作装饰。
+   * 第一项渲染为 House 图标（点击退回该层），中间项可点击（popTo 缩放退出），
+   * 末项为当前 home（Page 样式，不可点击）。
    */
   import {
     Root,
@@ -13,51 +13,50 @@
     Page,
     Link,
   } from "$lib/components/ui/breadcrumb";
-  import Text from "../../components/ObservableText.svelte";
   import { House } from "@lucide/svelte";
-  import type { EditorPanelController } from "$lib/panels/PanelController.svelte";
+  import type { EditorPanel } from "$lib/view/panel.svelte";
 
   interface Props {
-    controller: EditorPanelController;
+    panel: EditorPanel;
   }
 
-  let { controller }: Props = $props();
+  let { panel }: Props = $props();
 </script>
 
 <Root>
   <List>
-    {#each controller.currentPaths as task, i (task.id)}
+    {#each panel.navTaskList as task, i (task.id)}
       <Item index={i}>
         {#if i === 0}
           <Link href="lang">
             {#snippet child(attrs)}
-              <button {...attrs} onclick={() => controller.popTo(i)}>
+              <button {...attrs} onclick={() => panel.popTo(i)}>
                 <House class="my-1" size={18} />
               </button>
             {/snippet}
           </Link>
-        {:else if i + 1 < controller.currentPaths.length}
+        {:else if i + 1 < panel.navTaskList.length}
           <Link href="lang">
             {#snippet child(attrs)}
-              <button {...attrs} onclick={() => controller.popTo(i)}>
-                <Text text={task.text.toJSON()} />
+              <button {...attrs} onclick={() => panel.popTo(i)}>
+                {task.$text || "未命名"}
               </button>
             {/snippet}
           </Link>
         {:else}
           <Page>
-            <Text text={task.text.toJSON()} />
+            {task.$text || "未命名"}
           </Page>
         {/if}
       </Item>
       {#if i === 0}
         <Separator
           index={i}
-          class={controller.isRootHome
+          class={panel.isRootHome
             ? "-rotate-45 transition-transform"
             : "transition-transform"}
         />
-      {:else if i + 1 < controller.currentPaths.length}
+      {:else if i + 1 < panel.navTaskList.length}
         <Separator index={i} />
       {/if}
     {/each}
